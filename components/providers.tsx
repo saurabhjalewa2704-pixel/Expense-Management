@@ -52,6 +52,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <PersistQueryClientProvider
       client={client}
+      // Show the cached data instantly, then revalidate it all: a restored cache carries a fresh timestamp, so without this
+      // a change made just before closing the app (inside the persist throttle) could stay hidden for a minute.
+      onSuccess={() => { void client.invalidateQueries(); }}
       persistOptions={{
         persister,
         maxAge: 30 * DAY,

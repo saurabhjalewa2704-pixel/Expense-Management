@@ -186,8 +186,8 @@ begin
    where s.payee is not null and s.type in ('expense', 'income')
    group by s.payee;
 
-  insert into transactions (user_id, client_id, type, amount_pence, account_id, counter_account_id, category_id, payee_id, note, occurred_on, occurred_at, source)
-  select u, gen_random_uuid(), s.type, s.amount, s.acct, s.counter, cat.id, p.id, s.note, s.on_date, s.at_ts, 'app'
+  insert into transactions (user_id, client_id, type, amount_pence, account_id, counter_account_id, category_id, payee_id, note, occurred_on, occurred_at, source, created_at)
+  select u, gen_random_uuid(), s.type, s.amount, s.acct, s.counter, cat.id, p.id, s.note, s.on_date, s.at_ts, 'app', s.at_ts
     from seed_txn s
     left join categories cat on cat.user_id = u and cat.name = s.cat
     left join payees p on p.user_id = u and p.name = s.payee

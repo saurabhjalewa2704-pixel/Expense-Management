@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { reconcileAccount } from "@/app/actions/accounts";
 import { Sheet } from "@/components/ui/sheet";
 import { useToast } from "@/components/ui/toast";
+import { todayLondon } from "@/lib/dates";
 import { formatGBP, toPence } from "@/lib/money";
 import type { Account } from "@/lib/types";
 
@@ -25,7 +26,7 @@ export function ReconcileSheet({ open, onOpenChange, account, balancePence }: { 
   const confirm = async () => {
     if (!account || actual === null) return;
     setBusy(true);
-    const r = await reconcileAccount(account.id, actual);
+    const r = await reconcileAccount(account.id, actual, todayLondon());
     setBusy(false);
     if (!r.ok) return setError(r.error);
     await qc.invalidateQueries();

@@ -192,7 +192,7 @@ begin
 end $$;
 
 -- ACC-05: type what the bank says; the difference becomes a signed adjustment dated today.
-create function reconcile_account(p_account_id uuid, p_actual_pence bigint)
+create function reconcile_account(p_account_id uuid, p_actual_pence bigint, p_on date default null)
 returns transactions language plpgsql as $$
 declare v_bal bigint; v_diff bigint; v_row transactions;
 begin
@@ -201,13 +201,13 @@ begin
   v_diff := p_actual_pence - v_bal;
   if v_diff = 0 then return null; end if;
   insert into transactions (user_id, client_id, type, amount_pence, account_id, note, occurred_on)
-    values (auth.uid(), gen_random_uuid(), 'adjustment', v_diff, p_account_id, 'Balance adjustment', london_today())
+    values (auth.uid(), gen_random_uuid(), 'adjustment', v_diff, p_account_id, 'Balance adjustment', coalesce(p_on, london_today()))
     returning * into v_row;
   return v_row;
 end $$;
 
 -- ACC-03
-create function archive_account(p_account_id uuid, p_write_off boolean default false)
+create function archive_account(p_account_id uuid, p_write_off boolean default false, p_on date default null)
 returns accounts language plpgsql as $$
 declare v_bal bigint; v_row accounts; v_was_default boolean;
 begin
@@ -219,7 +219,7 @@ begin
     end if;
     insert into transactions (user_id, client_id, type, amount_pence, account_id, note, occurred_on)
       values (auth.uid(), gen_random_uuid(), 'adjustment', -v_bal, p_account_id, 'Balance written off',
-              greatest(london_today(), (select opening_date from accounts where id = p_account_id)));
+              greatest(coalesce(p_on, london_today()), (select opening_date from accounts where id = p_account_id)));
   end if;
   select is_default into v_was_default from accounts where id = p_account_id;
   update accounts set archived_at = now(), is_default = false where id = p_account_id returning * into v_row;

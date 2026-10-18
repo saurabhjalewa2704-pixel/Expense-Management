@@ -1,13 +1,17 @@
 import type { NextConfig } from "next";
 import { withSerwist } from "@serwist/turbopack";
 
+// The browser talks to Supabase directly (RLS-protected reads), so its exact origin is allowed, not a wildcard.
+const supabaseOrigin = (() => { try { return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").origin; } catch { return ""; } })();
+const supabaseWs = supabaseOrigin.replace(/^http/, "ws");
+
 const csp = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline'" + (process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""),
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co" + (process.env.NODE_ENV === "production" ? "" : " http://localhost:* http://127.0.0.1:* ws://localhost:*"),
+  `connect-src 'self' ${supabaseOrigin} ${supabaseWs}`.trim() + (process.env.NODE_ENV === "production" ? "" : " ws://localhost:*"),
   "worker-src 'self'",
   "manifest-src 'self'",
   "frame-ancestors 'none'",

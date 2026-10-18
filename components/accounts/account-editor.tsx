@@ -62,7 +62,7 @@ export function AccountEditor({ open, onOpenChange, account, balancePence, onSav
   const archive = async (writeOff: boolean) => {
     if (!account) return;
     setBusy(true);
-    const r = await archiveAccount(account.id, writeOff);
+    const r = await archiveAccount(account.id, writeOff, todayLondon());
     setBusy(false);
     if (!r.ok) return setError(r.error);
     await qc.invalidateQueries();

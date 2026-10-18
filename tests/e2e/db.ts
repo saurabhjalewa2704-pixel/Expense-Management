@@ -6,3 +6,10 @@ export async function sql<T extends Record<string, unknown> = Record<string, unk
   await client.connect();
   try { return (await client.query(text, params)).rows as T[]; } finally { await client.end(); }
 }
+
+/** The first row, or an error: for queries that must return exactly one. */
+export async function sqlOne<T extends Record<string, unknown> = Record<string, unknown>>(text: string, params: unknown[] = []): Promise<T> {
+  const rows = await sql<T>(text, params);
+  if (!rows[0]) throw new Error(`no row for: ${text}`);
+  return rows[0];
+}

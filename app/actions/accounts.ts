@@ -26,17 +26,17 @@ export async function upsertAccount(input: unknown): Promise<ActionResult<Accoun
 }
 
 /** ACC-03: archive; a non-zero balance needs `writeOff`, which records an adjustment first. */
-export async function archiveAccount(id: string, writeOff = false): Promise<ActionResult> {
+export async function archiveAccount(id: string, writeOff = false, on?: string): Promise<ActionResult> {
   const supabase = await supabaseServer();
-  const { error } = await supabase.rpc("archive_account", { p_account_id: id, p_write_off: writeOff });
+  const { error } = await supabase.rpc("archive_account", { p_account_id: id, p_write_off: writeOff, p_on: on ?? null });
   return error ? fail(friendlyDbError(error)) : ok(undefined);
 }
 
 /** ACC-05: the typed balance becomes the truth; the difference is a signed adjustment dated today. */
-export async function reconcileAccount(id: string, actualPence: number): Promise<ActionResult<Transaction | null>> {
+export async function reconcileAccount(id: string, actualPence: number, on?: string): Promise<ActionResult<Transaction | null>> {
   if (!Number.isSafeInteger(actualPence)) return fail("Enter a valid balance.");
   const supabase = await supabaseServer();
-  const { data, error } = await supabase.rpc("reconcile_account", { p_account_id: id, p_actual_pence: actualPence });
+  const { data, error } = await supabase.rpc("reconcile_account", { p_account_id: id, p_actual_pence: actualPence, p_on: on ?? null });
   return error ? fail(friendlyDbError(error)) : ok((data as Transaction | null) ?? null);
 }
 

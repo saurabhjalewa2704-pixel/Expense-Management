@@ -31,6 +31,25 @@ test.describe("capture (CAP-01..05)", () => {
     expect((await sql<{ use_count: number }>(`select use_count from payees where name = 'Gail''s Bakery'`))[0]!.use_count).toBeGreaterThan(1);
   });
 
+  test("CAP-01: Quick Add opens in under 100 ms (production build)", async ({ page }) => {
+    test.skip(!process.env.E2E_PROD && !process.env.E2E_PORT?.startsWith("32"), "timing is only meaningful on a production build");
+    await startDemo(page);
+    await page.waitForTimeout(1500);
+    const times: number[] = [];
+    for (let i = 0; i < 4; i++) {
+      times.push(await page.evaluate(() => new Promise<number>((res) => {
+        const t0 = performance.now();
+        const obs = new MutationObserver(() => { if (document.querySelector("[data-testid=quick-add]")) { obs.disconnect(); requestAnimationFrame(() => res(performance.now() - t0)); } });
+        obs.observe(document.body, { childList: true, subtree: true });
+        (document.querySelector(".tab-add") as HTMLElement).click();
+      })));
+      await page.keyboard.press("Escape");
+      await expect(page.getByTestId("quick-add")).toHaveCount(0);
+    }
+    expect(Math.min(...times)).toBeLessThan(100);
+    expect(times.sort((a, b) => a - b)[1]).toBeLessThan(100);
+  });
+
   test("Undo removes it completely and the hero goes back", async ({ page }) => {
     await startDemo(page);
     await openAdd(page);

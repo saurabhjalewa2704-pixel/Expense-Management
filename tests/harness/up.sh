@@ -24,6 +24,10 @@ stop_pid() {  # stop_pid <name>
   if [ -f "$f" ]; then kill "$(cat "$f")" 2>/dev/null || true; : > "$f"; fi
 }
 stop_pid pgrst; stop_pid gateway
+# also stop stragglers whose pid file was lost (the bracket keeps this pattern from matching this very command)
+pkill -f "[.]stack/postgrest" 2>/dev/null || true
+pkill -f "[t]ests/harness/gateway[.]mjs" 2>/dev/null || true
+sleep 1
 PGRST_DB_URI="postgres://authenticator:authenticator@127.0.0.1:$PGPORT/sterling_dev" PGRST_DB_SCHEMAS=public \
 PGRST_DB_ANON_ROLE=anon PGRST_JWT_SECRET="$SECRET" PGRST_SERVER_PORT=54323 PGRST_SERVER_HOST=127.0.0.1 \
   nohup "$PGRST_BIN" > "$STACK/pgrst.log" 2>&1 & echo $! > "$STACK/pgrst.pid"
