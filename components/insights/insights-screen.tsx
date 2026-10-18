@@ -13,7 +13,7 @@ type Tab = "weekly" | "monthly" | "adhoc";
 const TABS: { id: Tab; label: string }[] = [{ id: "weekly", label: "Last week" }, { id: "monthly", label: "Last month" }, { id: "adhoc", label: "So far" }];
 
 const stamp = (iso: string) =>
-  new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(iso)).replace(",", "").replace(/(\d{2}:\d{2})$/, ", $1");
+  new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(iso)).replace(/,\s*/g, " ").replace(/(\d{2}:\d{2})$/, ", $1");
 
 export function InsightsScreen() {
   const runs = useInsightRuns(), fb = useInsightFeedback(), profile = useProfile();

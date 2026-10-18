@@ -28,6 +28,7 @@ export function InsightCardView({ run, card, onFeedback }: { run: InsightRunRow;
   const d = card.metric?.delta_fact_key ? facts.get(card.metric.delta_fact_key) : undefined;
   const tone = card.severity === "caution" ? "cau" : card.severity === "positive" ? "pos" : "";
   const Icon = card.type === "win" ? UI.Check : card.type === "subscription" ? UI.RefreshCw : UI.Sparkles;
+  const labels = card.type === "pace" ? ["This month", "Last month"] : card.type === "trend" ? ["Latest", "Earlier"] : ["So far", "Typical"];
   const to = href(card);
   const [done, setDone] = useState<"helpful" | null>(null);
   const hi = card.viz === "bar_compare" && m?.value_pence != null && d?.value_pence != null ? Math.max(m.value_pence, d.value_pence, 1) : 1;
@@ -38,8 +39,8 @@ export function InsightCardView({ run, card, onFeedback }: { run: InsightRunRow;
       <p>{card.body}</p>
       {card.viz === "bar_compare" && m?.value_pence != null && d?.value_pence != null && (
         <div className="compare" aria-label={`${m.label}: ${formatGBP(m.value_pence)}; ${d.label}: ${formatGBP(d.value_pence)}`}>
-          <span className="lab">{shortLabel(m.label)}</span><div className={`bar ${tone === "cau" ? "cau" : ""}`} style={{ width: `${(m.value_pence / hi) * 100}%` }} /><span className="num">{m.display}</span>
-          <span className="lab">{shortLabel(d.label)}</span><div className="bar ctx" style={{ width: `${(d.value_pence / hi) * 100}%` }} /><span className="num">{d.display}</span>
+          <span className="lab" style={{ whiteSpace: "nowrap" }}>{labels[0]}</span><div className={`bar ${tone === "cau" ? "cau" : ""}`} style={{ width: `${(m.value_pence / hi) * 100}%` }} /><span className="num">{m.display}</span>
+          <span className="lab" style={{ whiteSpace: "nowrap" }}>{labels[1]}</span><div className="bar ctx" style={{ width: `${(d.value_pence / hi) * 100}%` }} /><span className="num">{d.display}</span>
         </div>
       )}
       {card.viz === "spark" && m?.series && m.series.length > 1 && <div style={{ marginTop: 14 }}><Sparkline values={m.series} height={48} label={`${m.label} over time`} /></div>}
@@ -54,7 +55,6 @@ export function InsightCardView({ run, card, onFeedback }: { run: InsightRunRow;
   );
 }
 
-const shortLabel = (s: string) => s.replace(/ so far$/i, "").replace(/^spend /i, "").slice(0, 14);
 
 /** Feedback handler bound to a run: records it, then refreshes the cached feedback so a dismissed card disappears at once. */
 export function useCardFeedback() {
@@ -79,7 +79,9 @@ export function useVisibleCards() {
 
 /** Home (one card) and the desktop rail (up to three). */
 export function InsightCard({ variant }: { variant: "home" | "list" }) {
-  const { run, cards } = useVisibleCards();
+  const visible = useVisibleCards();
+  const { run } = visible;
+  const cards = variant === "home" ? visible.cards.filter((c) => c.type !== "pace") : visible.cards;   // Home already has the pace card
   const feedback = useCardFeedback();
   if (!run || cards.length === 0) return null;
   const shown = variant === "home" ? cards.slice(0, 1) : cards.slice(0, 3);

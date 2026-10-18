@@ -28,6 +28,7 @@ test.describe("AI insights (M4)", () => {
 
     await page.goto("/");
     await expect(page.getByTestId("insight-card")).toHaveCount(1);
+    await expect(page.getByTestId("insight-card").getByRole("heading")).toHaveText("Eating out is running 38% above your usual");
     await expect(page.getByRole("link", { name: "See all insights" })).toBeVisible();
   });
 
