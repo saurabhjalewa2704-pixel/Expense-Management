@@ -185,3 +185,5 @@ input,textarea,select{font:inherit;color:inherit}
 .fixed-row{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;margin-top:12px;border-radius:12px;background:var(--surface-2);font-size:14px}
 section > .card.card,.stack > .card.card{margin-top:0}
 td + td{padding-left:14px}
+@keyframes spin{to{transform:rotate(360deg)}} .spin{animation:spin 900ms linear infinite}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}

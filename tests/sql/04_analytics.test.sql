@@ -56,6 +56,18 @@ begin
   -- history shorter than the norm window -> no norm at all
   assert (select norm_pence from spend_by_category('2026-01-01', '2026-01-31') limit 1) is null, 'cold start has no norm';
 
+  ---------------- insight facts ----------------
+  select * into r from category_period_history('2026-10-01', '2026-10-18') where category_id = eating;
+  assert r.current_pence = 7500 and r.prior_pence = array[5000, 5000, 5000, 5000, 5000]::bigint[], 'history per period (the 6th period starts before the first transaction, so it is left out): ' || r::text;
+  select * into r from category_period_history('2026-10-01', '2026-10-18') where category_id = groceries;
+  assert r.current_pence = 4872 and r.prior_pence = array[0,0,0,0,0]::bigint[], 'prior zero-fills: ' || r::text;
+  assert (select count(*) from category_period_history('2026-10-19', '2026-10-25', 4, interval '7 days')) >= 0, 'weekly step works';
+  assert (select array_length(prior_pence, 1) from category_period_history('2026-04-01', '2026-04-18') limit 1) is null
+      or (select array_length(prior_pence, 1) from category_period_history('2026-04-01', '2026-04-18') limit 1) = 0, 'no history before the first transaction';
+  assert (select count(*) from top_transactions('2026-10-01', '2026-10-18', 3)) = 3;
+  assert (select amount_pence from top_transactions('2026-10-01', '2026-10-18', 1)) = 5000, 'biggest expense first';
+  assert (select count(*) from new_payees('2026-10-01', '2026-10-18')) = 0, 'a payee seen before is not new';
+
   ---------------- daily_spend / pace / monthly / payees ----------------
   select * into r from month_pace('2026-10-18');
   assert r.day_of_month = 18 and r.days_in_month = 31 and r.spend_pence = 12372, 'MTD spend: ' || r::text;

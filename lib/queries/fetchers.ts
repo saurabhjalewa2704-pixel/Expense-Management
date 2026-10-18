@@ -106,3 +106,13 @@ export async function fetchLastIncomeAccount(db: SupabaseClient): Promise<string
       .order("occurred_on", { ascending: false }).order("created_at", { ascending: false }).limit(1));
   return rows[0]?.account_id ?? null;
 }
+
+/** The latest insight runs (digests and refreshes), newest first. Cards are stored with the run, so this works offline from the cache. */
+export const fetchInsightRuns = (db: SupabaseClient) =>
+  unwrap<import("@/lib/ai/generate").InsightRunRow[]>(
+    db.from("insight_runs").select("id,scope,period_start,period_end,facts,cards,model,input_tokens,output_tokens,used_fallback,created_at").order("created_at", { ascending: false }).limit(12),
+  );
+
+export interface FeedbackRow { run_id: string; card_key: string; card_type: string; action: "helpful" | "dismissed" | "opened" }
+export const fetchInsightFeedback = (db: SupabaseClient) =>
+  unwrap<FeedbackRow[]>(db.from("insight_feedback").select("run_id,card_key,card_type,action").order("created_at", { ascending: false }).limit(200));

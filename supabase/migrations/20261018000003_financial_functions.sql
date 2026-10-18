@@ -228,6 +228,57 @@ language sql stable as $$
    limit p_limit
 $$;
 
+-- Insight facts (PRD §12.2): everything a card may say is computed here or in lib/ai/facts.ts, never by the model.
+-- Spend per parent category for [p_from, p_to] and for each of the prior p_periods periods at the same offset
+-- (step = 1 month for monthly digests, 7 days for weekly ones). prior_pence[k] is k periods ago, zero when nothing was spent;
+-- periods before the user's first transaction are left out, so a new account has a short history, not a misleading one.
+create function category_period_history(p_from date, p_to date, p_periods int default 6, p_step interval default interval '1 month')
+returns table (category_id uuid, name text, icon text, parent_id uuid, current_pence bigint, prior_pence bigint[])
+language sql stable as $$
+  with first_txn as (select min(occurred_on) as d from transactions where deleted_at is null),
+  ks as (select k from generate_series(1, p_periods) k, first_txn where (p_from - k * p_step)::date >= first_txn.d),
+  scoped as (
+    select t.occurred_on, t.amount_pence, coalesce(c.parent_id, c.id) as gid
+      from transactions t join categories c on c.id = t.category_id
+     where t.deleted_at is null and t.type = 'expense'
+       and t.occurred_on >= (p_from - p_periods * p_step)::date and t.occurred_on <= p_to
+  ),
+  gids as (select distinct gid from scoped)
+  select g.gid, c.name, c.icon, c.parent_id,
+         coalesce((select sum(s.amount_pence) from scoped s where s.gid = g.gid and s.occurred_on between p_from and p_to), 0)::bigint,
+         coalesce((select array_agg(coalesce((select sum(s.amount_pence) from scoped s where s.gid = g.gid
+                          and s.occurred_on between (p_from - k.k * p_step)::date and (p_to - k.k * p_step)::date), 0)::bigint order by k.k)
+                     from ks k), '{}'::bigint[])
+    from gids g join categories c on c.id = g.gid
+   order by 5 desc, c.name
+$$;
+
+-- Payees first seen in the period (their earliest transaction falls inside it).
+create function new_payees(p_from date, p_to date)
+returns table (payee_id uuid, name text, amount_pence bigint, occurred_on date, category_name text)
+language sql stable as $$
+  select p.id, p.name, f.amount_pence, f.occurred_on, c.name
+    from payees p
+    join lateral (select t.* from transactions t where t.payee_id = p.id and t.deleted_at is null and t.type = 'expense'
+                   order by t.occurred_on, t.created_at limit 1) f on true
+    left join categories c on c.id = f.category_id
+   where f.occurred_on between p_from and p_to
+   order by f.amount_pence desc
+$$;
+
+-- The biggest single expenses of the period, leaving out rent-like fixed costs (those are never news).
+create function top_transactions(p_from date, p_to date, p_limit int default 3)
+returns table (id uuid, payee_name text, category_name text, amount_pence bigint, occurred_on date)
+language sql stable as $$
+  select t.id, p.name, c.name, t.amount_pence, t.occurred_on
+    from transactions t
+    left join payees p on p.id = t.payee_id
+    left join categories c on c.id = t.category_id
+   where t.deleted_at is null and t.type = 'expense' and t.occurred_on between p_from and p_to and not coalesce(c.is_fixed, false)
+   order by t.amount_pence desc, t.occurred_on desc
+   limit p_limit
+$$;
+
 -- Calendar heatmap + weekday averages need nothing beyond daily_spend. Category history for AN-07:
 create function category_monthly(p_category uuid, p_months int default 12)
 returns table (month date, total_pence bigint, txn_count int)

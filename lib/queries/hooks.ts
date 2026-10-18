@@ -10,7 +10,7 @@ import type { AccountBalance, TxnRow } from "@/lib/types";
 import {
   fetchAccounts, fetchAccountSeries, fetchActivityPage, fetchBalances, fetchCashFlow, fetchCashSeries, fetchCategories,
   fetchCategoryMonthly, fetchDailySpend, fetchMonthlyTotals, fetchPace, fetchPayees, fetchProfile, fetchSpendByCategory,
-  fetchLastIncomeAccount, fetchSuggestHistory, fetchTopPayees, fetchTotals, PAGE_SIZE, type ActivityCursor,
+  fetchInsightFeedback, fetchInsightRuns, fetchLastIncomeAccount, fetchSuggestHistory, fetchTopPayees, fetchTotals, PAGE_SIZE, type ActivityCursor,
 } from "./fetchers";
 import { qk, type ActivityFilters } from "./keys";
 
@@ -179,3 +179,6 @@ export const useSuggestHistory = () =>
   useQuery({ queryKey: qk.suggestHistory, queryFn: () => fetchSuggestHistory(db()), staleTime: 5 * 60_000 });
 export const useLastIncomeAccount = () =>
   useQuery({ queryKey: qk.lastIncomeAccount, queryFn: () => fetchLastIncomeAccount(db()), staleTime: 5 * 60_000 });
+
+export const useInsightRuns = () => useQuery({ queryKey: qk.insights, queryFn: () => fetchInsightRuns(db()) });
+export const useInsightFeedback = () => useQuery({ queryKey: [...qk.insights, "feedback"] as const, queryFn: () => fetchInsightFeedback(db()) });

@@ -267,6 +267,7 @@ create table insight_runs (
   input_tokens  int,
   output_tokens int,
   used_fallback boolean not null default false,
+  validation    jsonb not null default '{}'::jsonb,   -- cards the grounding validator dropped, and why
   created_at    timestamptz not null default now()
 );
 create index insight_runs_user on insight_runs(user_id, created_at desc);

@@ -5,6 +5,7 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 [ -f .stack/env ] || { echo "run 'npm run stack:up' first"; exit 1; }
 set -a; source .stack/env; set +a
+export STERLING_TEST_TODAY="${STERLING_TEST_TODAY:-2026-10-18}"
 PORT="${E2E_PORT:-3200}"
 pkill -f "[n]ext-server" 2>/dev/null || true
 if [ "${SKIP_BUILD:-0}" != "1" ]; then npx next build || exit 1; fi
