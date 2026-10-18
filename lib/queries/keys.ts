@@ -28,7 +28,7 @@ export const qk = {
   totals: (f: ActivityFilters) => ["activity-totals", f] as const,
   recent: ["recent"] as const,
   spendByCategory: (from: ISODate, to: ISODate, parent: string | null, pool = false) => ["spend-by-category", from, to, parent, pool] as const,
-  dailySpend: (from: ISODate, to: ISODate) => ["daily-spend", from, to] as const,
+  dailySpend: (from: ISODate, to: ISODate, excludeFixed = false) => ["daily-spend", from, to, excludeFixed] as const,
   monthlyTotals: (n: number) => ["monthly-totals", n] as const,
   topPayees: (from: ISODate, to: ISODate) => ["top-payees", from, to] as const,
   categoryMonthly: (id: string, n: number) => ["category-monthly", id, n] as const,

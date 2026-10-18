@@ -150,7 +150,8 @@ language sql stable as $$
    order by cur.total desc, c.name
 $$;
 
-create function daily_spend(p_from date, p_to date)
+-- p_exclude_fixed drops rent-like categories (is_fixed), for charts about behaviour such as the daily rhythm.
+create function daily_spend(p_from date, p_to date, p_exclude_fixed boolean default false)
 returns table (day date, total_pence bigint, cumulative_pence bigint)
 language sql stable as $$
   with d as (
@@ -158,7 +159,9 @@ language sql stable as $$
   ), s as (
     select t.occurred_on as day, sum(t.amount_pence) as total
       from transactions t
+      left join categories c on c.id = t.category_id
      where t.deleted_at is null and t.type = 'expense' and t.occurred_on between p_from and p_to
+       and (not p_exclude_fixed or not coalesce(c.is_fixed, false))
      group by t.occurred_on
   )
   select d.day, coalesce(s.total, 0)::bigint,
@@ -213,12 +216,13 @@ language sql stable as $$
    group by months.m order by months.m
 $$;
 
-create function top_payees(p_from date, p_to date, p_limit int default 10)
+create function top_payees(p_from date, p_to date, p_limit int default 10, p_category uuid default null)
 returns table (payee_id uuid, name text, visits int, total_pence bigint, avg_pence bigint)
 language sql stable as $$
   select p.id, p.name, count(*)::int, sum(t.amount_pence)::bigint, round(avg(t.amount_pence))::bigint
     from transactions t join payees p on p.id = t.payee_id
    where t.deleted_at is null and t.type = 'expense' and t.occurred_on between p_from and p_to
+     and (p_category is null or t.category_id in (select c.id from categories c where c.id = p_category or c.parent_id = p_category))
    group by p.id, p.name
    order by sum(t.amount_pence) desc, p.name
    limit p_limit

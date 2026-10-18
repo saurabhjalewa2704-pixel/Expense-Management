@@ -1,5 +1,6 @@
 "use client";
 import { useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AccountsFilterSheet, AmountFilterSheet, CategoriesFilterSheet, PeriodSheet, TypeFilterSheet, periodLabel, periodRange, type Period } from "./filter-sheets";
 import { TxnItem } from "./txn-row";
@@ -19,9 +20,13 @@ export function ActivityScreen() {
   const today = useToday();
   const [input, setInput] = useState("");
   const [debounced, setDebounced] = useState("");
-  const [period, setPeriod] = useState<Period>({ key: "this-month", ...periodRange("this-month", todayLondon()) });
+  // drill-down links (Analytics, top payees) arrive with ?categories=&from=&to=&payee=
+  const sp = useSearchParams();
+  const urlFrom = sp.get("from") ?? undefined, urlTo = sp.get("to") ?? undefined;
+  const [payeeId, setPayeeId] = useState<string | undefined>(sp.get("payee") ?? undefined);
+  const [period, setPeriod] = useState<Period>(urlFrom || urlTo ? { key: "custom", from: urlFrom, to: urlTo } : { key: "this-month", ...periodRange("this-month", todayLondon()) });
   const [accountIds, setAccountIds] = useState<string[]>([]);
-  const [categoryIds, setCategoryIds] = useState<string[]>([]);
+  const [categoryIds, setCategoryIds] = useState<string[]>(sp.get("categories")?.split(",").filter(Boolean) ?? []);
   const [types, setTypes] = useState<string[]>([]);
   const [amount, setAmount] = useState<{ min?: number; max?: number }>({});
   const [sheet, setSheet] = useState<null | "period" | "accounts" | "category" | "type" | "amount">(null);
@@ -32,10 +37,10 @@ export function ActivityScreen() {
     const s = parseSearch(debounced);
     return {
       q: s.text || undefined, amount: s.amount, min: s.min ?? amount.min, max: s.max ?? amount.max,
-      from: period.from, to: period.to,
+      from: period.from, to: period.to, payeeId,
       accountIds: accountIds.length ? accountIds : undefined, categoryIds: categoryIds.length ? categoryIds : undefined, types: types.length ? types : undefined,
     };
-  }, [debounced, period, accountIds, categoryIds, types, amount]);
+  }, [debounced, period, accountIds, categoryIds, types, amount, payeeId]);
 
   const activity = useActivity(filters);
   const totals = useTotals(filters);
@@ -77,6 +82,7 @@ export function ActivityScreen() {
         <button className={`chip plain ${amount.min != null || amount.max != null ? "sel" : ""}`} onClick={() => setSheet("amount")}>Amount <UI.ChevronDown size={14} strokeWidth={2} aria-hidden /></button>
       </div>
 
+      {payeeId && <div className="chips" style={{ marginTop: 10 }}><button className="chip plain sel" onClick={() => setPayeeId(undefined)} aria-label="Remove payee filter">One payee <UI.X size={14} strokeWidth={2} aria-hidden /></button></div>}
       <div className="sub" style={{ margin: "14px 2px 0" }} data-testid="summary" aria-live="polite">
         {t ? (<>{t.txn_count.toLocaleString("en-GB")} transaction{t.txn_count === 1 ? "" : "s"} · <span className="num">{formatGBP(t.spend_pence)}</span> out{t.income_pence > 0 && <> · <span className="num pos">{formatGBP(t.income_pence)}</span> in</>}</>) : " "}
       </div>

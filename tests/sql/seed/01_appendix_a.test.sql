@@ -44,6 +44,12 @@ begin
   assert exists (select 1 from list_transactions(p_q => 'ASOS') where type = 'income' and amount_pence = 12160 and category_name = 'Refunds');
   assert (select count(*) from account_balances('2026-10-18') where counts_as_cash) = 4;
 
+  -- the late-month spending of the six previous months has a median of £1,825.15, so October is heading for £5,062
+  assert (select round(percentile_cont(0.5) within group (order by late))
+            from (select (select coalesce(sum(amount_pence), 0) from transactions t where t.type = 'expense' and t.deleted_at is null
+                           and t.occurred_on > m::date + 17 and t.occurred_on < (m + interval '1 month')::date) as late
+                    from generate_series('2026-04-01'::date, '2026-09-01', interval '1 month') m) x) = 182515, 'median late-month spend';
+
   -- six months of history, and the invariant holds on it
   assert (select count(*) from monthly_totals(7) where spend_pence > 0) = 7;
   for n in 1..30 loop

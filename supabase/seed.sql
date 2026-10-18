@@ -159,6 +159,20 @@ begin
     end loop;
   end loop;
 
+  -- Top up days 19-30 of April-August so each month's late spending matches the pattern in the mock-up
+  -- (projected October £5,062 = £3,236.85 + the median late-month spend of £1,825.15).
+  for m in 1..5 loop
+    mdate := months[m];
+    total := (array[182530, 179000, 196000, 182500, 190000])[m]
+             - coalesce((select sum(amount) from seed_txn where type = 'expense' and on_date >= mdate + 18 and on_date < (mdate + interval '1 month')::date), 0);
+    if total > 0 then
+      insert into seed_txn (type, amount, acct, cat, payee, on_date, at_ts) values
+        ('expense', round(total * 0.4), amex, 'Online & general', 'Amazon', mdate + 20, ((mdate + 20)::text || ' 20:15 Europe/London')::timestamptz),
+        ('expense', round(total * 0.3), amex, 'Homeware', 'John Lewis', mdate + 23, ((mdate + 23)::text || ' 13:05 Europe/London')::timestamptz),
+        ('expense', total - round(total * 0.4) - round(total * 0.3), amex, 'Clothing & shoes', 'Uniqlo', mdate + 26, ((mdate + 26)::text || ' 15:40 Europe/London')::timestamptz);
+    end if;
+  end loop;
+
   -- income, savings, card payments, a cash top-up and one reconciliation
   insert into seed_txn (type, amount, acct, cat, payee, on_date, at_ts)
   select 'income', 515000, monzo, 'Salary', 'Northwind Ltd', make_date(2026, mm, 25), (make_date(2026, mm, 25)::text || ' 06:00 Europe/London')::timestamptz from generate_series(4, 9) mm;

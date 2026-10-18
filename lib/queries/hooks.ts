@@ -153,12 +153,12 @@ export function useRecent(limit = 4) {
 // ---- analytics (server only: charts are not overlaid with pending entries) ----
 export const useSpendByCategory = (from: ISODate, to: ISODate, parent: string | null = null, pool = false) =>
   useQuery({ queryKey: qk.spendByCategory(from, to, parent, pool), queryFn: () => fetchSpendByCategory(db(), from, to, parent, pool), placeholderData: keepPreviousData });
-export const useDailySpend = (from: ISODate, to: ISODate) =>
-  useQuery({ queryKey: qk.dailySpend(from, to), queryFn: () => fetchDailySpend(db(), from, to), placeholderData: keepPreviousData });
+export const useDailySpend = (from: ISODate, to: ISODate, excludeFixed = false) =>
+  useQuery({ queryKey: qk.dailySpend(from, to, excludeFixed), queryFn: () => fetchDailySpend(db(), from, to, excludeFixed), placeholderData: keepPreviousData });
 export const useMonthlyTotals = (months = 12) =>
   useQuery({ queryKey: qk.monthlyTotals(months), queryFn: () => fetchMonthlyTotals(db(), months) });
-export const useTopPayees = (from: ISODate, to: ISODate, limit = 10) =>
-  useQuery({ queryKey: [...qk.topPayees(from, to), limit], queryFn: () => fetchTopPayees(db(), from, to, limit), placeholderData: keepPreviousData });
+export const useTopPayees = (from: ISODate, to: ISODate, limit = 10, category: string | null = null) =>
+  useQuery({ queryKey: [...qk.topPayees(from, to), limit, category], queryFn: () => fetchTopPayees(db(), from, to, limit, category), placeholderData: keepPreviousData });
 export const useCategoryMonthly = (id: string, months = 12) =>
   useQuery({ queryKey: qk.categoryMonthly(id, months), queryFn: () => fetchCategoryMonthly(db(), id, months) });
 

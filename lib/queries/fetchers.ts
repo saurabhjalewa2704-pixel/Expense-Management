@@ -76,14 +76,14 @@ export async function fetchTotals(db: SupabaseClient, f: ActivityFilters): Promi
 export const fetchSpendByCategory = (db: SupabaseClient, from: ISODate, to: ISODate, parent: string | null, pool = false) =>
   unwrap<CategorySpend[]>(db.rpc("spend_by_category", { p_from: from, p_to: to, p_parent: parent, p_pool_only: pool }));
 
-export const fetchDailySpend = (db: SupabaseClient, from: ISODate, to: ISODate) =>
-  unwrap<DailySpend[]>(db.rpc("daily_spend", { p_from: from, p_to: to }));
+export const fetchDailySpend = (db: SupabaseClient, from: ISODate, to: ISODate, excludeFixed = false) =>
+  unwrap<DailySpend[]>(db.rpc("daily_spend", { p_from: from, p_to: to, p_exclude_fixed: excludeFixed }));
 
 export const fetchMonthlyTotals = (db: SupabaseClient, months: number) =>
   unwrap<MonthlyTotal[]>(db.rpc("monthly_totals", { p_months: months }));
 
-export const fetchTopPayees = (db: SupabaseClient, from: ISODate, to: ISODate, limit = 10) =>
-  unwrap<PayeeTotal[]>(db.rpc("top_payees", { p_from: from, p_to: to, p_limit: limit }));
+export const fetchTopPayees = (db: SupabaseClient, from: ISODate, to: ISODate, limit = 10, category: string | null = null) =>
+  unwrap<PayeeTotal[]>(db.rpc("top_payees", { p_from: from, p_to: to, p_limit: limit, p_category: category }));
 
 export const fetchCategoryMonthly = (db: SupabaseClient, id: string, months: number) =>
   unwrap<{ month: ISODate; total_pence: number; txn_count: number }[]>(db.rpc("category_monthly", { p_category: id, p_months: months }));

@@ -28,6 +28,8 @@ describe("formatGBP", () => {
     expect(formatGBP(12160, { signed: true })).toBe("+£121.60");
     expect(formatGBP(-12160, { signed: true })).toBe("−£121.60");
     expect(formatGBP(294000, { whole: true })).toBe("£2,940");
+    expect(formatGBP(39590, { whole: true })).toBe("£396");
+    expect(formatGBP(36725, { whole: true })).toBe("£367");
     expect(formatGBP(100000000)).toBe("£1,000,000.00");
   });
   it("rejects non-integers", () => expect(() => formatGBP(12.5)).toThrow());

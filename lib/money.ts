@@ -44,7 +44,8 @@ export interface FormatOptions {
 export function formatGBP(pence: Pence, opts: FormatOptions = {}): string {
   assertPence(pence);
   const abs = Math.abs(pence);
-  const pounds = Math.trunc(abs / 100);
+  // whole pounds are rounded to the nearest pound (£395.90 -> £396); with pence they are exact
+  const pounds = opts.whole ? Math.round(abs / 100) : Math.trunc(abs / 100);
   const pp = String(abs % 100).padStart(2, "0");
   const sign = pence < 0 ? MINUS : opts.signed && pence > 0 ? "+" : "";
   const body = poundsFmt.format(pounds);

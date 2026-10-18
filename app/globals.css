@@ -108,3 +108,9 @@ html { font-family: var(--font); font-feature-settings: "tnum"; }
 
 .skeleton { background: linear-gradient(90deg, var(--surface-2) 0%, var(--surface-3) 50%, var(--surface-2) 100%); background-size: 200% 100%; animation: shimmer 1.4s linear infinite; border-radius: 8px; }
 @keyframes shimmer { to { background-position: -200% 0; } }
+
+/* ---------- analytics layout: one column on phones, two from 640px (WEB-01) ---------- */
+.analytics-grid { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+.analytics-grid > * { min-width: 0; }
+.legend i.ctx { background: var(--ink-3); }
+@media (min-width: 640px) { .analytics-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .analytics-grid .span-all { grid-column: 1 / -1; } }
