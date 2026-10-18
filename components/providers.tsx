@@ -1,6 +1,7 @@
 "use client";
 import { QueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider, type Persister } from "@tanstack/react-query-persist-client";
+import { SerwistProvider } from "@serwist/turbopack/react";
 import { del, get, set } from "idb-keyval";
 import { useState } from "react";
 
@@ -50,6 +51,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const [client] = useState(makeQueryClient);
   const [persister] = useState(createPersister);
   return (
+    <SerwistProvider swUrl="/serwist/sw.js" disable={process.env.NODE_ENV !== "production"} reloadOnOnline={false}>
     <PersistQueryClientProvider
       client={client}
       // Show the cached data instantly, then revalidate it all: a restored cache carries a fresh timestamp, so without this
@@ -64,5 +66,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
     >
       {children}
     </PersistQueryClientProvider>
+    </SerwistProvider>
   );
 }
