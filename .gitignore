@@ -10,3 +10,4 @@ playwright-report
 .stack
 coverage
 .vercel
+tests/e2e/shots
