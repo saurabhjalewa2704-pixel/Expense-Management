@@ -1,5 +1,3 @@
-import { PageHeader } from "@/components/ui/page-header";
+import { CashScreen } from "@/components/cash/cash-screen";
 export const metadata = { title: "Available cash" };
-export default function Page() {
-  return <div className="scroll"><PageHeader title="Available cash" back="/" backLabel="Home" /><p className="sub" style={{ marginTop: 12 }}>Coming in a later milestone.</p></div>;
-}
+export default function Page() { return <CashScreen />; }
