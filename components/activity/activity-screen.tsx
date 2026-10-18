@@ -18,8 +18,9 @@ import type { TxnRow } from "@/lib/types";
 export function ActivityScreen() {
   const qc = useQueryClient();
   const today = useToday();
-  const [input, setInput] = useState("");
-  const [debounced, setDebounced] = useState("");
+  const spq = useSearchParams();
+  const [input, setInput] = useState(spq.get("q") ?? "");
+  const [debounced, setDebounced] = useState(spq.get("q") ?? "");
   // drill-down links (Analytics, top payees) arrive with ?categories=&from=&to=&payee=
   const sp = useSearchParams();
   const urlFrom = sp.get("from") ?? undefined, urlTo = sp.get("to") ?? undefined;

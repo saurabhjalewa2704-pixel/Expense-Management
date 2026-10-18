@@ -12,7 +12,11 @@ import { formatGBP } from "@/lib/money";
 import { useAccounts, useBalances } from "@/lib/queries/hooks";
 import type { Account, AccountType } from "@/lib/types";
 
-export const accountIcon = (t: AccountType) => ({ current: UI.Landmark, savings: UI.PiggyBank, credit_card: UI.CreditCard, cash: UI.Wallet, other: UI.Wallet })[t];
+const ACCOUNT_ICONS = { current: UI.Landmark, savings: UI.PiggyBank, credit_card: UI.CreditCard, cash: UI.Wallet, other: UI.Wallet } as const;
+export function AccountIcon({ type, size = 20 }: { type: AccountType; size?: number }) {
+  const Icon = ACCOUNT_ICONS[type];
+  return <Icon size={size} strokeWidth={1.75} aria-hidden />;
+}
 
 export function AccountsScreen() {
   const { data: accounts, isLoading } = useAccounts();
@@ -72,11 +76,10 @@ function Group({ label, accounts, bal }: { label: string; accounts: Account[]; b
       <div className="eyebrow group-label">{label}</div>
       <div className="list">
         {accounts.map((a) => {
-          const Icon = accountIcon(a.type);
           const b = bal(a.id);
           return (
             <Link key={a.id} href={`/accounts/${a.id}`} className="row" data-testid="account-row">
-              <div className="tile"><Icon size={20} strokeWidth={1.75} aria-hidden /></div>
+              <div className="tile"><AccountIcon type={a.type} /></div>
               <div className="row-main"><div className="row-t">{a.name}</div><div className="row-s">{accountTypeLabel(a.type)}{a.is_default ? " · Default" : ""}</div></div>
               <UI.ChevronRight size={18} strokeWidth={1.75} className="chev" aria-hidden />
               <div className="amt">{b === undefined ? "—" : formatGBP(b)}</div>

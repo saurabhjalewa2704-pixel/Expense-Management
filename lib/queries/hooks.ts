@@ -28,6 +28,13 @@ export function useToday(): ISODate {
   return today;
 }
 
+/** The current instant, refreshed every 30 s (for "As at 09:12" style labels; reading the clock in render would be impure). */
+export function useNow(): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => { const id = setInterval(() => setNow(Date.now()), 30_000); return () => clearInterval(id); }, []);
+  return now;
+}
+
 /** The offline outbox, live. */
 export function useOutbox(): OutboxItem[] {
   const [items, setItems] = useState<OutboxItem[]>([]);

@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useEffect } from "react";
 
 /** A crash inside a page shows this, in the app's own dark theme, instead of the framework's default page. */
@@ -10,7 +11,7 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
       <h1 className="large-title" style={{ marginTop: 8 }}>Something went wrong</h1>
       <p className="callout muted" style={{ marginTop: 8 }}>Your data is safe. Anything you logged is stored and will sync. Try again, or head back to Home.</p>
       <button className="btn" style={{ marginTop: 24 }} onClick={reset}>Try again</button>
-      <a className="btn secondary" style={{ marginTop: 10, height: 48 }} href="/">Back to Home</a>
+      <Link className="btn secondary" style={{ marginTop: 10, height: 48 }} href="/">Back to Home</Link>
     </main>
   );
 }

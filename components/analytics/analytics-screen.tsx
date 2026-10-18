@@ -13,7 +13,10 @@ import { addMonths, formatDayMonth, formatMonthYear, monthStart } from "@/lib/da
 import { CategoryIcon, UI } from "@/lib/icons";
 import { formatGBP, pctChange } from "@/lib/money";
 import { resolvePeriod, type PeriodSel } from "@/lib/periods";
+import type { Category } from "@/lib/types";
 import { useCashFlow, useCategories, useDailySpend, useMonthlyTotals, usePayees, useSpendByCategory, useToday, useTopPayees } from "@/lib/queries/hooks";
+
+const NO_CATEGORIES: Category[] = [];
 
 /** S5: the long scroll of finding-titled charts (AN-01..06, AN-08). */
 export function AnalyticsScreen() {
@@ -32,7 +35,7 @@ export function AnalyticsScreen() {
   const history = useDailySpend(monthStart(addMonths(monthStart(today), -6)), today);
   const payees = useTopPayees(p.from, p.to, 6);
   const allPayees = usePayees().data ?? [];
-  const categories = useCategories().data ?? [];
+  const categories = useCategories().data ?? NO_CATEGORIES;
 
   const catRows = cats.data ?? [];
   const totalSpend = catRows.reduce((s, r) => s + r.total_pence, 0);

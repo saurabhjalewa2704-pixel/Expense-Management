@@ -9,9 +9,17 @@ import { UI } from "@/lib/icons";
 import { formatGBP } from "@/lib/money";
 import { useMonthFlow, usePace, useProfile, useRecent } from "@/lib/queries/hooks";
 import { useAnimatedNumber } from "@/lib/use-animated-number";
+import { useIsDesktop } from "@/lib/use-media";
+import { DesktopHome } from "./desktop-home";
 import { rowSubtitle } from "@/lib/categories";
 
+/** Phone and tablet get the stacked Home; from 1024px the dashboard (S10) takes over. */
 export function HomeScreen() {
+  const desktop = useIsDesktop();
+  return desktop ? <DesktopHome /> : <MobileHome />;
+}
+
+function MobileHome() {
   const { today, data: flow } = useMonthFlow();
   const { data: pace } = usePace();
   const { data: profile } = useProfile();

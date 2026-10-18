@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { accountIcon } from "@/components/accounts/accounts-screen";
+import { AccountIcon } from "@/components/accounts/accounts-screen";
 import { CashChart } from "@/components/charts/cash-chart";
 import { Figure } from "@/components/money";
 import { PageHeader } from "@/components/ui/page-header";
@@ -9,7 +9,7 @@ import { accountTypeLabel } from "@/lib/accounts";
 import { addMonths, formatLong, formatShort, londonTime, monthEnd, monthStart, yearEnd, yearStart, type ISODate } from "@/lib/dates";
 import { UI } from "@/lib/icons";
 import { formatGBP } from "@/lib/money";
-import { useAccounts, useBalances, useCashFlow, useCashSeries, useToday, useTotals } from "@/lib/queries/hooks";
+import { useAccounts, useBalances, useCashFlow, useCashSeries, useNow, useToday, useTotals } from "@/lib/queries/hooks";
 import { useAnimatedNumber } from "@/lib/use-animated-number";
 
 type Span = "month" | "year";
@@ -17,6 +17,7 @@ type Span = "month" | "year";
 /** S7: available cash at any moment, how it adds up, and which accounts make it (CASH-02..04). */
 export function CashScreen() {
   const today = useToday();
+  const now = useNow();
   const [asAt, setAsAt] = useState<ISODate | null>(null);
   const [span, setSpan] = useState<Span>("month");
   const [picking, setPicking] = useState(false);
@@ -50,7 +51,7 @@ export function CashScreen() {
         {cash === undefined ? <div className="skeleton" style={{ height: 76, width: 280, marginTop: 10 }} aria-busy /> : (
           <div data-testid="cash-figure" aria-label={`Available cash ${formatGBP(f?.closing_pence ?? 0)}`}><Figure pence={cash} xl /></div>
         )}
-        <div className="sub" style={{ marginTop: 10 }} data-testid="as-at">As at {isToday ? `${formatLong(at)}, ${londonTime(Date.now())}` : formatLong(at)}</div>
+        <div className="sub" style={{ marginTop: 10 }} data-testid="as-at">As at {isToday ? `${formatLong(at)}, ${londonTime(now)}` : formatLong(at)}</div>
       </div>
 
       <div className="card chart-card" style={{ marginTop: 24 }}>
@@ -123,10 +124,9 @@ function Line({ k, sub, v, pos }: { k: string; sub?: string; v: string; pos?: bo
 }
 
 function AccountRow({ name, type, bal, apart }: { name: string; type?: import("@/lib/types").AccountType; bal: number; apart?: boolean }) {
-  const Icon = accountIcon(type ?? "other");
   return (
     <div className="row" data-testid="cash-account">
-      <div className="tile"><Icon size={20} strokeWidth={1.75} aria-hidden /></div>
+      <div className="tile"><AccountIcon type={type ?? "other"} /></div>
       <div className="row-main"><div className="row-t">{name}</div><div className="row-s">{type ? accountTypeLabel(type) : ""}{apart && type === "savings" ? " · set aside" : ""}</div></div>
       <div className="amt">{formatGBP(bal)}</div>
     </div>

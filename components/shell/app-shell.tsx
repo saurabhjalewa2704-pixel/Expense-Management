@@ -5,6 +5,7 @@ import { QuickAddProvider } from "@/components/capture/quick-add";
 import { ToastProvider } from "@/components/ui/toast";
 import { useProfile } from "@/lib/queries/hooks";
 import { SyncEngine } from "@/lib/sync";
+import { Shortcuts } from "./shortcuts";
 import { Sidebar } from "./sidebar";
 import { TabBar } from "./tab-bar";
 
@@ -16,6 +17,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <QuickAddProvider>
           <OnboardingGate />
           <SyncEngine />
+          <Shortcuts />
           <Sidebar />
           <div data-vaul-drawer-wrapper="" className="app-main">{children}</div>
           <TabBar />

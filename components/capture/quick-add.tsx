@@ -43,19 +43,6 @@ export function QuickAddProvider({ children }: { children: ReactNode }) {
     if (params.get("add") === "1") { open({ date: todayLondon() }); router.replace("/"); }
   }, [params, open, router]);
 
-  // WEB-03: N opens a new transaction (desktop); Esc is handled by the modal itself.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      const t = e.target as HTMLElement | null;
-      if (e.key.toLowerCase() !== "n" || e.metaKey || e.ctrlKey || e.altKey || t?.closest("input, textarea, select, [contenteditable]")) return;
-      if (document.querySelector("[role=dialog]")) return;
-      e.preventDefault();
-      open();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
-
   return (
     <Ctx.Provider value={{ open, isOpen }}>
       {children}
@@ -290,10 +277,11 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
   // keyboard: digits go to the amount unless a text field has focus (desktop)
   const onKeyDown = (e: React.KeyboardEvent) => {
     const t = e.target as HTMLElement;
-    if (t.closest("input, textarea, [role=radio]")) { if (e.key === "Enter" && t.tagName === "INPUT" && (t as HTMLInputElement).type === "text") (t as HTMLInputElement).blur(); return; }
+    if (t.closest("input, textarea")) { if (e.key === "Enter" && t.tagName === "INPUT" && (t as HTMLInputElement).type === "text") (t as HTMLInputElement).blur(); return; }
     if (/^\d$/.test(e.key) || e.key === ".") { e.preventDefault(); press(e.key); }
     else if (e.key === "Backspace") { e.preventDefault(); press("back"); }
-    else if (e.key === "Enter" && canSave) { e.preventDefault(); void save(); }
+    // Enter saves, except on a button that Enter should simply press (the keypad, pickers, Add itself)
+    else if (e.key === "Enter" && canSave && (t.tagName !== "BUTTON" || t.getAttribute("role") === "radio" || t.getAttribute("role") === "tab")) { e.preventDefault(); void save(); }
   };
 
   // Touch and pen act on pointerdown (no 300ms wait, no double-fire with the click that follows); mouse and keyboard use click.

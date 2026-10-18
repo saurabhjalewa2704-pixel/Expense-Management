@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { completeOnboarding } from "@/app/actions/profile";
 import { AccountEditor } from "@/components/accounts/account-editor";
-import { accountIcon } from "@/components/accounts/accounts-screen";
+import { AccountIcon } from "@/components/accounts/accounts-screen";
 import { accountTypeLabel } from "@/lib/accounts";
 import { CategoryIcon, UI } from "@/lib/icons";
 import { APP_NAME } from "@/lib/env";
@@ -52,8 +52,8 @@ export function Welcome() {
           <p className="callout muted" style={{ marginTop: 8 }}>Add what you spend from, with today&apos;s balance. Your available cash is worked out from these. Add savings too; they are kept apart by default.</p>
           {live.length > 0 && (
             <div className="list" style={{ marginTop: 20 }}>
-              {live.map((a) => { const Icon = accountIcon(a.type); const b = balances?.find((x) => x.account_id === a.id)?.balance_pence; return (
-                <div key={a.id} className="row" data-testid="onboarding-account"><div className="tile"><Icon size={20} strokeWidth={1.75} aria-hidden /></div>
+              {live.map((a) => { const b = balances?.find((x) => x.account_id === a.id)?.balance_pence; return (
+                <div key={a.id} className="row" data-testid="onboarding-account"><div className="tile"><AccountIcon type={a.type} /></div>
                   <div className="row-main"><div className="row-t">{a.name}</div><div className="row-s">{accountTypeLabel(a.type)}{a.counts_as_cash ? "" : " · kept apart"}</div></div>
                   <div className="amt">{b === undefined ? "" : formatGBP(b)}</div></div>); })}
             </div>
