@@ -74,6 +74,7 @@ export interface Transaction {
   occurred_at: string | null;
   source: TxnSource;
   needs_review: boolean;
+  pot_id: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -103,6 +104,8 @@ export interface TxnRow {
   source: TxnSource;
   needs_review: boolean;
   created_at: string;
+  pot_id: string | null;
+  pot_name: string | null;
   /** Set on rows that exist only in the offline outbox and have not reached the server yet. */
   pending?: boolean;
 }
@@ -119,6 +122,8 @@ export interface CashFlow {
   opening_pence: number;
   income_pence: number;
   spend_pence: number;
+  /** Net of one-off pot income and expenses in the period (not part of usual spending). */
+  pot_pence: number;
   set_aside_pence: number;
   adjust_pence: number;
   closing_pence: number;
@@ -149,4 +154,8 @@ export interface CategorySpend {
 export interface DailySpend { day: ISODate; total_pence: number; cumulative_pence: number }
 export interface MonthlyTotal { month: ISODate; income_pence: number; spend_pence: number }
 export interface PayeeTotal { payee_id: string; name: string; visits: number; total_pence: number; avg_pence: number }
-export interface TxnTotals { txn_count: number; spend_pence: number; income_pence: number }
+export interface TxnTotals { txn_count: number; spend_pence: number; income_pence: number; pot_pence: number }
+
+/** A one-off pot such as "Home purchase": real money, never part of usual spending. */
+export interface Pot { pot_id: string; name: string; target_pence: number | null; closed_at: string | null; spent_pence: number; received_pence: number; net_pence: number; txn_count: number; first_on: ISODate | null; last_on: ISODate | null }
+export interface PotCategory { category_id: string; name: string; icon: string; color: CategoryColor; total_pence: number; txn_count: number }

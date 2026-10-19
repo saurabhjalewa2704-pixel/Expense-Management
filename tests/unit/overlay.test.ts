@@ -12,7 +12,7 @@ const item = (p: Partial<OutboxItem["payload"]> & Pick<OutboxItem["payload"], "t
   client_id: crypto.randomUUID(), created_at: 1000, status: "pending", attempts: 0,
   payload: { client_id: "x", occurred_on: "2026-10-18", tags: [], account_manual: false, source: "app", ...p } as OutboxItem["payload"], ...extra,
 });
-const flow: CashFlow = { opening_pence: 786240, income_pence: 14000, spend_pence: 323685, set_aside_pence: 0, adjust_pence: 0, closing_pence: 476555 };
+const flow: CashFlow = { opening_pence: 786240, income_pence: 14000, spend_pence: 323685, pot_pence: 0, set_aside_pence: 0, adjust_pence: 0, closing_pence: 476555 };
 
 describe("livePending", () => {
   it("hides failed items and items the server has accepted once data is newer", () => {
@@ -30,6 +30,14 @@ describe("applyFlow", () => {
     expect(r.spend_pence).toBe(323685 + 1280);
     expect(r.closing_pence).toBe(476555 - 1280);
     expect(r.opening_pence + r.income_pence - r.spend_pence + r.set_aside_pence + r.adjust_pence).toBe(r.closing_pence);
+  });
+  it("a pot expense lowers cash but is its own term, not spend; pot income likewise", () => {
+    const r = applyFlow(flow, [item({ type: "expense", amount_pence: 1250000, account_id: "monzo", pot_id: "pot-1" }), item({ type: "income", amount_pence: 200000, account_id: "monzo", pot_id: "pot-1" })], accounts, "2026-10-01", "2026-10-18");
+    expect(r.spend_pence).toBe(flow.spend_pence);
+    expect(r.income_pence).toBe(flow.income_pence);
+    expect(r.pot_pence).toBe(-1050000);
+    expect(r.closing_pence).toBe(476555 - 1050000);
+    expect(r.opening_pence + r.income_pence - r.spend_pence + r.pot_pence + r.set_aside_pence + r.adjust_pence).toBe(r.closing_pence);
   });
   it("income raises cash", () => {
     const r = applyFlow(flow, [item({ type: "income", amount_pence: 5000, account_id: "monzo" })], accounts, "2026-10-01", "2026-10-18");
@@ -55,6 +63,10 @@ describe("applyBalances / applyPace", () => {
     const rows = [{ account_id: "monzo", balance_pence: 1000 }, { account_id: "amex", balance_pence: -5000 }];
     const out = applyBalances(rows, [item({ type: "transfer", amount_pence: 300, account_id: "monzo", counter_account_id: "amex" })]);
     expect(out.map((r) => r.balance_pence)).toEqual([700, -4700]);
+  });
+  it("pace ignores pending pot expenses", () => {
+    const pace: MonthPace = { month_start: "2026-10-01", day_of_month: 18, days_in_month: 31, spend_pence: 1000, prev_spend_pence: 0, prev_label_day: 18, prev_total_pence: 0 };
+    expect(applyPace(pace, [item({ type: "expense", amount_pence: 999999, account_id: "monzo", pot_id: "pot-1" })], "2026-10-18").spend_pence).toBe(1000);
   });
   it("adds month-to-date spend", () => {
     const pace: MonthPace = { month_start: "2026-10-01", day_of_month: 18, days_in_month: 31, spend_pence: 323685, prev_spend_pence: 360410, prev_label_day: 18, prev_total_pence: 531600 };

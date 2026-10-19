@@ -81,7 +81,7 @@ begin
     t := f + floor(random() * (('2026-10-18'::date - f) + 1))::int;
     select * into r from cash_flow(f, t);
     assert r.closing_pence = available_cash(t), format('closing <> available_cash(%s)', t);
-    assert r.opening_pence + r.income_pence - r.spend_pence + r.set_aside_pence + r.adjust_pence = r.closing_pence,
+    assert r.opening_pence + r.income_pence - r.spend_pence + r.pot_pence + r.set_aside_pence + r.adjust_pence = r.closing_pence,
       format('equation does not balance for %s..%s: %s', f, t, r);
     assert (select coalesce(sum(balance_pence), 0) from account_balances(t) where counts_as_cash) = available_cash(t),
       format('pool balances <> available_cash(%s)', t);

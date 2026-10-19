@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ISODate } from "@/lib/dates";
 import type {
   Account, AccountBalance, CashFlow, Category, CategorySpend, DailySpend, MonthPace, MonthlyTotal, Payee, PayeeTotal, Profile,
-  TxnRow, TxnTotals,
+  TxnRow, TxnTotals, Pot, PotCategory,
 } from "@/lib/types";
 import type { ActivityFilters } from "./keys";
 
@@ -57,6 +57,8 @@ const filterArgs = (f: ActivityFilters) => ({
   p_amount: f.amount ?? null,
   p_needs_review: f.needsReview ?? null,
   p_payee: f.payeeId ?? null,
+  p_pot_id: f.pot && f.pot !== "exclude" && f.pot !== "only" ? f.pot : null,
+  p_pots: f.pot === "exclude" || f.pot === "only" ? f.pot : null,
 });
 
 export interface ActivityCursor { on: ISODate; created: string; id: string }
@@ -94,7 +96,7 @@ import { addDays, todayLondon } from "@/lib/dates";
 /** The last 180 days of expenses, the minimum the suggestion ranking needs (CAP-01.1). */
 export async function fetchSuggestHistory(db: SupabaseClient): Promise<HistoryRow[]> {
   const rows = await unwrap<{ category_id: string; occurred_on: ISODate; occurred_at: string | null; created_at: string }[]>(
-    db.from("transactions").select("category_id,occurred_on,occurred_at,created_at").eq("type", "expense").is("deleted_at", null)
+    db.from("transactions").select("category_id,occurred_on,occurred_at,created_at").eq("type", "expense").is("deleted_at", null).is("pot_id", null)
       .gte("occurred_on", addDays(todayLondon(), -180)).order("occurred_on", { ascending: false }).limit(5000));
   return rows.map((r) => ({ category_id: r.category_id, occurred_on: r.occurred_on, at: r.occurred_at ?? r.created_at }));
 }
@@ -131,3 +133,6 @@ export const fetchTransactionCount = async (db: SupabaseClient): Promise<number>
   if (error) throw new Error(error.message);
   return count ?? 0;
 };
+
+export const fetchPots = (db: SupabaseClient) => unwrap<Pot[]>(db.rpc("pot_summary", { p_pot: null }));
+export const fetchPotCategories = (db: SupabaseClient, id: string) => unwrap<PotCategory[]>(db.rpc("pot_by_category", { p_pot: id }));

@@ -61,3 +61,14 @@ Record judgement calls here as: date · decision · reason.
 ## Sign-in
 
 - **2026-10-19 · E-mail + password is the default sign-in; the e-mailed code stays as an option.** The PRD chose codes because magic links break the installed iOS app, but codes need an e-mail template containing `{{ .Token }}`, and Supabase's built-in sender does not let you edit it (custom SMTP does). Passwords need no e-mail delivery and work in the installed app. The same allow-list applies before Supabase is called, wrong password and unknown e-mail give the same message, and Supabase's own rate limits apply. The user is created in the dashboard with Auto Confirm, so no sign-up path is exposed. The PRD's AUTH-01 acceptance ("e-mailed 6-digit code") still holds via the secondary option.
+
+## One-off pots (update 3)
+
+- **2026-10-19 · A pot is a flag on the transaction, not an account.** Money in a pot still leaves a real account, so balances and available cash include it. What a pot changes is classification: `pot_id` on a transaction takes it out of *usual spending*. Every analytic (category spend and its "usual" norm, daily rhythm, month pace, monthly totals, top payees, category history, new-payee and biggest-transaction facts) filters `pot_id is null` in SQL, so the AI facts and the charts cannot disagree and the insights pipeline needed no change.
+- **2026-10-19 · The cash equation gets a fourth term instead of hiding the pot.** `cash_flow()` now returns `pot_pence` (net of pot income and expenses); `income`/`spend` are usual only. Opening + In − Out ± One-off ± Set aside ± Adjusted = Available still holds exactly (SQL invariant, unit tests, Home, Cash detail and the AN-03 waterfall all show the "One-off" step), so the hero is never unexplained.
+- **2026-10-19 · Pots take expenses and income, never transfers.** A gift towards a deposit or a refund is as much a one-off as the stamp duty. A DB check enforces it, and the RPCs ignore a pot on a transfer.
+- **2026-10-19 · A pot is closed, not archived, and only an empty pot can be deleted.** A closed pot takes no new transactions but its history stays editable and it can be reopened. `on delete restrict` stops a pot with history disappearing.
+- **2026-10-19 · Ownership of a pot is checked by a trigger.** A foreign key does not prove the pot belongs to the same user, so `transactions_pot_guard` does (cross-user test in `05_pots.test.sql`).
+- **2026-10-19 · Activity is a ledger, so it still shows pot transactions** (labelled "<pot> pot", filterable: everything / usual only / pots only / one pot). Its header totals split usual spend from the pots' net.
+- **2026-10-19 · Quick-add suggestions ignore pot expenses**, so a £12,500 stamp-duty entry cannot skew the category ranking.
+- **2026-10-19 · Not done:** pot totals are server figures; a pot expense still waiting in the offline outbox appears in the lists and the hero but not yet in that pot's own totals until it syncs.

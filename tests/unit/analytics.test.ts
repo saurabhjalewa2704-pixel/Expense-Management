@@ -55,7 +55,7 @@ describe("findings", () => {
 });
 
 describe("waterfall (AN-03 is the CASH-01 equation)", () => {
-  const flow: CashFlow = { opening_pence: 786240, income_pence: 14000, spend_pence: 323685, set_aside_pence: 0, adjust_pence: 0, closing_pence: 476555 };
+  const flow: CashFlow = { opening_pence: 786240, income_pence: 14000, spend_pence: 323685, pot_pence: 0, set_aside_pence: 0, adjust_pence: 0, closing_pence: 476555 };
   const cats = [["Home", 181240], ["Groceries", 38625], ["Eating out", 31260], ["Transport", 21480], ["Shopping", 17890], ["Bills", 11843]].map(([name, total_pence]) => ({ name: name as string, total_pence: total_pence as number }));
   it("ends on the available cash with the right steps", () => {
     const { steps, base } = buildWaterfall(flow, cats);
@@ -66,11 +66,18 @@ describe("waterfall (AN-03 is the CASH-01 equation)", () => {
     expect(base).toBe(400000);                       // "scale starts at £4,000"
   });
   it("copes with a brand-new owner: nothing yet is a valid, finite chart", () => {
-    const empty: CashFlow = { opening_pence: 0, income_pence: 0, spend_pence: 0, set_aside_pence: 0, adjust_pence: 0, closing_pence: 0 };
+    const empty: CashFlow = { opening_pence: 0, income_pence: 0, spend_pence: 0, pot_pence: 0, set_aside_pence: 0, adjust_pence: 0, closing_pence: 0 };
     const { steps, base } = buildWaterfall(empty, []);
     expect(base).toBe(0);
     expect(Number.isFinite(base)).toBe(true);
     expect(steps.map((s) => s.label)).toEqual(["Opening", "Available"]);
+  });
+  it("shows a one-off pot as its own step, so the chart still ends on available cash", () => {
+    const withPot: CashFlow = { ...flow, pot_pence: -1050000, closing_pence: 476555 - 1050000 };
+    const { steps } = buildWaterfall(withPot, cats);
+    expect(steps.find((s) => s.key === "pot")).toMatchObject({ label: "One-off", kind: "down", value: -1050000 });
+    expect(steps[steps.length - 1]!.value).toBe(withPot.closing_pence);
+    expect(buildWaterfall(flow, cats).steps.map((s) => s.label)).not.toContain("One-off");
   });
   it("shows set aside and adjustments only when they exist", () => {
     const { steps } = buildWaterfall({ ...flow, set_aside_pence: -50000, adjust_pence: -1408, closing_pence: 476555 - 51408 }, cats);

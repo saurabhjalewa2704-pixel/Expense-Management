@@ -43,10 +43,11 @@ input,textarea,select{font:inherit;color:inherit}
 .figure .pence{font-size:32px;margin:7px 0 0 1px;color:var(--ink-3);letter-spacing:-.02em;font-weight:500}
 .figure.xl .whole{font-size:76px}
 .figure.xl .cur,.figure.xl .pence{font-size:36px;margin-top:9px}
-.equation{display:flex;align-items:flex-end;gap:12px;margin-top:22px;padding-top:16px;border-top:1px solid var(--rule-strong)}
+.equation{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;row-gap:14px;margin-top:22px;padding-top:16px;border-top:1px solid var(--rule-strong)}
 .eq-term{display:flex;flex-direction:column;gap:4px}
 .eq-k{font-size:var(--t-caption);font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
 .eq-v{font-size:var(--t-callout);font-weight:500;letter-spacing:-.01em}
+.eq-pair{display:flex;align-items:flex-end;gap:12px}
 .eq-op{font-size:var(--t-callout);color:var(--ink-3);padding-bottom:1px}
 
 /* ---------- surfaces ---------- */
@@ -141,8 +142,9 @@ input,textarea,select{font:inherit;color:inherit}
 .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
 .key{height:54px;border-radius:var(--r-key);background:var(--surface-2);display:grid;place-items:center;font-size:26px;font-weight:500;letter-spacing:-.01em}
 .key.fn{background:transparent;color:var(--ink-2)}
-.meta{display:flex;gap:8px;margin-top:12px}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .meta .chip{height:34px;font-size:13px;background:var(--surface);}
+.meta .chip.sel{background:var(--ink);color:var(--on-ink)}
 
 /* ---------- category grid ---------- */
 .cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px 8px}

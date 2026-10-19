@@ -19,6 +19,7 @@ export async function createTransaction(input: unknown): Promise<ActionResult<Tr
     p_payee: v.type === "transfer" ? null : (v.payee ?? null), p_note: v.note ?? null, p_tags: v.tags,
     p_occurred_on: v.occurred_on, p_occurred_at: v.occurred_at ?? null, p_source: v.source,
     p_needs_review: false, p_account_manual: v.account_manual,
+    p_pot_id: v.type === "transfer" ? null : (v.pot_id ?? null),
   });
   if (error) return fail(friendlyDbError(error), isRetryableDbError(error));
   return ok(data as Transaction);
@@ -35,6 +36,7 @@ export async function updateTransaction(id: string, input: unknown): Promise<Act
     p_category_id: v.type === "transfer" ? null : v.category_id,
     p_payee: v.type === "transfer" ? null : (v.payee ?? null), p_note: v.note ?? null, p_tags: v.tags,
     p_occurred_on: v.occurred_on, p_occurred_at: v.occurred_at ?? null,
+    p_pot_id: v.type === "transfer" ? null : (v.pot_id ?? null),
   });
   if (error) return fail(friendlyDbError(error));
   return ok(data as Transaction);

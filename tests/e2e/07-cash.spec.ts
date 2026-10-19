@@ -62,30 +62,32 @@ test.describe("available cash (CASH-01..05)", () => {
 
   test("the hero equals available_cash() to the penny after a run of edits", async ({ page }) => {
     // the hero (optimistic, then reconciled) and Postgres converge on exactly the same figure
-    const check = async () => {
+    // with `expected`, wait for Postgres to reach it first, so a check made the instant after a tap cannot pass on the stale figure
+    const check = async (expected?: number) => {
+      if (expected !== undefined) await expect.poll(() => cashAt("2026-10-18"), { timeout: 15_000 }).toBe(expected);
       await expect.poll(async () => (await heroPence(page)) - (await cashAt("2026-10-18")), { timeout: 15_000 }).toBe(0);
       return cashAt("2026-10-18");
     };
-    expect(await check()).toBe(476555);
+    await check(476555);
 
     // an expense
     await openAdd(page); await amountKeys(page, "23.45");
     await page.getByRole("radio", { name: /Supermarket/ }).click();
     await page.getByRole("button", { name: "Add £23.45" }).click();
-    expect(await check()).toBe(476555 - 2345);
+    await check(476555 - 2345);
 
     // income
     await openAdd(page); await page.getByRole("tab", { name: "Income" }).click(); await amountKeys(page, "812.19");
     await page.getByRole("radio", { name: "Salary" }).click();
     await page.getByRole("button", { name: "Add income £812.19" }).click();
-    expect(await check()).toBe(476555 - 2345 + 81219);
+    await check(476555 - 2345 + 81219);
 
     // £500 to savings leaves the pool: shown as "Set aside", and not as spending
     await openAdd(page); await page.getByRole("tab", { name: "Transfer" }).click(); await amountKeys(page, "500");
     await page.getByRole("button", { name: /^To/ }).click();
     await page.getByRole("button", { name: /^Marcus/ }).click();
     await page.getByRole("button", { name: "Transfer £500.00" }).click();
-    expect(await check()).toBe(476555 - 2345 + 81219 - 50000);
+    await check(476555 - 2345 + 81219 - 50000);
     await expect(page.getByTestId("equation")).toContainText("Set aside");
     await expect(page.getByTestId("equation")).toContainText("£500.00");
     await expect(page.getByTestId("pace")).toContainText("£3,260.30");            // 3,236.85 + 23.45: the transfer is not spend
@@ -102,8 +104,7 @@ test.describe("available cash (CASH-01..05)", () => {
     await page.getByRole("button", { name: "Save changes" }).click();
     await expect(toast(page)).toContainText("Saved");
     await page.goto("/");
-    const afterEdit = await check();
-    expect(afterEdit).toBe(476555 - 2345 + 81219 - 50000 - 5000);                // £1,650 -> £1,700
+    const afterEdit = await check(476555 - 2345 + 81219 - 50000 - 5000);                // £1,650 -> £1,700
 
     // delete the new expense: it comes straight back
     await page.goto("/activity");
@@ -111,6 +112,6 @@ test.describe("available cash (CASH-01..05)", () => {
     await page.getByRole("button", { name: "Delete transaction" }).click();
     await page.getByRole("alertdialog").getByRole("button", { name: "Delete" }).click();
     await page.goto("/");
-    expect(await check()).toBe(afterEdit + 2345);
+    await check(afterEdit + 2345);
   });
 });

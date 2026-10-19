@@ -32,11 +32,11 @@ export function applyBalances<T extends { account_id: string; balance_pence: num
 
 /** cash_flow() for a period, with pending items inside [from, to] layered on. */
 export function applyFlow(flow: CashFlow, items: readonly OutboxItem[], accounts: readonly Account[], from: ISODate, to: ISODate): CashFlow {
-  let income = 0, spend = 0, setAside = 0;
+  let income = 0, spend = 0, pot = 0, setAside = 0;
   for (const { payload: p } of items) {
     if (p.occurred_on < from || p.occurred_on > to) continue;
-    if (p.type === "income" && inPool(accounts, p.account_id)) income += p.amount_pence;
-    else if (p.type === "expense" && inPool(accounts, p.account_id)) spend += p.amount_pence;
+    if (p.type === "income" && inPool(accounts, p.account_id)) { if (p.pot_id) pot += p.amount_pence; else income += p.amount_pence; }
+    else if (p.type === "expense" && inPool(accounts, p.account_id)) { if (p.pot_id) pot -= p.amount_pence; else spend += p.amount_pence; }
     else if (p.type === "transfer") {
       const a = inPool(accounts, p.account_id), b = inPool(accounts, p.counter_account_id);
       if (a && !b) setAside -= p.amount_pence;
@@ -47,19 +47,20 @@ export function applyFlow(flow: CashFlow, items: readonly OutboxItem[], accounts
     ...flow,
     income_pence: flow.income_pence + income,
     spend_pence: flow.spend_pence + spend,
+    pot_pence: flow.pot_pence + pot,
     set_aside_pence: flow.set_aside_pence + setAside,
-    closing_pence: flow.closing_pence + income - spend + setAside,
+    closing_pence: flow.closing_pence + income - spend + pot + setAside,
   };
 }
 
 /** month_pace(): month-to-date spend gains pending expenses dated inside the month (any account counts as spend). */
 export function applyPace(pace: MonthPace, items: readonly OutboxItem[], today: ISODate): MonthPace {
-  const extra = items.reduce((s, { payload: p }) => s + (p.type === "expense" && p.occurred_on >= pace.month_start && p.occurred_on <= today ? p.amount_pence : 0), 0);
+  const extra = items.reduce((s, { payload: p }) => s + (p.type === "expense" && !p.pot_id && p.occurred_on >= pace.month_start && p.occurred_on <= today ? p.amount_pence : 0), 0);
   return { ...pace, spend_pence: pace.spend_pence + extra };
 }
 
 /** Shape a pending item like a list_transactions row, so lists can show it with a "waiting to sync" glyph. */
-export function pendingRow(item: OutboxItem, accounts: readonly Account[], categories: readonly Category[]): TxnRow {
+export function pendingRow(item: OutboxItem, accounts: readonly Account[], categories: readonly Category[], pots: readonly { pot_id: string; name: string }[] = []): TxnRow {
   const p = item.payload;
   const acc = accounts.find((a) => a.id === p.account_id);
   const counter = accounts.find((a) => a.id === p.counter_account_id);
@@ -73,7 +74,7 @@ export function pendingRow(item: OutboxItem, accounts: readonly Account[], categ
     parent_category_id: parent?.id ?? null, parent_category_name: parent?.name ?? null, category_icon: cat?.icon ?? parent?.icon ?? null,
     payee_id: null, payee_name: p.payee?.trim() || null, note: p.note ?? null, tags: p.tags ?? [],
     occurred_on: p.occurred_on, occurred_at: p.occurred_at ?? null, source: p.source ?? "app", needs_review: false,
-    created_at: new Date(item.created_at).toISOString(), pending: true,
+    created_at: new Date(item.created_at).toISOString(), pot_id: p.pot_id ?? null, pot_name: pots.find((x) => x.pot_id === p.pot_id)?.name ?? null, pending: true,
   };
 }
 

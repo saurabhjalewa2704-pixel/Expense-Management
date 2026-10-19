@@ -17,6 +17,8 @@ import type { Account, Payee, TxnRow } from "@/lib/types";
 import { useKeyboardInset } from "@/lib/use-keyboard-inset";
 import { useIsDesktop } from "@/lib/use-media";
 import { AccountPicker, DateSheet, NoteSheet } from "./pickers";
+import { PotPicker } from "./pot-picker";
+import { usePots } from "@/lib/queries/hooks";
 import { CategoryPicker } from "./category-picker";
 
 type Mode = "expense" | "income" | "transfer";
@@ -84,10 +86,11 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [accountId, setAccountId] = useState<string | null>(null);
   const [accountManual, setAccountManual] = useState(false);
+  const [potId, setPotId] = useState<string | null>(null);
   const [counterId, setCounterId] = useState<string | null>(null);
   const [date, setDate] = useState<ISODate>(todayLondon());
   const [note, setNote] = useState("");
-  const [picker, setPicker] = useState<null | "category" | "account" | "counter" | "date" | "note">(null);
+  const [picker, setPicker] = useState<null | "category" | "account" | "counter" | "date" | "note" | "pot">(null);
   const [confirm, setConfirm] = useState<null | "discard" | "delete">(null);
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
@@ -106,9 +109,9 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
       setMode(editing.type === "adjustment" ? "expense" : (editing.type as Mode));
       setAmount(`${Math.trunc(editing.amount_pence / 100)}.${String(editing.amount_pence % 100).padStart(2, "0")}`.replace(/\.00$/, ""));
       setPayee(editing.payee_name ?? ""); setCategoryId(editing.category_id); setAccountId(editing.account_id);
-      setCounterId(editing.counter_account_id); setDate(editing.occurred_on); setNote(editing.note ?? ""); setAutoFilled(false); setAccountManual(false);
+      setCounterId(editing.counter_account_id); setPotId(editing.pot_id ?? null); setDate(editing.occurred_on); setNote(editing.note ?? ""); setAutoFilled(false); setAccountManual(false);
     } else {
-      setMode(options.mode ?? "expense"); setAmount(""); setPayee(""); setCategoryId(null); setAccountId(null); setCounterId(null);
+      setMode(options.mode ?? "expense"); setAmount(""); setPayee(""); setCategoryId(null); setAccountId(null); setCounterId(null); setPotId(null);
       setDate(options.date ?? todayLondon()); setNote(""); setAutoFilled(false); setAccountManual(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -118,6 +121,8 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
   const effAccount = accountId ?? (mode === "income" ? (lastIncomeAccount && live.find((a) => a.id === lastIncomeAccount)?.id) : undefined) ?? defaultAccount?.id ?? null;
   const effCounter = counterId ?? live.find((a) => a.id !== effAccount)?.id ?? null;
 
+  const pots = usePots().data ?? [];
+  const potName = pots.find((x) => x.pot_id === potId)?.name ?? "Pot";
   const kind = mode === "income" ? "income" : "expense";
   const pence = toPence(amount) ?? 0;
   const account = accountById(effAccount);
@@ -200,6 +205,7 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
     payee: mode === "transfer" ? null : payee.trim() || null, note: note.trim() || null, tags: [],
     occurred_on: date, occurred_at: !editing && date === todayLondon() ? new Date().toISOString() : (editing?.occurred_at ?? null),
     account_manual: accountManual, source: "app",
+    pot_id: mode === "transfer" ? null : potId,
   });
 
   const canSave = pence > 0 && !!effAccount && (mode === "transfer" ? !!effCounter && effCounter !== effAccount : !!categoryId);
@@ -309,7 +315,7 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
         <div className="seg" role="tablist" aria-label="Type">
           {MODES.map((m) => (
             <button key={m.id} role="tab" aria-selected={mode === m.id} className={mode === m.id ? "on" : ""} disabled={!!editing && editing.type !== m.id}
-              onClick={() => { setMode(m.id); setCategoryId(null); setAutoFilled(false); setAccountId(null); setError(undefined); }}>
+              onClick={() => { setMode(m.id); setCategoryId(null); setAutoFilled(false); setAccountId(null); setError(undefined); if (m.id === "transfer") setPotId(null); }}>
               {m.label}
             </button>
           ))}
@@ -372,10 +378,17 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
               <button className="chip" onClick={() => setPicker("date")} aria-label={`Date ${dateChipLabel(date)}`}>
                 <UI.Calendar size={16} strokeWidth={1.75} aria-hidden />{dateChipLabel(date)}
               </button>
+              {mode !== "transfer" && (
+                <button className={`chip ${potId ? "sel" : ""}`} onClick={() => setPicker("pot")} aria-label={potId ? `One-off pot ${potName}` : "One-off pot"} style={{ maxWidth: 150 }}>
+                  <UI.PiggyBank size={16} strokeWidth={1.75} aria-hidden /><span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{potId ? potName : "One-off"}</span>
+                </button>
+              )}
               <button className="chip" onClick={() => setPicker("note")} aria-label="Note" style={{ maxWidth: 150 }}>
                 <UI.FileText size={16} strokeWidth={1.75} aria-hidden /><span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{note ? note : "Note"}</span>
               </button>
             </div>
+
+            {potId && mode !== "transfer" && <p className="sub" data-testid="pot-note" style={{ margin: "8px 2px 0" }}>In “{potName}”. Not counted in monthly spend or insights.</p>}
 
             <div className="keypad num" role="group" aria-label="Amount keypad">
               {["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0"].map((k) => (
@@ -415,6 +428,7 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
       <AccountPicker open={picker === "account"} onOpenChange={(o) => setPicker(o ? "account" : null)} title={mode === "transfer" ? "From" : "Account"} selectedId={effAccount}
         excludeId={mode === "transfer" ? effCounter : undefined} onSelect={chooseAccount} />
       <AccountPicker open={picker === "counter"} onOpenChange={(o) => setPicker(o ? "counter" : null)} title="To" selectedId={effCounter} excludeId={effAccount} onSelect={(id) => setCounterId(id)} />
+      <PotPicker open={picker === "pot"} onOpenChange={(o) => setPicker(o ? "pot" : null)} selectedId={potId} onSelect={setPotId} />
       <DateSheet open={picker === "date"} onOpenChange={(o) => setPicker(o ? "date" : null)} value={date} min={(account as Account | undefined)?.opening_date} onChange={setDate} />
       <NoteSheet open={picker === "note"} onOpenChange={(o) => setPicker(o ? "note" : null)} value={note} onChange={setNote} />
     </Sheet>

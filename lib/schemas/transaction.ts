@@ -10,6 +10,8 @@ const base = z.object({
   account_id: z.uuid("Choose an account."),
   counter_account_id: z.uuid().nullish(),
   category_id: z.uuid().nullish(),
+  /** A one-off pot (expenses and income only): kept out of usual spending, analytics and insights. */
+  pot_id: z.uuid().nullish(),
   payee: z.string().trim().max(80, "Keep the payee under 80 characters.").nullish(),
   note: z.string().trim().max(280, "Keep the note under 280 characters.").nullish(),
   tags: z.array(z.string().trim().min(1).max(30)).max(10).default([]),
@@ -22,6 +24,7 @@ const rules = (v: Shape, ctx: z.RefinementCtx) => {
   if (v.type === "transfer") {
     if (!v.counter_account_id) ctx.addIssue({ code: "custom", path: ["counter_account_id"], message: "Choose the account it goes to." });
     else if (v.counter_account_id === v.account_id) ctx.addIssue({ code: "custom", path: ["counter_account_id"], message: "Choose two different accounts." });
+    if (v.pot_id) ctx.addIssue({ code: "custom", path: ["pot_id"], message: "A transfer can't go in a pot." });
   } else if (!v.category_id) {
     ctx.addIssue({ code: "custom", path: ["category_id"], message: "Choose a category." });
   }

@@ -43,6 +43,7 @@ export function SettingsScreen() {
       <div className="list">
         <Row href="/settings/accounts" Icon={UI.Landmark} title="Accounts" sub={`${accounts.length} account${accounts.length === 1 ? "" : "s"}${accounts.find((a) => a.is_default) ? ` · default ${accounts.find((a) => a.is_default)!.name}` : ""}`} />
         <Row href="/settings/categories" Icon={UI.Tags} title="Categories" sub={`${categories.length} categories`} />
+        <Row href="/pots" Icon={UI.PiggyBank} title="One-off pots" sub="Big one-time costs, kept out of monthly spend" />
       </div>
 
       <div className="eyebrow group-label">Capture</div>
