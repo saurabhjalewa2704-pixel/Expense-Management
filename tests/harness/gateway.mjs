@@ -59,6 +59,9 @@ const send = (res, status, body, headers = {}) => {
 const gotrueError = (res, status, code, msg) => send(res, status, { code: status, error_code: code, msg });
 const bearer = (req) => (req.headers.authorization ?? "").replace(/^Bearer\s+/i, "");
 
+// every existing user signs in with this password in tests (the real Supabase checks the stored hash)
+const TEST_PASSWORD = "test-password-123";
+
 async function auth(req, res, url) {
   const route = url.pathname.replace("/auth/v1", "");
   const body = ["POST", "PUT"].includes(req.method) ? JSON.parse((await readBody(req)).toString() || "{}") : {};
@@ -85,6 +88,11 @@ async function auth(req, res, url) {
     const u = await findUser("id", claims.sub);
     if (!u) return gotrueError(res, 403, "user_not_found", "User from sub claim in JWT does not exist");
     return send(res, 200, userJson(u));
+  }
+  if (route === "/token" && req.method === "POST" && url.searchParams.get("grant_type") === "password") {
+    const u = await findUser("email", String(body.email ?? "").trim().toLowerCase());
+    if (!u || body.password !== TEST_PASSWORD) return gotrueError(res, 400, "invalid_credentials", "Invalid login credentials");
+    return send(res, 200, session(u));
   }
   if (route === "/token" && req.method === "POST" && url.searchParams.get("grant_type") === "refresh_token") {
     const claims = verify(body.refresh_token);

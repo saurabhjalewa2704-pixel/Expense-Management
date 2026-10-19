@@ -57,3 +57,7 @@ Record judgement calls here as: date · decision · reason.
 - **2026-10-19 · The demo seed marks the permission card as already answered** (`reminder_prompted = true`) so Home matches the mock-up; the reminder tests reset it.
 - **2026-10-19 · Test seams, all inert in production:** `STERLING_PUSH_STUB=<file>` writes pushes to a file (an endpoint containing "gone" answers 410), and `?now=` on the nudge route works only when `STERLING_TEST_TODAY` is set.
 - **2026-10-19 · The evening reminder needs a 15-minute scheduler, which Vercel Hobby lacks.** `vercel.json` carries the two daily jobs; the README gives a `pg_cron` + `pg_net` snippet for the nudge.
+
+## Sign-in
+
+- **2026-10-19 · E-mail + password is the default sign-in; the e-mailed code stays as an option.** The PRD chose codes because magic links break the installed iOS app, but codes need an e-mail template containing `{{ .Token }}`, and Supabase's built-in sender does not let you edit it (custom SMTP does). Passwords need no e-mail delivery and work in the installed app. The same allow-list applies before Supabase is called, wrong password and unknown e-mail give the same message, and Supabase's own rate limits apply. The user is created in the dashboard with Auto Confirm, so no sign-up path is exposed. The PRD's AUTH-01 acceptance ("e-mailed 6-digit code") still holds via the secondary option.
