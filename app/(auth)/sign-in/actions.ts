@@ -41,6 +41,26 @@ export async function verifyCode(email: string, code: string): Promise<ActionRes
   return ok(undefined);
 }
 
+/** E-mail + password sign-in. Needs no e-mail delivery, so it works on Supabase's built-in sender. Same allow-list, checked first. */
+export async function signInWithPassword(email: string, password: string): Promise<ActionResult> {
+  const e = Email.safeParse(email);
+  if (!e.success) return fail("Enter a valid e-mail address.");
+  if (e.data !== allowedEmail()) return fail("That address can't sign in to this app.");
+  if (!password) return fail("Enter your password.");
+
+  const supabase = await supabaseServer();
+  const { data, error } = await supabase.auth.signInWithPassword({ email: e.data, password });
+  if (error || !data.user) {
+    if (error?.status === 429 || error?.code === "over_request_rate_limit") return fail("Too many attempts. Wait a minute and try again.");
+    return fail("That e-mail or password isn't right.");
+  }
+  if (data.user.email?.toLowerCase() !== allowedEmail()) {
+    await supabase.auth.signOut();
+    return fail("That address can't sign in to this app.");
+  }
+  return ok(undefined);
+}
+
 export async function signOut(): Promise<ActionResult> {
   const supabase = await supabaseServer();
   await supabase.auth.signOut({ scope: "global" });

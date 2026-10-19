@@ -26,7 +26,8 @@ Not built (P1, PRD §M5): natural-language entry, Shortcuts endpoint, recurring 
    - Sessions: set the refresh-token / inactivity timeout to at least 30 days (AUTH-01).
 3. **Environment variables** (Vercel → Project → Settings, and `.env.local` for local work; see `.env.example`):
    `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ALLOWED_EMAIL`, `CRON_SECRET` (any long random string), `ANTHROPIC_API_KEY` (optional: without it insights are written from templates), `AI_MONTHLY_TOKEN_CAP`, and for reminders `npx web-push generate-vapid-keys` → `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (same value as the public key).
-4. **Create yourself once:** `node scripts/bootstrap-owner.mjs` (reads the same variables; it refuses to create a second user).
+4. **Create yourself once.** Either `node scripts/bootstrap-owner.mjs` (reads the same variables; it refuses to create a second user), or with no terminal: Supabase → Authentication → Users → **Add user → Create new user**, your `ALLOWED_EMAIL`, a password, **Auto Confirm User** ticked. The database trigger creates your profile and categories either way.
+   Sign in with that e-mail and password. The e-mailed-code option ("E-mail me a code instead") needs the template change in step 2, and on Supabase's built-in e-mail sender that may require custom SMTP.
 5. **Deploy to Vercel**, then open the site on your iPhone in Safari → Share → **Add to Home Screen** and sign in from the installed app (reminders only work from there).
 
 ## Scheduled jobs

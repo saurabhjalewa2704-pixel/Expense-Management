@@ -16,6 +16,7 @@ export async function resetDb(opts: { seed?: "demo"; onboarded?: boolean } = {})
 /** Sign in through the real UI with the e-mailed-code flow (the gateway's fixed code is 123456). */
 export async function signIn(page: Page, email = OWNER) {
   await page.goto("/sign-in");
+  await page.getByRole("button", { name: "E-mail me a code instead" }).click();
   await page.getByLabel("E-mail address").fill(email);
   await page.getByRole("button", { name: "Send code" }).click();
   await page.getByLabel("6-digit code").fill("123456");
