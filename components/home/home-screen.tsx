@@ -3,6 +3,7 @@ import Link from "next/link";
 import { TxnItem, recentWhen } from "@/components/activity/txn-row";
 import { useQuickAdd } from "@/components/capture/quick-add";
 import { Figure } from "@/components/money";
+import { ReminderPrompt } from "@/components/home/reminder-prompt";
 import { InsightCard } from "@/components/insights/insight-card";
 import { formatLong, formatMonth, addMonths, monthStart } from "@/lib/dates";
 import { UI } from "@/lib/icons";
@@ -62,6 +63,7 @@ function MobileHome() {
       <div style={{ marginTop: 24 }} className="stack">
         <PaceCard today={today} pace={pace} />
         <InsightCard variant="home" />
+        <ReminderPrompt />
       </div>
 
       <div className="section-h"><h2>Recent</h2><Link className="link" href="/activity">See all</Link></div>

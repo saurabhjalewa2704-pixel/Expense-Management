@@ -46,3 +46,14 @@ Record judgement calls here as: date · decision · reason.
 - **2026-10-18 · Dismissals are per card key, not per run.** Keys are stable (`anomaly:eating_out:2026-10`), so dismissing a card stays dismissed across refreshes within the period. Feedback also feeds the next generation as plain-sentence preferences (last 50).
 - **2026-10-18 · Scope of tabs.** Digests cover completed periods (last week, last month); "So far" is the on-demand month-to-date refresh. The mock-up's "Month outlook" hero (CASH-06) and the "Ask about your money" bar (AI-04, "Ask Sterling") are P1 and are not built.
 - **2026-10-18 · Test clock.** `STERLING_TEST_TODAY` pins the server's idea of "today" for the E2E run only (the demo data is dated to 18 Oct 2026). It is unset in production.
+
+## Evening reminder (M4b)
+
+- **2026-10-19 · The decision to send is a pure function** (`lib/nudge.ts`): in the user's London slot, not already sent today, nothing logged today, no "Nothing to log" marker. Copy switches to "It's been a few days…" when the newest transaction is 3+ days old. The cron route only gathers inputs and sends, so the rules are unit-tested without a clock or a push service.
+- **2026-10-19 · The slot is a window, not an instant.** A run counts when London time is within `NUDGE_WINDOW_MIN` (default 15) after the reminder time, so a 15-minute cron cannot miss it and an hourly one (`NUDGE_WINDOW_MIN=60`) still works. `profiles.last_reminder_on` makes it at most one a day even if several runs fall inside the window, and it is set only after at least one device accepted the push.
+- **2026-10-19 · A "Nothing to log" marker counts as a logged day** in the week view and silences that day's reminder. The notification action posts to `/api/no-spend` with the session cookie (same-origin, so no token ends up in the worker).
+- **2026-10-19 · Turning the reminder off also unsubscribes this device**; the server stops sending from the next slot anyway because the cron selects only `reminder_enabled` profiles. Expired subscriptions (404/410) are deleted when a push fails.
+- **2026-10-19 · The permission card hides itself where push is impossible** (desktop browsers without PushManager). On iOS Safari outside the installed app it stays visible and *Turn on* explains how to install first, rather than failing silently.
+- **2026-10-19 · The demo seed marks the permission card as already answered** (`reminder_prompted = true`) so Home matches the mock-up; the reminder tests reset it.
+- **2026-10-19 · Test seams, all inert in production:** `STERLING_PUSH_STUB=<file>` writes pushes to a file (an endpoint containing "gone" answers 410), and `?now=` on the nudge route works only when `STERLING_TEST_TODAY` is set.
+- **2026-10-19 · The evening reminder needs a 15-minute scheduler, which Vercel Hobby lacks.** `vercel.json` carries the two daily jobs; the README gives a `pg_cron` + `pg_net` snippet for the nudge.

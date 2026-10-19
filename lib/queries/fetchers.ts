@@ -116,3 +116,18 @@ export const fetchInsightRuns = (db: SupabaseClient) =>
 export interface FeedbackRow { run_id: string; card_key: string; card_type: string; action: "helpful" | "dismissed" | "opened" }
 export const fetchInsightFeedback = (db: SupabaseClient) =>
   unwrap<FeedbackRow[]>(db.from("insight_feedback").select("run_id,card_key,card_type,action").order("created_at", { ascending: false }).limit(200));
+
+/** Days with something logged, and days marked "Nothing to log", in [from, to] (Settings → Reminders week view). */
+export async function fetchWeekActivity(db: SupabaseClient, from: ISODate, to: ISODate): Promise<{ logged: ISODate[]; noSpend: ISODate[] }> {
+  const [t, n] = await Promise.all([
+    unwrap<{ occurred_on: ISODate }[]>(db.from("transactions").select("occurred_on").gte("occurred_on", from).lte("occurred_on", to).is("deleted_at", null)),
+    unwrap<{ day: ISODate }[]>(db.from("no_spend_days").select("day").gte("day", from).lte("day", to)),
+  ]);
+  return { logged: [...new Set(t.map((r) => r.occurred_on))], noSpend: n.map((r) => r.day) };
+}
+
+export const fetchTransactionCount = async (db: SupabaseClient): Promise<number> => {
+  const { count, error } = await db.from("transactions").select("id", { count: "exact", head: true }).is("deleted_at", null);
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+};

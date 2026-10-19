@@ -5,6 +5,9 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 [ -f .stack/env ] || { echo "run 'npm run stack:up' first"; exit 1; }
 set -a; source .stack/env; set +a
+# a throwaway public VAPID key (the private half was discarded) and a file standing in for the push service
+export NEXT_PUBLIC_VAPID_PUBLIC_KEY="${NEXT_PUBLIC_VAPID_PUBLIC_KEY:-BOhikE_J3XWbyLOkZ_ri-eiUGlk3vd8fvyLUGb53g1NOpppyTRLNduPUM7iaL0CW_ShRvqLkRPc1IBnzOnc_-W4}"
+export STERLING_PUSH_STUB="$PWD/.stack/push.log"
 export STERLING_TEST_TODAY="${STERLING_TEST_TODAY:-2026-10-18}"
 PORT="${E2E_PORT:-3200}"
 pkill -f "[n]ext-server" 2>/dev/null || true

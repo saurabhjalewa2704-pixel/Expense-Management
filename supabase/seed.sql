@@ -28,7 +28,7 @@ begin
   delete from transactions where user_id = u;
   delete from payees where user_id = u;
   delete from accounts where user_id = u;
-  update profiles set display_name = 'Saurabh', onboarded_at = now(), acct_switch_candidate = null, acct_switch_count = 0 where id = u;
+  update profiles set display_name = 'Saurabh', onboarded_at = now(), acct_switch_candidate = null, acct_switch_count = 0, reminder_prompted = true where id = u;
 
   insert into accounts (user_id, name, institution, type, opening_balance_pence, opening_date, counts_as_cash, sort_order, is_default)
     values (u, 'Monzo', 'Monzo', 'current', 0, '2026-04-01', true, 1, true) returning id into monzo;
