@@ -17,7 +17,7 @@ async function fakePush(page: Page, endpoint = "https://push.test/device-1") {
     let current: unknown = null;
     const sub = { endpoint: ep, toJSON: () => ({ endpoint: ep, keys: { p256dh: "BPtestkey", auth: "authkey" } }), unsubscribe: async () => { current = null; return true; } };
     PushManager.prototype.getSubscription = async () => current as PushSubscription | null;
-    PushManager.prototype.subscribe = async () => (current = sub) as PushSubscription;
+    PushManager.prototype.subscribe = async () => (current = sub) as unknown as PushSubscription;
   }, endpoint);
 }
 
