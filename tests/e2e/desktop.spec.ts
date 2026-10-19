@@ -26,8 +26,9 @@ test.describe("desktop (WEB-01..03)", () => {
     await page.getByRole("button", { name: /Add transaction/ }).first().click();
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
+    // the modal scales in over ~220 ms, so wait for it to settle before measuring
+    await expect.poll(async () => Math.round((await dialog.boundingBox())!.width)).toBe(480);
     const box = (await dialog.boundingBox())!;
-    expect(Math.round(box.width)).toBe(480);
     expect(Math.abs(box.x + box.width / 2 - 1440 / 2)).toBeLessThan(2);          // centred
     await page.keyboard.press("Escape");
     await expect(dialog).toHaveCount(0);

@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { startDemo } from "./helpers";
 import { startUpdateProxy } from "./proxy";
 
@@ -10,11 +10,17 @@ test.beforeEach(() => proxy.setBuild(""));
 
 // A real update, end to end: the page is controlled by one service worker, the server then serves a changed worker script, the
 // browser installs it, it waits, and the app offers a Refresh. (Production build only: the worker is not registered in dev.)
+/** Wait until the first service worker is active, then reload so this page is controlled by it. */
+async function controlled(page: Page) {
+  await page.evaluate(() => navigator.serviceWorker.ready.then(() => true));
+  await page.reload();
+  await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller), { timeout: 30_000 }).toBe(true);
+}
+
 test.describe("new version banner (PWA)", () => {
   test("a new build waits, the banner offers Refresh, and refreshing switches to it", async ({ page }) => {
     await startDemo(page);
-    await page.reload();
-    await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller), { timeout: 20_000 }).toBe(true);
+    await controlled(page);
     await page.evaluate(() => { (window as unknown as { __marker: number }).__marker = 1; });
     await expect(page.getByTestId("update-banner")).toHaveCount(0);
 
@@ -36,8 +42,7 @@ test.describe("new version banner (PWA)", () => {
 
   test("the banner can be dismissed for now", async ({ page }) => {
     await startDemo(page);
-    await page.reload();
-    await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller), { timeout: 20_000 }).toBe(true);
+    await controlled(page);
     proxy.setBuild("build 3");
     await page.evaluate(async () => { await (await navigator.serviceWorker.getRegistration())!.update(); });
     await expect(page.getByTestId("update-banner")).toBeVisible({ timeout: 20_000 });
