@@ -72,3 +72,10 @@ Record judgement calls here as: date · decision · reason.
 - **2026-10-19 · Activity is a ledger, so it still shows pot transactions** (labelled "<pot> pot", filterable: everything / usual only / pots only / one pot). Its header totals split usual spend from the pots' net.
 - **2026-10-19 · Quick-add suggestions ignore pot expenses**, so a £12,500 stamp-duty entry cannot skew the category ranking.
 - **2026-10-19 · Not done:** pot totals are server figures; a pot expense still waiting in the offline outbox appears in the lists and the hero but not yet in that pot's own totals until it syncs.
+
+## New-version banner (update 2)
+
+- **2026-10-19 · A new build waits instead of taking over.** The service worker used `skipWaiting: true`, which swaps the worker (and its cached assets) under a page that is already open, so an installed PWA could run old JS against new caches until someone happened to relaunch it. Now `skipWaiting` is off: a new build installs and waits, the app shows a banner ("A new version of Sterling is ready · Refresh"), and Refresh posts `SKIP_WAITING`, then reloads once the new worker controls the page.
+- **2026-10-19 · The app asks for updates itself.** iOS rarely re-checks a PWA that stays in memory, so the banner component calls `registration.update()` on launch, whenever the app returns to the foreground, when the network comes back, and every 15 minutes.
+- **2026-10-19 · Nothing is offered on the first install** (no controller yet, so there is nothing "old"), and the banner can be dismissed for the session; it returns for the next new build.
+- **2026-10-19 · Tested against a real worker update.** Playwright cannot intercept the browser's own worker-script fetch, so `tests/e2e/proxy.ts` is a tiny pass-through that serves a changed `sw.js`; the test proves the old page is left alone, the banner appears, and Refresh switches versions.

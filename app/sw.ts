@@ -13,7 +13,9 @@ declare const self: ServiceWorkerGlobalScope;
 // Data is not cached here: TanStack Query persists it to IndexedDB (accounts, categories, recent transactions).
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
-  skipWaiting: true,
+  // A new build waits until the app offers it (components/shell/update-banner.tsx posts SKIP_WAITING), so the page the user
+  // is looking at never changes underneath them.
+  skipWaiting: false,
   clientsClaim: true,
   navigationPreload: true,
   runtimeCaching: defaultCache,

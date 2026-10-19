@@ -8,6 +8,7 @@ import { SyncEngine } from "@/lib/sync";
 import { Shortcuts } from "./shortcuts";
 import { Sidebar } from "./sidebar";
 import { TabBar } from "./tab-bar";
+import { UpdateBanner } from "./update-banner";
 
 /** Tab bar (phone) or sidebar (desktop), the pre-mounted Quick Add sheet, the toast layer and the sync engine. */
 export function AppShell({ children }: { children: ReactNode }) {
@@ -15,6 +16,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <ToastProvider>
       <Suspense fallback={null}>
         <QuickAddProvider>
+          <UpdateBanner />
           <OnboardingGate />
           <SyncEngine />
           <Shortcuts />
