@@ -123,3 +123,38 @@ begin
   assert (select count(*) from pots) = 0, 'delete_all_my_data removes pots';
   reset role;
 end $$;
+
+-- largest_transactions: usual spending only, biggest first, limited; ask_turns are private per user.
+do $$
+declare ua uuid := gen_random_uuid(); ub uuid := gen_random_uuid(); acc uuid; cat uuid; pot uuid; n int; denied boolean;
+begin
+  insert into auth.users (id, email) values (ua, 'ra@test.local'), (ub, 'rb@test.local');
+  perform set_config('request.jwt.claims', json_build_object('sub', ua, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  insert into accounts (name, type, opening_balance_pence, opening_date) values ('A', 'current', 10000000, '2026-01-01') returning id into acc;
+  select id into cat from categories where name = 'Groceries' and parent_id is null;
+  insert into pots (name) values ('P') returning id into pot;
+  perform create_transaction(gen_random_uuid(), 'expense', 3000, acc, null, cat, 'Small', null, '{}', '2026-10-02');
+  perform create_transaction(gen_random_uuid(), 'expense', 9000, acc, null, cat, 'Big', null, '{}', '2026-10-03');
+  perform create_transaction(gen_random_uuid(), 'expense', 900000, acc, null, cat, 'Deposit', null, '{}', '2026-10-04', null, 'app', false, false, pot);
+  assert (select count(*) from largest_transactions('2026-10-01', '2026-10-31', 10)) = 2, 'pot transactions are not usual spending';
+  assert (select payee_name from largest_transactions('2026-10-01', '2026-10-31', 10) limit 1) = 'Big', 'biggest first';
+  assert (select count(*) from largest_transactions('2026-10-01', '2026-10-31', 1)) = 1, 'limit';
+  insert into ask_turns (question, answer, model, facts) values ('How much?', 'About that much.', 'x', '[{"label":"a","display":"£1.00"}]');
+  reset role;
+  perform set_config('request.jwt.claims', json_build_object('sub', ub, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  assert (select count(*) from ask_turns) = 0, 'B sees A questions';
+  update ask_turns set answer = 'x'; get diagnostics n = row_count; assert n = 0, 'B edited A turns';
+  delete from ask_turns; get diagnostics n = row_count; assert n = 0, 'B deleted A turns';
+  denied := false;
+  begin insert into ask_turns (user_id, question, answer, model) values (ua, 'q', 'a', 'm'); exception when others then denied := true; end;
+  assert denied, 'B inserted a turn for A';
+  assert (select count(*) from largest_transactions('2026-01-01', '2026-12-31', 10)) = 0, 'B sees A transactions';
+  reset role;
+  perform set_config('request.jwt.claims', json_build_object('sub', ua, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  perform delete_all_my_data();
+  assert (select count(*) from ask_turns) = 0, 'delete_all_my_data removes ask turns';
+  reset role;
+end $$;

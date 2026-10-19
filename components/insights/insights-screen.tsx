@@ -1,6 +1,7 @@
 "use client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { AskDock } from "@/components/insights/ask-screen";
 import { InsightCardView, useCardFeedback } from "@/components/insights/insight-card";
 import { useToast } from "@/components/ui/toast";
 import { PageHeader } from "@/components/ui/page-header";
@@ -43,7 +44,7 @@ export function InsightsScreen() {
   }
 
   return (
-    <div className="scroll">
+    <div className="scroll ask-scroll">
       <PageHeader title="Insights" back="/" backLabel="Home" right={
         <button className="icon-btn" aria-label="Refresh insights" disabled={busy || off} onClick={refresh}><UI.RefreshCw size={18} strokeWidth={1.75} aria-hidden className={busy ? "spin" : undefined} /></button>
       } />
@@ -67,6 +68,7 @@ export function InsightsScreen() {
         )}
       </div>
       {run && <p className="sub" style={{ marginTop: 20, textAlign: "center" }}>Generated from your data · {run.period_start === run.period_end ? run.period_start : `${run.period_start} to ${run.period_end}`}</p>}
+      {!off && <AskDock />}
     </div>
   );
 }

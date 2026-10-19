@@ -30,7 +30,7 @@ export function AiScreen() {
       <PageHeader title="AI insights" back="/settings" backLabel="Settings" />
       <p className="sub" style={{ marginTop: 6 }}>Sterling works out every number itself. The AI only turns those numbers into a few plain sentences, and any sentence that quotes a figure it wasn&rsquo;t given is discarded.</p>
       <div className="list" style={{ marginTop: 20 }}>
-        <div className="row"><div className="row-main"><div className="row-t">Weekly and monthly insights</div><div className="row-s">Digests on Monday and the 1st</div></div>
+        <div className="row"><div className="row-main"><div className="row-t">Insights and Ask Sterling</div><div className="row-s">Digests on Monday and the 1st, and questions in your own words</div></div>
           <Switch label="AI insights" checked={p?.ai_enabled ?? true} onChange={(v) => set({ ai_enabled: v })} /></div>
         <div className="row"><div className="row-main"><div className="row-t">Include transaction notes</div><div className="row-s">Off by default. Notes can contain personal detail</div></div>
           <Switch label="Include transaction notes" checked={p?.ai_include_notes ?? false} onChange={(v) => set({ ai_include_notes: v })} disabled={p?.ai_enabled === false} /></div>
@@ -43,7 +43,7 @@ export function AiScreen() {
         <div role="progressbar" aria-label="Monthly AI usage" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} style={{ height: 6, borderRadius: 3, background: "var(--surface-3)", marginTop: 10, overflow: "hidden" }}>
           <div style={{ width: `${pct}%`, height: "100%", background: "var(--ink)" }} />
         </div>
-        <p className="sub" style={{ marginTop: 10 }}>At the cap Sterling stops calling the model and uses templates until next month.</p>
+        <p className="sub" style={{ marginTop: 10 }}>Digests and Ask Sterling answers both count. At the cap digests use templates and questions pause until next month.</p>
       </div>
       <div className="list" style={{ marginTop: 28 }}>
         {confirmClear ? (

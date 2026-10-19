@@ -10,7 +10,7 @@ import type { AccountBalance, TxnRow } from "@/lib/types";
 import {
   fetchAccounts, fetchAccountSeries, fetchActivityPage, fetchBalances, fetchCashFlow, fetchCashSeries, fetchCategories,
   fetchCategoryMonthly, fetchDailySpend, fetchMonthlyTotals, fetchPace, fetchPayees, fetchProfile, fetchSpendByCategory,
-  fetchPotCategories, fetchPots, fetchTransactionCount, fetchWeekActivity, fetchInsightFeedback, fetchInsightRuns, fetchLastIncomeAccount, fetchSuggestHistory, fetchTopPayees, fetchTotals, PAGE_SIZE, type ActivityCursor,
+  fetchAskTurns, fetchPotCategories, fetchPots, fetchTransactionCount, fetchWeekActivity, fetchInsightFeedback, fetchInsightRuns, fetchLastIncomeAccount, fetchSuggestHistory, fetchTopPayees, fetchTotals, PAGE_SIZE, type ActivityCursor,
 } from "./fetchers";
 import { qk, type ActivityFilters } from "./keys";
 
@@ -192,3 +192,5 @@ export const useTransactionCount = () => useQuery({ queryKey: ["txn-count"] as c
 
 export const usePots = () => useQuery({ queryKey: qk.pots, queryFn: () => fetchPots(db()) });
 export const usePotCategories = (id: string) => useQuery({ queryKey: qk.potCategories(id), queryFn: () => fetchPotCategories(db(), id) });
+
+export const useAskTurns = () => useQuery({ queryKey: qk.ask, queryFn: () => fetchAskTurns(db()) });

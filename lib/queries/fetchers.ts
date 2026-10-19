@@ -136,3 +136,10 @@ export const fetchTransactionCount = async (db: SupabaseClient): Promise<number>
 
 export const fetchPots = (db: SupabaseClient) => unwrap<Pot[]>(db.rpc("pot_summary", { p_pot: null }));
 export const fetchPotCategories = (db: SupabaseClient, id: string) => unwrap<PotCategory[]>(db.rpc("pot_by_category", { p_pot: id }));
+
+export interface AskTurn { id: string; question: string; answer: string; facts: { label: string; display: string }[]; used_fallback: boolean; model: string; created_at: string }
+/** The latest questions and answers, oldest first (a conversation reads top to bottom). */
+export async function fetchAskTurns(db: SupabaseClient): Promise<AskTurn[]> {
+  const rows = await unwrap<AskTurn[]>(db.from("ask_turns").select("id,question,answer,facts,used_fallback,model,created_at").order("created_at", { ascending: false }).limit(30));
+  return rows.reverse();
+}

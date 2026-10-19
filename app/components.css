@@ -195,3 +195,20 @@ td + td{padding-left:14px}
 .update-banner .msg{flex:1;min-width:0}
 .update-banner .go{height:30px;padding:0 14px;border-radius:var(--r-pill);background:var(--ink);color:var(--on-ink);font-weight:600}
 .update-banner .x{width:30px;height:30px;display:grid;place-items:center;color:var(--ink-2)}
+
+/* ---------- Ask Sterling ---------- */
+.ask-scroll{padding-bottom:calc(var(--tabbar-h) + 150px)}
+.ask-thread{display:flex;flex-direction:column;gap:12px;margin-top:20px}
+.ask-q{align-self:flex-end;max-width:86%;background:var(--surface-3);border-radius:var(--r-card);padding:10px 14px;font-size:var(--t-callout)}
+.ask-a{align-self:flex-start;max-width:100%;font-size:var(--t-callout);line-height:1.45}
+.ask-facts{margin-top:12px;padding-top:10px;border-top:1px solid var(--rule);font-size:var(--t-sub);color:var(--ink-2)}
+.ask-facts summary{cursor:pointer;list-style:none;font-weight:500}
+.ask-facts ul{margin-top:8px;display:flex;flex-direction:column;gap:6px;list-style:none;padding:0}
+.ask-facts li{display:flex;justify-content:space-between;gap:12px}
+.ask-facts li b{color:var(--ink);font-weight:500;white-space:nowrap}
+.ask-dock{position:fixed;left:0;right:0;bottom:var(--tabbar-h);padding:12px var(--gutter) 14px;background:linear-gradient(to bottom,transparent,var(--bg) 22%);z-index:4}
+.ask-field{background:var(--surface);height:50px;padding-right:6px;box-shadow:0 0 0 1px var(--rule-strong);display:flex;align-items:center;gap:10px}
+.ask-field input{flex:1;min-width:0;background:none;border:0;outline:none;color:var(--ink)}
+.ask-send{width:38px;height:38px;border-radius:50%;background:var(--ink);color:var(--on-ink);display:grid;place-items:center;flex:none}
+.ask-send:disabled{opacity:.35}
+@media (min-width:1024px){.ask-dock{bottom:0;left:248px}.ask-scroll{padding-bottom:180px}}

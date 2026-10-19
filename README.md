@@ -14,8 +14,11 @@ Next.js 16 on Vercel · Supabase (Postgres, Auth, RLS) · Claude API for the ins
 | M3 | Analytics (pace, categories, waterfall, trend, rhythm, deep dive), desktop dashboard, CSV/JSON export |
 | M4 | AI insights: facts from SQL, model wording, grounding validator, template fallback, digests, feedback |
 | M4b | Evening reminder via Web Push |
+| Update 2 | "New version available" banner for the installed app |
+| Update 3 | One-off pots (e.g. a home purchase), kept out of monthly spend, analytics and insights |
+| Update 4 | Ask Sterling: ask about your spending in plain English (Insights → Ask) |
 
-Not built (P1, PRD §M5): natural-language entry, Shortcuts endpoint, recurring rules, budgets, other push types, Face ID lock, "Ask Sterling", month-end outlook card.
+Not built (P1, PRD §M5): natural-language entry, Shortcuts endpoint, recurring rules, budgets, other push types, Face ID lock, month-end outlook card.
 
 ## Set up (about 20 minutes)
 
@@ -66,13 +69,14 @@ npm test                  # unit tests (Vitest)
 npm run test:sql          # RLS, cash-identity invariants, business rules, analytics, PRD Appendix A to the penny
 bash scripts/e2e-prod.sh  # production build + Playwright at 390×844 (mobile) and 1440×1024 (desktop)
 npx tsx scripts/ai-check.ts 20   # needs ANTHROPIC_API_KEY + Supabase env: the PRD §12.8 check against the real model
+npx tsx scripts/ask-check.ts      # the same for Ask Sterling: nine sample questions, answers and tools printed
 ```
 
 ## What could not be verified here
 
 These need a real account or device and are the owner's to check:
 
-- **The real Claude output.** Everything around the model is tested (validator, retry, fallback, caps) with fake writers; run `scripts/ai-check.ts` with your key.
+- **The real Claude output.** Everything around the model is tested (validator, retry, fallback, caps) with fake writers and, for Ask Sterling, a scripted stand-in model that drives the real tools; run `scripts/ai-check.ts` and `scripts/ask-check.ts` with your key.
 - **Web Push on an iPhone.** iOS delivers push only to an installed Home Screen app and not to simulators. Subscription, the nudge rules and the service-worker handlers are tested with a stubbed push service.
 - **Real Supabase Auth e-mail.** Tests use the local gateway; confirm the code e-mail template and sign-up setting in your project.
 - **Safari/WebKit specifics** (keyboard behaviour, Face ID is not built). E2E runs on Chromium with an iPhone profile.

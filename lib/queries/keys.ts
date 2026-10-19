@@ -37,6 +37,7 @@ export const qk = {
   suggestHistory: ["suggest-history"] as const,
   lastIncomeAccount: ["last-income-account"] as const,
   pots: ["pots"] as const,
+  ask: ["ask"] as const,
   potCategories: (id: string) => ["pot-categories", id] as const,
   insights: ["insights"] as const,
 };

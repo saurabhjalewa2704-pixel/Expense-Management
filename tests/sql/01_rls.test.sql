@@ -24,6 +24,7 @@ begin
   insert into push_subscriptions (endpoint, p256dh, auth) values ('https://push.example/a', 'p', 'a');
   insert into no_spend_days (day) values ('2026-02-02');
   insert into pots (name) values ('Home purchase');
+  insert into ask_turns (question, answer, model) values ('q', 'a', 'x');
   reset role;
   insert into insight_runs (user_id, scope, period_start, period_end, facts, cards, model)
     values (ua, 'weekly', '2026-02-02', '2026-02-08', '{}', '[]', 'x') returning id into run;
@@ -37,7 +38,7 @@ begin
   perform set_config('request.jwt.claims', json_build_object('sub', ub, 'role', 'authenticated')::text, true);
   set local role authenticated;
   foreach t in array array['accounts','payees','transactions','recurring_rules','budgets','insight_runs',
-                           'insight_feedback','api_tokens','push_subscriptions','no_spend_days','pots'] loop
+                           'insight_feedback','api_tokens','push_subscriptions','no_spend_days','pots','ask_turns'] loop
     execute format('select count(*) from %I', t) into n;
     assert n = 0, 'B can read ' || t;
   end loop;

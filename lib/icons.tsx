@@ -1,5 +1,6 @@
 "use client";
 import {
+  ArrowUp,
   Archive, ArrowLeftRight, Badge, Banknote, BedDouble, Bell, Bike, BookOpen, Briefcase, BriefcaseBusiness, Calendar, Camera, Car, CarTaxiFront,
   Check, ChevronDown, ChevronLeft, ChevronRight, CircleEllipsis, Circle, CircleCheck, Clapperboard, Clock, CloudOff, Coffee, CreditCard, Copy,
   Delete, Download, Droplets, Dumbbell, Ellipsis, FileText, Flower2, Fuel, Gamepad2, Gift, GraduationCap, GripVertical, Hammer, HandHeart,
@@ -42,7 +43,7 @@ export function CategoryIcon({ name, size = 20, ...rest }: { name: string | null
 
 /** UI glyphs, one place so stroke weight stays consistent (1.75). */
 export const UI = {
-  Archive, ArrowLeftRight, Bell, Calendar, Check, ChevronDown, ChevronLeft, ChevronRight, CircleCheck, Clock, CloudOff, CreditCard, Copy,
+  Archive, ArrowLeftRight, ArrowUp, Bell, Calendar, Check, ChevronDown, ChevronLeft, ChevronRight, CircleCheck, Clock, CloudOff, CreditCard, Copy,
   Delete, Download, Ellipsis, FileText, GripVertical, Info, ListFilter, Lock, LogOut, Merge, Pencil, Plus, RefreshCw, Search, Settings,
   SlidersHorizontal, Sparkles, Trash2, List, ChartNoAxesColumn, CloudUpload, Tags, Database, Share, SquarePlus, House, ShieldCheck, Bike, TrendingUp, Wallet, X, ChevronDownIcon: ChevronDown, Landmark, PiggyBank, Banknote,
 };
