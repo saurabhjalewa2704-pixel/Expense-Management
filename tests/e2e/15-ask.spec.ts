@@ -22,7 +22,10 @@ test.describe("Ask Sterling (natural-language questions)", () => {
     await page.getByRole("link", { name: "Compare this month with last month" }).click();
     await expect(page).toHaveURL(/\/insights\/ask/);
     const answer = page.getByTestId("ask-answer").last();
-    await expect(answer).toBeVisible({ timeout: 20_000 });
+    await Promise.race([
+      answer.waitFor({ timeout: 20_000 }),
+      page.getByTestId("ask-error").waitFor({ timeout: 20_000 }).then(async () => { throw new Error(`Ask failed: ${await page.getByTestId("ask-error").innerText()}`); }),
+    ]);
     await expect(answer).toContainText("£3,236.85");                         // October so far (usual spending)
     await expect(answer).toContainText("£5,316.20");                         // all of September
     await answer.getByText(/Numbers used/).click();

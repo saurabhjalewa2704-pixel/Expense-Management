@@ -90,3 +90,12 @@ Record judgement calls here as: date · decision · reason.
 - **2026-10-19 · Stored, private, clearable.** `ask_turns` (RLS, cross-user test) keeps the question, validated answer, the figures it could quote and token use. Clear AI history and Delete all data remove it.
 - **2026-10-19 · Testing without a key.** `STERLING_ASK_STUB` swaps in a scripted model that picks tools by keyword and words the result, including deliberately ungrounded answers to exercise retry and fallback. Real model quality (tool choice, wording) is for the owner to judge with `scripts/ask-check.ts`.
 - **2026-10-19 · A separate screen, not a sheet.** The Insights screen docks an "Ask about your money…" field with starter questions (mock-up 06); it opens `/insights/ask`, a conversation with the input pinned above the tab bar, which behaves better with the iOS keyboard than a nested sheet.
+
+## Category picker (update 1)
+
+- **2026-10-19 · Drill in instead of expanding below.** The old picker revealed a parent's sub-categories under the grid (often off-screen) and made "the parent itself" a hidden second tap. Now a tap on a parent slides the same sheet to that parent's list ("‹ Categories", the parent's name as the title); the first row is an explicit "<Parent> (general)", then the sub-categories, and any row saves and closes at once. A parent with no sub-categories is chosen immediately.
+- **2026-10-19 · A Suggested row leads the list**, built from the same ranking as Quick Add's chips (this payee's category, then the most used), each shown with its parent ("Eating out › Restaurants"). Its buttons are labelled "Suggested: …" so they never collide with the grid tiles.
+- **2026-10-19 · Reopening lands where you were.** With a category already chosen, the picker opens on its parent's list with the choice marked; Back shows all parents with the right one highlighted.
+- **2026-10-19 · Search spans both levels** and shows each match's parent underneath.
+- **2026-10-19 · The desktop modal uses two panes** (parents left, the highlighted parent's list right) because a 480px modal has room for both, and hover/click feels natural there.
+- **2026-10-19 · A category picked from the full list leads Quick Add's chips as "Transport › Taxis"**, so the parent is visible after choosing. Chips from the usual suggestions stay short, to keep the three-tap capture quick.

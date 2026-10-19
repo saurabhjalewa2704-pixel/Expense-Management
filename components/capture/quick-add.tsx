@@ -153,7 +153,8 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
     });
   }, [mode, tree, history, categories, matchedPayee, outbox, nowMs]);
 
-  const selectedLabel = categoryId ? tree.byId.get(categoryId)?.name : undefined;
+  // a category picked from the full list leads the chips with its parent shown ("Transport › Taxis")
+  const selectedLabel = categoryId ? tree.path(categoryId) : undefined;
   const chipList = categoryId && !chips.some((c) => c.categoryId === categoryId) && selectedLabel
     ? [{ categoryId, label: selectedLabel }, ...chips.slice(0, 5)] : chips;
 
@@ -424,7 +425,7 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
       )}
 
       <CategoryPicker open={picker === "category"} onOpenChange={(o) => setPicker(o ? "category" : null)} kind={kind} selectedId={categoryId}
-        onSelect={(id) => { setCategoryId(id); setError(undefined); }} />
+        onSelect={(id) => { setCategoryId(id); setError(undefined); }} suggestedIds={chips.map((c) => c.categoryId)} />
       <AccountPicker open={picker === "account"} onOpenChange={(o) => setPicker(o ? "account" : null)} title={mode === "transfer" ? "From" : "Account"} selectedId={effAccount}
         excludeId={mode === "transfer" ? effCounter : undefined} onSelect={chooseAccount} />
       <AccountPicker open={picker === "counter"} onOpenChange={(o) => setPicker(o ? "counter" : null)} title="To" selectedId={effCounter} excludeId={effAccount} onSelect={(id) => setCounterId(id)} />

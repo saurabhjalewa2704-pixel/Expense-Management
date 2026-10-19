@@ -71,4 +71,20 @@ test.describe("desktop (WEB-01..03)", () => {
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), path).toBe(true);
     }
   });
+
+  test("category picker is two panes in the modal: parents on the left, the parent's list on the right", async ({ page }) => {
+    await page.keyboard.press("n");
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await page.keyboard.type("15");
+    await page.getByRole("button", { name: "More categories" }).click();
+    const panes = page.getByTestId("cat-panes");
+    await expect(panes).toBeVisible();
+    await panes.getByRole("button", { name: "Transport" }).click();                         // highlights; the list opens beside it
+    await expect(panes.getByTestId("cat-list")).toContainText("Transport (general)");
+    await panes.getByRole("button", { name: "Eating out" }).click();                        // switching parent swaps the right pane
+    await expect(panes.getByTestId("cat-list")).toContainText("Eating out (general)");
+    await panes.getByTestId("cat-list").getByRole("button", { name: "Restaurants" }).click();
+    await expect(page.getByLabel("Search categories")).toHaveCount(0);
+    await expect(page.getByRole("radio", { name: /Restaurants/ })).toBeChecked();
+  });
 });

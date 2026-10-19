@@ -212,3 +212,14 @@ td + td{padding-left:14px}
 .ask-send{width:38px;height:38px;border-radius:50%;background:var(--ink);color:var(--on-ink);display:grid;place-items:center;flex:none}
 .ask-send:disabled{opacity:.35}
 @media (min-width:1024px){.ask-dock{bottom:0;left:248px}.ask-scroll{padding-bottom:180px}}
+
+/* ---------- category picker ---------- */
+.cat-panes{display:grid;grid-template-columns:minmax(0,184px) minmax(0,1fr);gap:12px;margin-top:16px;align-items:start;max-height:min(56dvh,480px);overflow-y:auto}
+.cat-panes .row[aria-current="true"]{background:var(--surface-3)}
+.cat-panes .row{gap:10px;padding:10px 12px}
+.cat-panes .row + .row::before{left:12px}
+.cat-panes .tile{width:28px;height:28px;border-radius:8px}
+.cat-panes .radio{margin-left:auto}
+.pane-in{animation:pane-in 180ms ease-out}
+@keyframes pane-in{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.pane-in{animation:none}}
