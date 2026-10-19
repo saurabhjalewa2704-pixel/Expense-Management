@@ -1,0 +1,289 @@
+<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=390"><title>Sterling · Analytics</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"><style>/* Sterling design tokens — the single source for Tailwind theme + components.
+   Sterling is dark-only: there is no light theme. */
+:root {
+  color-scheme: dark;
+  /* colour */
+  --bg: #0C0D0C;
+  --surface: #18191A;
+  --surface-2: #212224;
+  --surface-3: #2A2B2D;
+  --ink: #F3F2EE;
+  --ink-2: #A9AAA4;
+  --ink-3: #8D8F89;
+  --rule: rgba(255, 255, 255, 0.08);
+  --rule-strong: rgba(255, 255, 255, 0.14);
+  --on-ink: #0C0D0C;
+  --positive: #4FC487;
+  --positive-tint: rgba(79, 196, 135, 0.14);
+  --caution: #EE9A52;
+  --caution-tint: rgba(238, 154, 82, 0.14);
+  --danger: #F0645A;
+  --chart-ink: #F3F2EE;
+  --chart-context: #3A3B3D;
+  --chart-fill: rgba(255, 255, 255, 0.06);
+  --scrim: rgba(0, 0, 0, 0.6);
+  --tabbar: rgba(24, 25, 26, 0.82);
+
+  /* category chart tones (multi-series only) */
+  --cat-stone: #8A877E; --cat-sage: #8FA48C; --cat-moss: #5F7457; --cat-sky: #7E9DB4; --cat-slate: #5B6675;
+  --cat-clay: #B57A5E; --cat-sand: #C9B48A; --cat-plum: #8A6C82; --cat-rose: #C08F8F; --cat-ochre: #C29A3E;
+
+  /* type */
+  --font: "Instrument Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --t-hero: 64px;      /* available cash whole pounds */
+  --t-large: 32px;     /* large screen titles */
+  --t-title: 22px;
+  --t-headline: 17px;
+  --t-body: 17px;
+  --t-callout: 15px;
+  --t-sub: 13px;
+  --t-caption: 12px;
+
+  /* space (4pt) */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 20px; --s6: 24px; --s8: 32px; --s10: 40px; --s14: 56px;
+  --gutter: 20px;
+
+  /* shape */
+  --r-card: 16px;
+  --r-sheet: 28px;
+  --r-key: 14px;
+  --r-tile: 10px;
+  --r-pill: 999px;
+  --shadow-sheet: 0 -8px 40px rgba(0, 0, 0, 0.5);
+
+  /* motion */
+  --spring: cubic-bezier(.2, .8, .2, 1);
+}
+
+
+/* ---------- base ---------- */
+*{box-sizing:border-box;margin:0;padding:0}
+body{margin:0;background:#000}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+a{color:inherit;text-decoration:none}
+.screen{position:relative;overflow:hidden;background:var(--bg);color:var(--ink);font-family:var(--font);
+  -webkit-font-smoothing:antialiased;font-size:var(--t-body);line-height:1.35}
+.phone{width:390px;height:844px}
+.num,.amt,.figure,.eq-v{font-variant-numeric:tabular-nums}
+.i{flex:none;display:block}
+.pos{color:var(--positive)}
+.cau{color:var(--caution)}
+.muted{color:var(--ink-2)}
+.faint{color:var(--ink-3)}
+.scroll{padding:56px var(--gutter) 128px}
+.row-between{display:flex;justify-content:space-between;align-items:center;gap:12px}
+
+/* ---------- type ---------- */
+.eyebrow{font-size:var(--t-caption);letter-spacing:.06em;text-transform:uppercase;font-weight:600;color:var(--ink-3)}
+.large-title{font-size:var(--t-large);font-weight:600;letter-spacing:-.03em;line-height:1.1}
+.title{font-size:var(--t-title);font-weight:600;letter-spacing:-.02em;line-height:1.2}
+.headline{font-size:var(--t-headline);font-weight:600;letter-spacing:-.01em}
+.callout{font-size:var(--t-callout)}
+.sub{font-size:var(--t-sub);color:var(--ink-2)}
+
+/* ---------- top bar ---------- */
+.topbar{display:flex;align-items:center;justify-content:space-between;height:44px}
+.avatar{width:36px;height:36px;border-radius:50%;background:var(--surface);display:grid;place-items:center;
+  font-size:14px;font-weight:600;color:var(--ink-2);box-shadow:inset 0 0 0 1px var(--rule)}
+.icon-btn{width:36px;height:36px;border-radius:50%;background:var(--surface);display:grid;place-items:center;color:var(--ink);box-shadow:inset 0 0 0 1px var(--rule)}
+.navbar{display:flex;align-items:center;justify-content:space-between;height:44px;margin:0 -8px}
+.back{display:flex;align-items:center;gap:2px;font-size:var(--t-body);color:var(--ink);padding:8px}
+
+/* ---------- signature: available cash ---------- */
+.hero{margin-top:28px}
+.hero-label{font-size:var(--t-callout);color:var(--ink-2);font-weight:500;display:flex;align-items:center;gap:6px}
+.figure{display:flex;align-items:flex-start;font-weight:600;line-height:1;margin-top:10px;letter-spacing:-.045em}
+.figure .cur{font-size:32px;margin:7px 3px 0 0;letter-spacing:0;font-weight:500}
+.figure .whole{font-size:var(--t-hero)}
+.figure .pence{font-size:32px;margin:7px 0 0 1px;color:var(--ink-3);letter-spacing:-.02em;font-weight:500}
+.figure.xl .whole{font-size:76px}
+.figure.xl .cur,.figure.xl .pence{font-size:36px;margin-top:9px}
+.equation{display:flex;align-items:flex-end;gap:12px;margin-top:22px;padding-top:16px;border-top:1px solid var(--rule-strong)}
+.eq-term{display:flex;flex-direction:column;gap:4px}
+.eq-k{font-size:var(--t-caption);font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.eq-v{font-size:var(--t-callout);font-weight:500;letter-spacing:-.01em}
+.eq-op{font-size:var(--t-callout);color:var(--ink-3);padding-bottom:1px}
+
+/* ---------- surfaces ---------- */
+.card{background:var(--surface);border-radius:var(--r-card);padding:var(--s4)}
+.card + .card{margin-top:12px}
+.stack{display:flex;flex-direction:column;gap:12px}
+.section-h{display:flex;justify-content:space-between;align-items:baseline;margin:32px 2px 12px}
+.section-h h2{font-size:var(--t-title);font-weight:600;letter-spacing:-.02em}
+.section-h .link{font-size:var(--t-callout);color:var(--ink-2);display:flex;align-items:center;gap:2px}
+.group-label{margin:28px 16px 8px}
+
+/* ---------- pace ---------- */
+.pace .k{font-size:var(--t-sub);color:var(--ink-2);font-weight:500}
+.pace-amt{font-size:var(--t-title);font-weight:600;letter-spacing:-.02em;margin-top:6px}
+.pace-amt span{font-size:var(--t-callout);font-weight:400;color:var(--ink-2);letter-spacing:0}
+.track{position:relative;height:6px;border-radius:3px;background:var(--surface-3);margin:14px 0 12px}
+.track .fill{position:absolute;inset:0 auto 0 0;border-radius:3px;background:var(--ink)}
+.track .tick{position:absolute;top:-5px;width:2px;height:16px;border-radius:1px;background:var(--ink-3)}
+.track .tick::after{content:attr(data-label);position:absolute;top:19px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--ink-3);white-space:nowrap;font-weight:500}
+.pace-note{display:flex;align-items:center;gap:8px;font-size:var(--t-sub);color:var(--ink-2);margin-top:22px}
+.dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--ink-3)}
+.dot.pos{background:var(--positive)} .dot.cau{background:var(--caution)}
+
+/* ---------- insight ---------- */
+.ins-tag{display:inline-flex;align-items:center;gap:6px;font-size:var(--t-caption);font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+.ins-tag.cau{color:var(--caution)} .ins-tag.pos{color:var(--positive)}
+.insight h3{font-size:var(--t-headline);font-weight:600;letter-spacing:-.01em;line-height:1.3;margin-top:10px}
+.insight p{font-size:var(--t-callout);color:var(--ink-2);margin-top:6px;line-height:1.4}
+.compare{margin-top:14px;display:grid;grid-template-columns:auto 1fr auto;gap:8px 10px;align-items:center;font-size:var(--t-sub)}
+.compare .bar{height:8px;border-radius:4px;background:var(--ink)}
+.compare .bar.ctx{background:var(--chart-context)}
+.compare .bar.cau{background:var(--caution)}
+.compare .lab{color:var(--ink-2);width:76px}
+.ins-actions{display:flex;align-items:center;gap:4px;margin-top:14px;padding-top:12px;border-top:1px solid var(--rule)}
+.ins-actions .ghost{display:flex;align-items:center;gap:6px;height:32px;padding:0 10px;border-radius:var(--r-pill);font-size:var(--t-sub);color:var(--ink-2);font-weight:500}
+.ins-actions .open{margin-left:auto;color:var(--ink)}
+
+/* ---------- lists ---------- */
+.list{background:var(--surface);border-radius:var(--r-card);overflow:hidden}
+.row{display:flex;align-items:center;gap:12px;padding:12px 16px;min-height:62px;position:relative}
+.row + .row::before{content:"";position:absolute;top:0;left:64px;right:0;height:1px;background:var(--rule)}
+.tile{width:36px;height:36px;border-radius:var(--r-tile);background:var(--surface-2);display:grid;place-items:center;color:var(--ink);flex:none}
+.tile.pos{background:var(--positive-tint);color:var(--positive)}
+.tile.ink{background:var(--ink);color:var(--on-ink)}
+.row-main{flex:1;min-width:0}
+.row-t{font-size:16px;font-weight:500;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row-s{font-size:var(--t-sub);color:var(--ink-2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.amt{font-size:16px;font-weight:500;letter-spacing:-.01em;text-align:right;white-space:nowrap}
+.amt small{display:block;font-size:var(--t-sub);color:var(--ink-3);font-weight:400;margin-top:2px}
+.day-h{display:flex;justify-content:space-between;align-items:baseline;margin:24px 4px 8px;font-size:var(--t-sub);color:var(--ink-2);font-weight:500}
+.day-h b{color:var(--ink);font-weight:600;font-size:var(--t-callout)}
+.chev{color:var(--ink-3)}
+
+/* ---------- tab bar ---------- */
+.tabbar{position:absolute;left:0;right:0;bottom:0;height:88px;padding:8px 6px 30px;display:grid;grid-template-columns:repeat(5,1fr);
+  align-items:start;background:var(--tabbar);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--rule);z-index:5}
+.tab{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink-3);font-size:10px;font-weight:500;padding-top:2px}
+.tab.active{color:var(--ink)}
+.tab-add{justify-self:center;width:50px;height:50px;border-radius:50%;background:var(--ink);color:var(--on-ink);display:grid;place-items:center;margin-top:-3px;box-shadow:0 6px 16px rgba(0,0,0,.18)}
+
+/* ---------- chips & controls ---------- */
+.chip{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px 0 11px;border-radius:var(--r-pill);background:var(--surface);
+  box-shadow:inset 0 0 0 1px var(--rule-strong);font-size:14px;font-weight:500;white-space:nowrap;color:var(--ink)}
+.chip.sel{background:var(--ink);color:var(--on-ink);box-shadow:none}
+.chip.soft{background:var(--surface-2);box-shadow:none}
+.chip.plain{padding:0 14px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips.nowrap{flex-wrap:nowrap;overflow:hidden}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--surface-3);border-radius:10px;padding:2px;height:36px}
+.seg span{display:grid;place-items:center;font-size:14px;font-weight:500;color:var(--ink-2);border-radius:8px}
+.seg span.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08),0 0 0 .5px var(--rule)}
+.field{display:flex;align-items:center;gap:10px;height:48px;padding:0 14px;border-radius:12px;background:var(--surface-2);font-size:var(--t-body);color:var(--ink)}
+.field .ph{color:var(--ink-3)}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;height:56px;border-radius:16px;background:var(--ink);color:var(--on-ink);font-size:var(--t-headline);font-weight:600;width:100%;letter-spacing:-.01em}
+.btn.secondary{background:var(--surface);color:var(--ink);box-shadow:inset 0 0 0 1px var(--rule-strong)}
+
+/* ---------- sheets ---------- */
+.scrim{position:absolute;inset:0;background:var(--scrim);z-index:6}
+.behind{position:absolute;left:12px;right:12px;top:47px;bottom:0;border-radius:12px 12px 0 0;background:var(--bg);opacity:.9;transform-origin:top}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--surface);border-radius:var(--r-sheet) var(--r-sheet) 0 0;box-shadow:var(--shadow-sheet);z-index:7;padding:8px var(--gutter) 34px}
+.grabber{width:36px;height:5px;border-radius:3px;background:var(--surface-3);margin:0 auto 14px}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;height:36px;margin-bottom:12px}
+.sheet-head .t{font-size:var(--t-headline);font-weight:600}
+.sheet-head .txt{font-size:var(--t-body);color:var(--ink-2)}
+
+/* ---------- quick add ---------- */
+.amount{display:flex;justify-content:center;align-items:flex-start;font-weight:600;letter-spacing:-.045em;line-height:1;margin:22px 0 20px}
+.amount .cur{font-size:30px;margin:8px 3px 0 0;font-weight:500;letter-spacing:0;color:var(--ink-2)}
+.amount .whole{font-size:64px}
+.amount .pence{font-size:64px}
+.amount .caret{width:3px;height:56px;background:var(--ink);border-radius:2px;margin:4px 0 0 4px;opacity:.85}
+.payee{display:flex;align-items:center;gap:10px;height:48px;padding:0 14px;border-radius:12px;background:var(--surface-2)}
+.payee .v{font-size:var(--t-body);font-weight:500;flex:1}
+.learned{font-size:12px;color:var(--ink-2);display:flex;align-items:center;gap:4px;font-weight:500}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
+.key{height:54px;border-radius:var(--r-key);background:var(--surface-2);display:grid;place-items:center;font-size:26px;font-weight:500;letter-spacing:-.01em}
+.key.fn{background:transparent;color:var(--ink-2)}
+.meta{display:flex;gap:8px;margin-top:12px}
+.meta .chip{height:34px;font-size:13px;background:var(--surface);}
+
+/* ---------- category grid ---------- */
+.cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px 8px}
+.cat{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:12px;font-weight:500;color:var(--ink-2);text-align:center;line-height:1.2}
+.cat .sq{width:58px;height:58px;border-radius:16px;background:var(--surface-2);display:grid;place-items:center;color:var(--ink)}
+.cat.sel{color:var(--ink)}
+.cat.sel .sq{background:var(--ink);color:var(--on-ink)}
+.subs{margin-top:20px;border-radius:var(--r-card);background:var(--surface-2);overflow:hidden}
+.subs .row{min-height:52px;padding:10px 16px}
+.subs .row + .row::before{left:16px}
+.subs .row-t{font-size:16px;font-weight:400}
+.radio{width:22px;height:22px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--rule-strong);display:grid;place-items:center;flex:none}
+.radio.on{background:var(--ink);box-shadow:none;color:var(--on-ink)}
+
+/* ---------- charts ---------- */
+.chart-card .finding{font-size:var(--t-headline);font-weight:600;letter-spacing:-.01em;line-height:1.3}
+.chart-card .finding-sub{font-size:var(--t-sub);color:var(--ink-2);margin-top:4px}
+.chart{display:block;margin-top:16px;overflow:visible}
+.chart text{font-family:var(--font);font-variant-numeric:tabular-nums}
+.cbar-row{display:grid;grid-template-columns:28px 1fr auto;gap:4px 12px;align-items:center;padding:10px 0}
+.cbar-row + .cbar-row{border-top:1px solid var(--rule)}
+.cbar-row .tile{width:28px;height:28px;border-radius:8px;grid-row:span 2}
+.cbar-name{font-size:15px;font-weight:500;display:flex;align-items:center;gap:8px}
+.cbar-amt{font-size:15px;font-weight:500;text-align:right}
+.cbar-track{position:relative;height:6px;grid-column:2/4}
+.cbar-track .b{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:var(--ink)}
+.cbar-track .n{position:absolute;top:-3px;width:2px;height:12px;border-radius:1px;background:var(--ink-3)}
+.delta{font-size:12px;font-weight:600;padding:2px 6px;border-radius:6px;background:var(--caution-tint);color:var(--caution)}
+.legend{display:flex;gap:16px;margin-top:12px;font-size:12px;color:var(--ink-2);align-items:center}
+.legend i{display:inline-block;width:14px;height:2px;border-radius:1px;background:var(--ink);margin-right:6px;vertical-align:middle}
+.legend i.ctx{background:var(--ink-3)}
+.legend i.tick{width:2px;height:10px;background:var(--ink-3)}
+.period{display:flex;align-items:center;justify-content:space-between;margin:16px 0 4px}
+.period .p{font-size:var(--t-headline);font-weight:600}
+.period .icon-btn{width:32px;height:32px}
+.heat{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:16px}
+.heat .d{aspect-ratio:1;border-radius:7px;display:grid;place-items:center;font-size:11px;font-weight:500;color:var(--ink-2)}
+.heat .wk{font-size:11px;color:var(--ink-3);text-align:center;font-weight:500;padding-bottom:2px}
+.chips.fade{margin-right:calc(-1 * var(--gutter));-webkit-mask-image:linear-gradient(to right,#000 82%,transparent);mask-image:linear-gradient(to right,#000 82%,transparent)}
+.fixed-row{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;margin-top:12px;border-radius:12px;background:var(--surface-2);font-size:14px}
+section > .card.card,.stack > .card.card{margin-top:0}
+td + td{padding-left:14px}
+</style></head><body><div class="screen" style="width:390px;height:2640px">
+<div class="scroll" style="padding-bottom:40px">
+  <div class="topbar" style="justify-content:flex-end"><span class="icon-btn" aria-label="Export"><svg class="i " width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8.5 7H17v8.5"/></svg></span></div>
+  <h1 class="large-title">Analytics</h1>
+  <div class="seg" style="margin-top:16px"><span class="on">Month</span><span>Quarter</span><span>Year</span><span>Custom</span></div>
+  <div class="period"><span class="icon-btn" aria-label="Previous"><svg class="i " width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg></span><span class="p">October 2026</span><span class="icon-btn" aria-label="Next" style="opacity:.35"><svg class="i " width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></span></div>
+
+  <div class="card chart-card" style="margin-top:16px">
+    <div class="finding">You’re £367 under September’s pace</div>
+    <div class="finding-sub">Cumulative spend, 1–31 October vs September</div>
+    <svg class="chart" width="318" height="196" viewBox="0 0 318 196" role="img" aria-label="Cumulative spend in October compared with September"><line x1="0" x2="318" y1="119.3" y2="119.3" style="stroke:var(--rule)" stroke-width="1"/><text x="0" y="114.3" font-size="11" style="fill:var(--ink-3)">£2k</text><line x1="0" x2="318" y1="68.7" y2="68.7" style="stroke:var(--rule)" stroke-width="1"/><text x="0" y="63.7" font-size="11" style="fill:var(--ink-3)">£4k</text><line x1="0" x2="318" y1="170" y2="170" style="stroke:var(--rule-strong)" stroke-width="1"/><path d="M0.0,170.0 L10.3,127.9 L20.5,126.3 L30.8,122.5 L41.0,120.7 L51.3,118.2 L61.5,117.4 L71.8,116.1 L82.1,112.9 L92.3,111.7 L102.6,107.1 L112.8,105.6 L123.1,103.6 L133.4,102.9 L143.6,101.8 L153.9,93.9 L164.1,92.4 L174.4,88.2 L184.6,88.0 L184.6,170 L0,170 Z" style="fill:var(--chart-fill)"/><path d="M0.0,170.0 L10.3,127.5 L20.5,126.2 L30.8,122.8 L41.0,120.3 L51.3,119.2 L61.5,117.7 L71.8,113.4 L82.1,111.3 L92.3,110.3 L102.6,107.5 L112.8,106.1 L123.1,104.9 L133.4,101.1 L143.6,99.4 L153.9,98.4 L164.1,96.6 L174.4,95.4 L184.6,78.7 L194.9,77.1 L205.2,72.4 L215.4,70.5 L225.7,69.4 L235.9,68.0 L246.2,65.5 L256.5,61.1 L266.7,59.6 L277.0,58.6 L287.2,55.5 L297.5,53.3 L307.7,35.3" fill="none" style="stroke:var(--ink-3)" stroke-width="1.5" stroke-dasharray="1 0" opacity=".55" stroke-linejoin="round"/><path d="M0.0,170.0 L10.3,127.9 L20.5,126.3 L30.8,122.5 L41.0,120.7 L51.3,118.2 L61.5,117.4 L71.8,116.1 L82.1,112.9 L92.3,111.7 L102.6,107.1 L112.8,105.6 L123.1,103.6 L133.4,102.9 L143.6,101.8 L153.9,93.9 L164.1,92.4 L174.4,88.2 L184.6,88.0" fill="none" style="stroke:var(--chart-ink)" stroke-width="2.25" stroke-linejoin="round" stroke-linecap="round"/><circle cx="307.7" cy="35.3" r="3" style="fill:var(--ink-3)"/><text x="301.7" y="26.3" text-anchor="end" font-size="11" font-weight="500" style="fill:var(--ink-2)">Sep £5,319</text><path d="M190.6,78.7 H193.6 V88.0 H190.6" fill="none" style="stroke:var(--positive)" stroke-width="1.5"/><text x="199.6" y="87.3" font-size="11" font-weight="600" style="fill:var(--positive)">−£367</text><circle cx="184.6" cy="88.0" r="5" style="fill:var(--chart-ink);stroke:var(--surface)" stroke-width="2.5"/><line x1="184.6" x2="184.6" y1="95.0" y2="170" style="stroke:var(--ink)" stroke-width="1" stroke-dasharray="2 3" opacity=".35"/><text x="0.0" y="190" text-anchor="start" font-size="11" style="fill:var(--ink-3)">1 Oct</text><text x="71.8" y="190" text-anchor="middle" font-size="11" style="fill:var(--ink-3)">8</text><text x="143.6" y="190" text-anchor="middle" font-size="11" style="fill:var(--ink-3)">15</text><text x="215.4" y="190" text-anchor="middle" font-size="11" style="fill:var(--ink-3)">22</text><text x="318.0" y="190" text-anchor="end" font-size="11" style="fill:var(--ink-3)">31</text><text x="184.6" y="190" text-anchor="middle" font-size="11" font-weight="600" style="fill:var(--ink)">Today</text></svg>
+    <div class="legend" style="justify-content:space-between"><span><i></i>Oct · <b class="num">£3,236.85</b></span><span><i class="ctx"></i>Sep by day 18 · <span class="num">£3,604.10</span></span></div>
+  </div>
+
+  <div class="card chart-card">
+    <div class="finding">Eating out is up 38% on your usual</div>
+    <div class="finding-sub">This month by category · marker = your usual by day 18</div>
+    <div style="margin-top:8px"><div class="fixed-row"><span style="display:flex;gap:10px;align-items:center;font-weight:500"><svg class="i " width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10.2 12 3.5l8.5 6.7V19a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19z"/><path d="M9.5 20.5v-5.5h5v5.5"/></svg>Home <span class="faint" style="font-weight:400">· fixed costs</span></span><span class="num" style="font-weight:500">£1,812.40</span></div><div class="cbar-row"><div class="tile"><svg class="i " width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5h2.2l2.1 10.1a1 1 0 0 0 1 .8h8.6a1 1 0 0 0 1-.78L19.8 8H6"/><circle cx="9" cy="19.25" r="1.25"/><circle cx="17" cy="19.25" r="1.25"/></svg></div><div class="cbar-name">Groceries</div><div class="cbar-amt num">£386.25</div><div class="cbar-track"><div class="b" style="width:100.0%;"></div><div class="n" style="left:93.5%"></div></div></div><div class="cbar-row"><div class="tile"><svg class="i " width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3.5v17M4.5 3.5v4.5a2.5 2.5 0 0 0 5 0V3.5M17.5 20.5v-17c-2.2.9-3.5 3.6-3.5 7v3.5h3.5"/></svg></div><div class="cbar-name">Eating out<span class="delta">↑ 38%</span></div><div class="cbar-amt num">£312.60</div><div class="cbar-track"><div class="b" style="width:80.9%;background:var(--caution)"></div><div class="n" style="left:58.5%"></div></div></div><div class="cbar-row"><div class="tile"><svg class="i " width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5.5" y="3.5" width="13" height="13" rx="3"/><path d="M5.5 10h13M9 20.5l1-3M15 20.5l-1-3"/><circle cx="9" cy="13.4" r=".9" fill="currentColor" stroke="none"/><circle cx="15" cy="13.4" r=".9" fill="currentColor" stroke="none"/></svg></div><div class="cbar-name">Transport</div><div class="cbar-amt num">£214.80</div><div class="cbar-track"><div class="b" style="width:55.6%;"></div><div class="n" style="left:65.0%"></div></div></div><div class="cbar-row"><div class="tile"><svg class="i " width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 8h13l-.9 11.6a1.5 1.5 0 0 1-1.5 1.4H7.9a1.5 1.5 0 0 1-1.5-1.4z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/></svg></div><div class="cbar-name">Shopping</div><div class="cbar-amt num">£178.90</div><div class="cbar-track"><div class="b" style="width:46.3%;"></div><div class="n" style="left:52.8%"></div></div></div><div class="cbar-row"><div class="tile"><svg class="i " width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5h12v17l-2-1.25-2 1.25-2-1.25-2 1.25-2-1.25-2 1.25z"/><path d="M9 8.5h6M9 12h6M9 15.5h3.5"/></svg></div><div class="cbar-name">Bills</div><div class="cbar-amt num">£118.43</div><div class="cbar-track"><div class="b" style="width:30.7%;"></div><div class="n" style="left:30.6%"></div></div></div><div class="cbar-row"><div class="tile"><svg class="i " width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7.5-4.6-7.5-10.2A4.2 4.2 0 0 1 12 7.3a4.2 4.2 0 0 1 7.5 2.5C19.5 15.4 12 20 12 20z"/></svg></div><div class="cbar-name">Health</div><div class="cbar-amt num">£96.00</div><div class="cbar-track"><div class="b" style="width:24.9%;"></div><div class="n" style="left:22.8%"></div></div></div><div class="cbar-row"><div class="tile"><svg class="i " width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 7.5h17V10a2 2 0 0 0 0 4v2.5h-17V14a2 2 0 0 0 0-4z"/><path d="M14.5 7.5v1.5M14.5 11.25v1.5M14.5 15v1.5"/></svg></div><div class="cbar-name">Entertainment</div><div class="cbar-amt num">£74.97</div><div class="cbar-track"><div class="b" style="width:19.4%;"></div><div class="n" style="left:18.4%"></div></div></div><div class="cbar-row"><div class="tile"><svg class="i " width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="8.5" width="17" height="4" rx="1"/><path d="M5 12.5v8h14v-8M12 8.5v12M12 8.5c-1.6-.1-4.6-.9-4.6-2.8 0-1.3 1.1-2 2.2-1.7C11.3 4.4 12 6.7 12 8.5zM12 8.5c1.6-.1 4.6-.9 4.6-2.8 0-1.3-1.1-2-2.2-1.7-1.7.4-2.4 2.7-2.4 4.5z"/></svg></div><div class="cbar-name">Family & giving</div><div class="cbar-amt num">£42.50</div><div class="cbar-track"><div class="b" style="width:11.0%;"></div><div class="n" style="left:14.2%"></div></div></div></div>
+    <div class="legend"><span><i></i>This month</span><span><i class="tick"></i>Usual by now</span></div>
+  </div>
+
+  <div class="card chart-card">
+    <div class="finding">£4,765.55 left after £3,236.85 of spending</div>
+    <div class="finding-sub">1–18 October · scale starts at £4,000</div>
+    <div style="margin-top:16px;display:flex;flex-direction:column;gap:4px"><div style="display:grid;grid-template-columns:76px 1fr 84px;align-items:center;gap:10px;height:30px"><span style="font-size:13px;color:var(--ink-2);font-weight:500">Opening</span><div style="position:relative;height:18px"><div style="position:absolute;left:0.00%;width:96.50%;top:0;bottom:0;border-radius:4px;background:var(--chart-ink)"></div></div><span class="num" style="font-size:13px;text-align:right;font-weight:500;">£7,862.40</span></div><div style="display:grid;grid-template-columns:76px 1fr 84px;align-items:center;gap:10px;height:30px"><span style="font-size:13px;color:var(--ink-2);font-weight:500">Income</span><div style="position:relative;height:18px"><div style="position:absolute;left:96.50%;width:3.50%;top:0;bottom:0;border-radius:4px;background:var(--positive)"></div></div><span class="num" style="font-size:13px;text-align:right;font-weight:500;color:var(--positive)">+£140.00</span></div><div style="display:grid;grid-template-columns:76px 1fr 84px;align-items:center;gap:10px;height:30px"><span style="font-size:13px;color:var(--ink-2);font-weight:500">Home</span><div style="position:relative;height:18px"><div style="position:absolute;left:54.72%;width:45.28%;top:0;bottom:0;border-radius:4px;background:var(--chart-context)"></div></div><span class="num" style="font-size:13px;text-align:right;font-weight:500;">−£1,812.40</span></div><div style="display:grid;grid-template-columns:76px 1fr 84px;align-items:center;gap:10px;height:30px"><span style="font-size:13px;color:var(--ink-2);font-weight:500">Groceries</span><div style="position:relative;height:18px"><div style="position:absolute;left:45.07%;width:9.65%;top:0;bottom:0;border-radius:4px;background:var(--chart-context)"></div></div><span class="num" style="font-size:13px;text-align:right;font-weight:500;">−£386.25</span></div><div style="display:grid;grid-template-columns:76px 1fr 84px;align-items:center;gap:10px;height:30px"><span style="font-size:13px;color:var(--ink-2);font-weight:500">Eating out</span><div style="position:relative;height:18px"><div style="position:absolute;left:37.26%;width:7.81%;top:0;bottom:0;border-radius:4px;background:var(--chart-context)"></div></div><span class="num" style="font-size:13px;text-align:right;font-weight:500;">−£312.60</span></div><div style="display:grid;grid-template-columns:76px 1fr 84px;align-items:center;gap:10px;height:30px"><span style="font-size:13px;color:var(--ink-2);font-weight:500">Transport</span><div style="position:relative;height:18px"><div style="position:absolute;left:31.89%;width:5.37%;top:0;bottom:0;border-radius:4px;background:var(--chart-context)"></div></div><span class="num" style="font-size:13px;text-align:right;font-weight:500;">−£214.80</span></div><div style="display:grid;grid-template-columns:76px 1fr 84px;align-items:center;gap:10px;height:30px"><span style="font-size:13px;color:var(--ink-2);font-weight:500">Other</span><div style="position:relative;height:18px"><div style="position:absolute;left:19.13%;width:12.76%;top:0;bottom:0;border-radius:4px;background:var(--chart-context)"></div></div><span class="num" style="font-size:13px;text-align:right;font-weight:500;">−£510.80</span></div><div style="display:grid;grid-template-columns:76px 1fr 84px;align-items:center;gap:10px;height:30px"><span style="font-size:13px;color:var(--ink-2);font-weight:500">Available</span><div style="position:relative;height:18px"><div style="position:absolute;left:0.00%;width:19.13%;top:0;bottom:0;border-radius:4px;background:var(--chart-ink)"></div></div><span class="num" style="font-size:13px;text-align:right;font-weight:600;">£4,765.55</span></div></div>
+  </div>
+
+  <div class="card chart-card">
+    <div class="finding">October is heading for £5,062, near your average</div>
+    <div class="finding-sub">Monthly spend, Nov 2025 – Oct 2026 · hatched = projected</div>
+    <svg class="chart" width="318" height="190" viewBox="0 0 318 190" role="img" aria-label="Monthly spend over 12 months"><defs><pattern id="hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" style="stroke:var(--ink-3)" stroke-width="1.5" opacity=".6"/></pattern></defs><rect x="0.0" y="63.6" width="16" height="102.4" rx="3" style="fill:var(--chart-context)"/><text x="8.0" y="184" text-anchor="middle" font-size="11" font-weight="400" style="fill:var(--ink-3)">N</text><rect x="27.5" y="34.1" width="16" height="131.9" rx="3" style="fill:var(--chart-context)"/><text x="35.5" y="184" text-anchor="middle" font-size="11" font-weight="400" style="fill:var(--ink-3)">D</text><rect x="54.9" y="77.2" width="16" height="88.8" rx="3" style="fill:var(--chart-context)"/><text x="62.9" y="184" text-anchor="middle" font-size="11" font-weight="400" style="fill:var(--ink-3)">J</text><rect x="82.4" y="72.1" width="16" height="93.9" rx="3" style="fill:var(--chart-context)"/><text x="90.4" y="184" text-anchor="middle" font-size="11" font-weight="400" style="fill:var(--ink-3)">F</text><rect x="109.8" y="60.6" width="16" height="105.4" rx="3" style="fill:var(--chart-context)"/><text x="117.8" y="184" text-anchor="middle" font-size="11" font-weight="400" style="fill:var(--ink-3)">M</text><rect x="137.3" y="65.4" width="16" height="100.6" rx="3" style="fill:var(--chart-context)"/><text x="145.3" y="184" text-anchor="middle" font-size="11" font-weight="400" style="fill:var(--ink-3)">A</text><rect x="164.7" y="58.3" width="16" height="107.7" rx="3" style="fill:var(--chart-context)"/><text x="172.7" y="184" text-anchor="middle" font-size="11" font-weight="400" style="fill:var(--ink-3)">M</text><rect x="192.2" y="50.7" width="16" height="115.3" rx="3" style="fill:var(--chart-context)"/><text x="200.2" y="184" text-anchor="middle" font-size="11" font-weight="400" style="fill:var(--ink-3)">J</text><rect x="219.6" y="64.1" width="16" height="101.9" rx="3" style="fill:var(--chart-context)"/><text x="227.6" y="184" text-anchor="middle" font-size="11" font-weight="400" style="fill:var(--ink-3)">J</text><rect x="247.1" y="38.8" width="16" height="127.2" rx="3" style="fill:var(--chart-context)"/><text x="255.1" y="184" text-anchor="middle" font-size="11" font-weight="400" style="fill:var(--ink-3)">A</text><rect x="274.5" y="56.6" width="16" height="109.4" rx="3" style="fill:var(--chart-context)"/><text x="282.5" y="184" text-anchor="middle" font-size="11" font-weight="400" style="fill:var(--ink-3)">S</text><rect x="302.0" y="61.9" width="16" height="37.6" rx="3" style="fill:url(#hatch);stroke:var(--ink-3)" stroke-width="1" stroke-opacity=".5"/><rect x="302.0" y="99.4" width="16" height="66.6" rx="3" style="fill:var(--chart-ink)"/><text x="310.0" y="184" text-anchor="middle" font-size="11" font-weight="600" style="fill:var(--ink)">O</text><line x1="0" x2="318" y1="58.3" y2="58.3" style="stroke:var(--ink)" stroke-width="1" stroke-dasharray="3 3" opacity=".6"/><text x="0" y="14.0" font-size="11" style="fill:var(--ink-3)">£7k</text><rect x="206" y="36.3" width="112" height="17" rx="4" style="fill:var(--surface)"/><text x="318" y="49.3" text-anchor="end" font-size="11" font-weight="500" style="fill:var(--ink-2)">Average £5,235</text></svg>
+  </div>
+
+  <div class="card chart-card">
+    <div class="finding">Saturdays are your biggest day</div>
+    <div class="finding-sub">Daily spend, October · Saturdays average £165.82</div>
+    <div class="heat"><div class="wk">M</div><div class="wk">T</div><div class="wk">W</div><div class="wk">T</div><div class="wk">F</div><div class="wk">S</div><div class="wk">S</div><div></div><div></div><div></div><div class="d" style="background:color-mix(in srgb, var(--chart-ink) 90%, transparent);color:var(--on-ink);">1</div><div class="d" style="background:color-mix(in srgb, var(--chart-ink) 34%, transparent);color:var(--ink-2);">2</div><div class="d" style="background:color-mix(in srgb, var(--chart-ink) 57%, transparent);color:var(--on-ink);">3</div><div class="d" style="background:color-mix(in srgb, var(--chart-ink) 34%, transparent);color:var(--ink-2);">4</div><div class="d" style="background:color-mix(in srgb, var(--chart-ink) 57%, transparent);color:var(--on-ink);">5</div><div class="d" style="background:color-mix(in srgb, var(--chart-ink) 18%, transparent);color:var(--ink-2);">6</div><div class="d" style="background:color-mix(in srgb, var(--chart-ink) 34%, transparent);color:var(--ink-2);">7</div><div class="d" style="background:color-mix(in srgb, var(--chart-ink) 57%, transparent);color:var(--on-ink);">8</div><div class="d" style="background:color-mix(in srgb, var(--chart-ink) 18%, transparent);color:var(--ink-2);">9</div><div class="d" style="background:color-mix(in srgb, var(--chart-ink) 90%, transparent);color:var(--on-ink);">10</div><div class="d" style="background:color-mix(in srgb, var(--chart-ink) 34%, transparent);color:var(--ink-2);">11</div><div class="d" style="background:color-mix(in srgb, var(--chart-ink) 34%, transparent);color:var(--ink-2);">12</div><div class="d" style="background:color-mix(in srgb, var(--chart-ink) 18%, transparent);color:var(--ink-2);">13</div><div class="d" style="background:color-mix(in srgb, var(--chart-ink) 18%, transparent);color:var(--ink-2);">14</div><div class="d" style="background:color-mix(in srgb, var(--chart-ink) 90%, transparent);color:var(--on-ink);">15</div><div class="d" style="background:color-mix(in srgb, var(--chart-ink) 34%, transparent);color:var(--ink-2);">16</div><div class="d" style="background:color-mix(in srgb, var(--chart-ink) 90%, transparent);color:var(--on-ink);">17</div><div class="d" style="background:color-mix(in srgb, var(--chart-ink) 7%, transparent);color:var(--ink-2);box-shadow:0 0 0 2px var(--surface),0 0 0 3.5px var(--ink);">18</div><div class="d" style="box-shadow:inset 0 0 0 1px var(--rule);color:var(--ink-3)">19</div><div class="d" style="box-shadow:inset 0 0 0 1px var(--rule);color:var(--ink-3)">20</div><div class="d" style="box-shadow:inset 0 0 0 1px var(--rule);color:var(--ink-3)">21</div><div class="d" style="box-shadow:inset 0 0 0 1px var(--rule);color:var(--ink-3)">22</div><div class="d" style="box-shadow:inset 0 0 0 1px var(--rule);color:var(--ink-3)">23</div><div class="d" style="box-shadow:inset 0 0 0 1px var(--rule);color:var(--ink-3)">24</div><div class="d" style="box-shadow:inset 0 0 0 1px var(--rule);color:var(--ink-3)">25</div><div class="d" style="box-shadow:inset 0 0 0 1px var(--rule);color:var(--ink-3)">26</div><div class="d" style="box-shadow:inset 0 0 0 1px var(--rule);color:var(--ink-3)">27</div><div class="d" style="box-shadow:inset 0 0 0 1px var(--rule);color:var(--ink-3)">28</div><div class="d" style="box-shadow:inset 0 0 0 1px var(--rule);color:var(--ink-3)">29</div><div class="d" style="box-shadow:inset 0 0 0 1px var(--rule);color:var(--ink-3)">30</div><div class="d" style="box-shadow:inset 0 0 0 1px var(--rule);color:var(--ink-3)">31</div></div>
+    <div class="legend" style="justify-content:space-between"><span>Less</span><span style="display:flex;gap:4px"><i style="width:14px;height:14px;border-radius:4px;margin:0;background:color-mix(in srgb, var(--chart-ink) 7%, transparent)"></i><i style="width:14px;height:14px;border-radius:4px;margin:0;background:color-mix(in srgb, var(--chart-ink) 18%, transparent)"></i><i style="width:14px;height:14px;border-radius:4px;margin:0;background:color-mix(in srgb, var(--chart-ink) 34%, transparent)"></i><i style="width:14px;height:14px;border-radius:4px;margin:0;background:color-mix(in srgb, var(--chart-ink) 58%, transparent)"></i><i style="width:14px;height:14px;border-radius:4px;margin:0;background:color-mix(in srgb, var(--chart-ink) 90%, transparent)"></i></span><span>More</span></div>
+  </div>
+
+  <div class="section-h"><h2>Top payees</h2><a class="link" href="#">All</a></div>
+  <div class="list"><div class="row"><div class="tile "><svg class="i " width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5h2.2l2.1 10.1a1 1 0 0 0 1 .8h8.6a1 1 0 0 0 1-.78L19.8 8H6"/><circle cx="9" cy="19.25" r="1.25"/><circle cx="17" cy="19.25" r="1.25"/></svg></div><div class="row-main"><div class="row-t">Waitrose</div><div class="row-s">4 visits · avg £46.60</div></div><div class="amt">£186.40</div></div><div class="row"><div class="tile "><svg class="i " width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5.5" y="3.5" width="13" height="13" rx="3"/><path d="M5.5 10h13M9 20.5l1-3M15 20.5l-1-3"/><circle cx="9" cy="13.4" r=".9" fill="currentColor" stroke="none"/><circle cx="15" cy="13.4" r=".9" fill="currentColor" stroke="none"/></svg></div><div class="row-main"><div class="row-t">TfL</div><div class="row-s">14 visits · avg £6.75</div></div><div class="amt">£94.60</div></div><div class="row"><div class="tile "><svg class="i " width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3.5v17M4.5 3.5v4.5a2.5 2.5 0 0 0 5 0V3.5M17.5 20.5v-17c-2.2.9-3.5 3.6-3.5 7v3.5h3.5"/></svg></div><div class="row-main"><div class="row-t">Dishoom Kensington</div><div class="row-s">1 visit · avg £86.50</div></div><div class="amt">£86.50</div></div><div class="row"><div class="tile "><svg class="i " width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 8h13l-.9 11.6a1.5 1.5 0 0 1-1.5 1.4H7.9a1.5 1.5 0 0 1-1.5-1.4z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/></svg></div><div class="row-main"><div class="row-t">Amazon</div><div class="row-s">3 visits · avg £24.12</div></div><div class="amt">£72.38</div></div><div class="row"><div class="tile "><svg class="i " width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 8.5h12v4.5a5 5 0 0 1-5 5h-2a5 5 0 0 1-5-5z"/><path d="M16.5 9.5h1.25a2.25 2.25 0 0 1 0 4.5H16.5M8 3.5v2M11.5 3.5v2"/><path d="M4 20.5h13"/></svg></div><div class="row-main"><div class="row-t">Gail's Bakery</div><div class="row-s">6 visits · avg £6.40</div></div><div class="amt">£38.40</div></div></div>
+</div>
+</div></body></html>

@@ -1,0 +1,260 @@
+<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=390"><title>Sterling · Insights</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"><style>/* Sterling design tokens — the single source for Tailwind theme + components.
+   Sterling is dark-only: there is no light theme. */
+:root {
+  color-scheme: dark;
+  /* colour */
+  --bg: #0C0D0C;
+  --surface: #18191A;
+  --surface-2: #212224;
+  --surface-3: #2A2B2D;
+  --ink: #F3F2EE;
+  --ink-2: #A9AAA4;
+  --ink-3: #8D8F89;
+  --rule: rgba(255, 255, 255, 0.08);
+  --rule-strong: rgba(255, 255, 255, 0.14);
+  --on-ink: #0C0D0C;
+  --positive: #4FC487;
+  --positive-tint: rgba(79, 196, 135, 0.14);
+  --caution: #EE9A52;
+  --caution-tint: rgba(238, 154, 82, 0.14);
+  --danger: #F0645A;
+  --chart-ink: #F3F2EE;
+  --chart-context: #3A3B3D;
+  --chart-fill: rgba(255, 255, 255, 0.06);
+  --scrim: rgba(0, 0, 0, 0.6);
+  --tabbar: rgba(24, 25, 26, 0.82);
+
+  /* category chart tones (multi-series only) */
+  --cat-stone: #8A877E; --cat-sage: #8FA48C; --cat-moss: #5F7457; --cat-sky: #7E9DB4; --cat-slate: #5B6675;
+  --cat-clay: #B57A5E; --cat-sand: #C9B48A; --cat-plum: #8A6C82; --cat-rose: #C08F8F; --cat-ochre: #C29A3E;
+
+  /* type */
+  --font: "Instrument Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --t-hero: 64px;      /* available cash whole pounds */
+  --t-large: 32px;     /* large screen titles */
+  --t-title: 22px;
+  --t-headline: 17px;
+  --t-body: 17px;
+  --t-callout: 15px;
+  --t-sub: 13px;
+  --t-caption: 12px;
+
+  /* space (4pt) */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 20px; --s6: 24px; --s8: 32px; --s10: 40px; --s14: 56px;
+  --gutter: 20px;
+
+  /* shape */
+  --r-card: 16px;
+  --r-sheet: 28px;
+  --r-key: 14px;
+  --r-tile: 10px;
+  --r-pill: 999px;
+  --shadow-sheet: 0 -8px 40px rgba(0, 0, 0, 0.5);
+
+  /* motion */
+  --spring: cubic-bezier(.2, .8, .2, 1);
+}
+
+
+/* ---------- base ---------- */
+*{box-sizing:border-box;margin:0;padding:0}
+body{margin:0;background:#000}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+a{color:inherit;text-decoration:none}
+.screen{position:relative;overflow:hidden;background:var(--bg);color:var(--ink);font-family:var(--font);
+  -webkit-font-smoothing:antialiased;font-size:var(--t-body);line-height:1.35}
+.phone{width:390px;height:844px}
+.num,.amt,.figure,.eq-v{font-variant-numeric:tabular-nums}
+.i{flex:none;display:block}
+.pos{color:var(--positive)}
+.cau{color:var(--caution)}
+.muted{color:var(--ink-2)}
+.faint{color:var(--ink-3)}
+.scroll{padding:56px var(--gutter) 128px}
+.row-between{display:flex;justify-content:space-between;align-items:center;gap:12px}
+
+/* ---------- type ---------- */
+.eyebrow{font-size:var(--t-caption);letter-spacing:.06em;text-transform:uppercase;font-weight:600;color:var(--ink-3)}
+.large-title{font-size:var(--t-large);font-weight:600;letter-spacing:-.03em;line-height:1.1}
+.title{font-size:var(--t-title);font-weight:600;letter-spacing:-.02em;line-height:1.2}
+.headline{font-size:var(--t-headline);font-weight:600;letter-spacing:-.01em}
+.callout{font-size:var(--t-callout)}
+.sub{font-size:var(--t-sub);color:var(--ink-2)}
+
+/* ---------- top bar ---------- */
+.topbar{display:flex;align-items:center;justify-content:space-between;height:44px}
+.avatar{width:36px;height:36px;border-radius:50%;background:var(--surface);display:grid;place-items:center;
+  font-size:14px;font-weight:600;color:var(--ink-2);box-shadow:inset 0 0 0 1px var(--rule)}
+.icon-btn{width:36px;height:36px;border-radius:50%;background:var(--surface);display:grid;place-items:center;color:var(--ink);box-shadow:inset 0 0 0 1px var(--rule)}
+.navbar{display:flex;align-items:center;justify-content:space-between;height:44px;margin:0 -8px}
+.back{display:flex;align-items:center;gap:2px;font-size:var(--t-body);color:var(--ink);padding:8px}
+
+/* ---------- signature: available cash ---------- */
+.hero{margin-top:28px}
+.hero-label{font-size:var(--t-callout);color:var(--ink-2);font-weight:500;display:flex;align-items:center;gap:6px}
+.figure{display:flex;align-items:flex-start;font-weight:600;line-height:1;margin-top:10px;letter-spacing:-.045em}
+.figure .cur{font-size:32px;margin:7px 3px 0 0;letter-spacing:0;font-weight:500}
+.figure .whole{font-size:var(--t-hero)}
+.figure .pence{font-size:32px;margin:7px 0 0 1px;color:var(--ink-3);letter-spacing:-.02em;font-weight:500}
+.figure.xl .whole{font-size:76px}
+.figure.xl .cur,.figure.xl .pence{font-size:36px;margin-top:9px}
+.equation{display:flex;align-items:flex-end;gap:12px;margin-top:22px;padding-top:16px;border-top:1px solid var(--rule-strong)}
+.eq-term{display:flex;flex-direction:column;gap:4px}
+.eq-k{font-size:var(--t-caption);font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.eq-v{font-size:var(--t-callout);font-weight:500;letter-spacing:-.01em}
+.eq-op{font-size:var(--t-callout);color:var(--ink-3);padding-bottom:1px}
+
+/* ---------- surfaces ---------- */
+.card{background:var(--surface);border-radius:var(--r-card);padding:var(--s4)}
+.card + .card{margin-top:12px}
+.stack{display:flex;flex-direction:column;gap:12px}
+.section-h{display:flex;justify-content:space-between;align-items:baseline;margin:32px 2px 12px}
+.section-h h2{font-size:var(--t-title);font-weight:600;letter-spacing:-.02em}
+.section-h .link{font-size:var(--t-callout);color:var(--ink-2);display:flex;align-items:center;gap:2px}
+.group-label{margin:28px 16px 8px}
+
+/* ---------- pace ---------- */
+.pace .k{font-size:var(--t-sub);color:var(--ink-2);font-weight:500}
+.pace-amt{font-size:var(--t-title);font-weight:600;letter-spacing:-.02em;margin-top:6px}
+.pace-amt span{font-size:var(--t-callout);font-weight:400;color:var(--ink-2);letter-spacing:0}
+.track{position:relative;height:6px;border-radius:3px;background:var(--surface-3);margin:14px 0 12px}
+.track .fill{position:absolute;inset:0 auto 0 0;border-radius:3px;background:var(--ink)}
+.track .tick{position:absolute;top:-5px;width:2px;height:16px;border-radius:1px;background:var(--ink-3)}
+.track .tick::after{content:attr(data-label);position:absolute;top:19px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--ink-3);white-space:nowrap;font-weight:500}
+.pace-note{display:flex;align-items:center;gap:8px;font-size:var(--t-sub);color:var(--ink-2);margin-top:22px}
+.dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--ink-3)}
+.dot.pos{background:var(--positive)} .dot.cau{background:var(--caution)}
+
+/* ---------- insight ---------- */
+.ins-tag{display:inline-flex;align-items:center;gap:6px;font-size:var(--t-caption);font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+.ins-tag.cau{color:var(--caution)} .ins-tag.pos{color:var(--positive)}
+.insight h3{font-size:var(--t-headline);font-weight:600;letter-spacing:-.01em;line-height:1.3;margin-top:10px}
+.insight p{font-size:var(--t-callout);color:var(--ink-2);margin-top:6px;line-height:1.4}
+.compare{margin-top:14px;display:grid;grid-template-columns:auto 1fr auto;gap:8px 10px;align-items:center;font-size:var(--t-sub)}
+.compare .bar{height:8px;border-radius:4px;background:var(--ink)}
+.compare .bar.ctx{background:var(--chart-context)}
+.compare .bar.cau{background:var(--caution)}
+.compare .lab{color:var(--ink-2);width:76px}
+.ins-actions{display:flex;align-items:center;gap:4px;margin-top:14px;padding-top:12px;border-top:1px solid var(--rule)}
+.ins-actions .ghost{display:flex;align-items:center;gap:6px;height:32px;padding:0 10px;border-radius:var(--r-pill);font-size:var(--t-sub);color:var(--ink-2);font-weight:500}
+.ins-actions .open{margin-left:auto;color:var(--ink)}
+
+/* ---------- lists ---------- */
+.list{background:var(--surface);border-radius:var(--r-card);overflow:hidden}
+.row{display:flex;align-items:center;gap:12px;padding:12px 16px;min-height:62px;position:relative}
+.row + .row::before{content:"";position:absolute;top:0;left:64px;right:0;height:1px;background:var(--rule)}
+.tile{width:36px;height:36px;border-radius:var(--r-tile);background:var(--surface-2);display:grid;place-items:center;color:var(--ink);flex:none}
+.tile.pos{background:var(--positive-tint);color:var(--positive)}
+.tile.ink{background:var(--ink);color:var(--on-ink)}
+.row-main{flex:1;min-width:0}
+.row-t{font-size:16px;font-weight:500;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row-s{font-size:var(--t-sub);color:var(--ink-2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.amt{font-size:16px;font-weight:500;letter-spacing:-.01em;text-align:right;white-space:nowrap}
+.amt small{display:block;font-size:var(--t-sub);color:var(--ink-3);font-weight:400;margin-top:2px}
+.day-h{display:flex;justify-content:space-between;align-items:baseline;margin:24px 4px 8px;font-size:var(--t-sub);color:var(--ink-2);font-weight:500}
+.day-h b{color:var(--ink);font-weight:600;font-size:var(--t-callout)}
+.chev{color:var(--ink-3)}
+
+/* ---------- tab bar ---------- */
+.tabbar{position:absolute;left:0;right:0;bottom:0;height:88px;padding:8px 6px 30px;display:grid;grid-template-columns:repeat(5,1fr);
+  align-items:start;background:var(--tabbar);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--rule);z-index:5}
+.tab{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink-3);font-size:10px;font-weight:500;padding-top:2px}
+.tab.active{color:var(--ink)}
+.tab-add{justify-self:center;width:50px;height:50px;border-radius:50%;background:var(--ink);color:var(--on-ink);display:grid;place-items:center;margin-top:-3px;box-shadow:0 6px 16px rgba(0,0,0,.18)}
+
+/* ---------- chips & controls ---------- */
+.chip{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px 0 11px;border-radius:var(--r-pill);background:var(--surface);
+  box-shadow:inset 0 0 0 1px var(--rule-strong);font-size:14px;font-weight:500;white-space:nowrap;color:var(--ink)}
+.chip.sel{background:var(--ink);color:var(--on-ink);box-shadow:none}
+.chip.soft{background:var(--surface-2);box-shadow:none}
+.chip.plain{padding:0 14px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips.nowrap{flex-wrap:nowrap;overflow:hidden}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--surface-3);border-radius:10px;padding:2px;height:36px}
+.seg span{display:grid;place-items:center;font-size:14px;font-weight:500;color:var(--ink-2);border-radius:8px}
+.seg span.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08),0 0 0 .5px var(--rule)}
+.field{display:flex;align-items:center;gap:10px;height:48px;padding:0 14px;border-radius:12px;background:var(--surface-2);font-size:var(--t-body);color:var(--ink)}
+.field .ph{color:var(--ink-3)}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;height:56px;border-radius:16px;background:var(--ink);color:var(--on-ink);font-size:var(--t-headline);font-weight:600;width:100%;letter-spacing:-.01em}
+.btn.secondary{background:var(--surface);color:var(--ink);box-shadow:inset 0 0 0 1px var(--rule-strong)}
+
+/* ---------- sheets ---------- */
+.scrim{position:absolute;inset:0;background:var(--scrim);z-index:6}
+.behind{position:absolute;left:12px;right:12px;top:47px;bottom:0;border-radius:12px 12px 0 0;background:var(--bg);opacity:.9;transform-origin:top}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--surface);border-radius:var(--r-sheet) var(--r-sheet) 0 0;box-shadow:var(--shadow-sheet);z-index:7;padding:8px var(--gutter) 34px}
+.grabber{width:36px;height:5px;border-radius:3px;background:var(--surface-3);margin:0 auto 14px}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;height:36px;margin-bottom:12px}
+.sheet-head .t{font-size:var(--t-headline);font-weight:600}
+.sheet-head .txt{font-size:var(--t-body);color:var(--ink-2)}
+
+/* ---------- quick add ---------- */
+.amount{display:flex;justify-content:center;align-items:flex-start;font-weight:600;letter-spacing:-.045em;line-height:1;margin:22px 0 20px}
+.amount .cur{font-size:30px;margin:8px 3px 0 0;font-weight:500;letter-spacing:0;color:var(--ink-2)}
+.amount .whole{font-size:64px}
+.amount .pence{font-size:64px}
+.amount .caret{width:3px;height:56px;background:var(--ink);border-radius:2px;margin:4px 0 0 4px;opacity:.85}
+.payee{display:flex;align-items:center;gap:10px;height:48px;padding:0 14px;border-radius:12px;background:var(--surface-2)}
+.payee .v{font-size:var(--t-body);font-weight:500;flex:1}
+.learned{font-size:12px;color:var(--ink-2);display:flex;align-items:center;gap:4px;font-weight:500}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
+.key{height:54px;border-radius:var(--r-key);background:var(--surface-2);display:grid;place-items:center;font-size:26px;font-weight:500;letter-spacing:-.01em}
+.key.fn{background:transparent;color:var(--ink-2)}
+.meta{display:flex;gap:8px;margin-top:12px}
+.meta .chip{height:34px;font-size:13px;background:var(--surface);}
+
+/* ---------- category grid ---------- */
+.cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px 8px}
+.cat{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:12px;font-weight:500;color:var(--ink-2);text-align:center;line-height:1.2}
+.cat .sq{width:58px;height:58px;border-radius:16px;background:var(--surface-2);display:grid;place-items:center;color:var(--ink)}
+.cat.sel{color:var(--ink)}
+.cat.sel .sq{background:var(--ink);color:var(--on-ink)}
+.subs{margin-top:20px;border-radius:var(--r-card);background:var(--surface-2);overflow:hidden}
+.subs .row{min-height:52px;padding:10px 16px}
+.subs .row + .row::before{left:16px}
+.subs .row-t{font-size:16px;font-weight:400}
+.radio{width:22px;height:22px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--rule-strong);display:grid;place-items:center;flex:none}
+.radio.on{background:var(--ink);box-shadow:none;color:var(--on-ink)}
+
+/* ---------- charts ---------- */
+.chart-card .finding{font-size:var(--t-headline);font-weight:600;letter-spacing:-.01em;line-height:1.3}
+.chart-card .finding-sub{font-size:var(--t-sub);color:var(--ink-2);margin-top:4px}
+.chart{display:block;margin-top:16px;overflow:visible}
+.chart text{font-family:var(--font);font-variant-numeric:tabular-nums}
+.cbar-row{display:grid;grid-template-columns:28px 1fr auto;gap:4px 12px;align-items:center;padding:10px 0}
+.cbar-row + .cbar-row{border-top:1px solid var(--rule)}
+.cbar-row .tile{width:28px;height:28px;border-radius:8px;grid-row:span 2}
+.cbar-name{font-size:15px;font-weight:500;display:flex;align-items:center;gap:8px}
+.cbar-amt{font-size:15px;font-weight:500;text-align:right}
+.cbar-track{position:relative;height:6px;grid-column:2/4}
+.cbar-track .b{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:var(--ink)}
+.cbar-track .n{position:absolute;top:-3px;width:2px;height:12px;border-radius:1px;background:var(--ink-3)}
+.delta{font-size:12px;font-weight:600;padding:2px 6px;border-radius:6px;background:var(--caution-tint);color:var(--caution)}
+.legend{display:flex;gap:16px;margin-top:12px;font-size:12px;color:var(--ink-2);align-items:center}
+.legend i{display:inline-block;width:14px;height:2px;border-radius:1px;background:var(--ink);margin-right:6px;vertical-align:middle}
+.legend i.ctx{background:var(--ink-3)}
+.legend i.tick{width:2px;height:10px;background:var(--ink-3)}
+.period{display:flex;align-items:center;justify-content:space-between;margin:16px 0 4px}
+.period .p{font-size:var(--t-headline);font-weight:600}
+.period .icon-btn{width:32px;height:32px}
+.heat{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:16px}
+.heat .d{aspect-ratio:1;border-radius:7px;display:grid;place-items:center;font-size:11px;font-weight:500;color:var(--ink-2)}
+.heat .wk{font-size:11px;color:var(--ink-3);text-align:center;font-weight:500;padding-bottom:2px}
+.chips.fade{margin-right:calc(-1 * var(--gutter));-webkit-mask-image:linear-gradient(to right,#000 82%,transparent);mask-image:linear-gradient(to right,#000 82%,transparent)}
+.fixed-row{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;margin-top:12px;border-radius:12px;background:var(--surface-2);font-size:14px}
+section > .card.card,.stack > .card.card{margin-top:0}
+td + td{padding-left:14px}
+</style></head><body><div class="screen" style="width:390px;height:1320px">
+<div class="scroll" style="padding-bottom:230px">
+  <div class="topbar" style="justify-content:flex-end"><span class="icon-btn" aria-label="Refresh insights"><svg class="i " width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 4.5v4h-4"/></svg></span></div>
+  <h1 class="large-title">Insights</h1>
+  <div class="sub" style="margin-top:6px">Updated Mon 12 Oct, 07:00 · from your own data</div>
+  <div class="seg" style="margin-top:16px"><span class="on">This week</span><span>October</span><span>2026</span></div>
+  <div class="stack" style="margin-top:16px"><div class="card" style="background:var(--ink);color:var(--on-ink);padding:20px"><div class="row-between"><span class="ins-tag" style="color:var(--on-ink);opacity:.7"><svg class="i " width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5c.6 3.9 2.6 5.9 6.5 6.5-3.9.6-5.9 2.6-6.5 6.5-.6-3.9-2.6-5.9-6.5-6.5 3.9-.6 5.9-2.6 6.5-6.5z"/><path d="M18.5 15.5c.25 1.4.85 2 2.25 2.25-1.4.25-2 .85-2.25 2.25-.25-1.4-.85-2-2.25-2.25 1.4-.25 2-.85 2.25-2.25z"/></svg>Month outlook</span><span style="font-size:13px;opacity:.6">18 of 31 days</span></div><div style="font-size:24px;font-weight:600;letter-spacing:-.025em;line-height:1.2;margin-top:12px">On track to close October at about £2,940</div><p style="font-size:15px;opacity:.72;margin-top:8px;line-height:1.4">That’s before your salary. Spending is £367 under September’s pace, mostly thanks to transport.</p><div style="margin-top:14px"><svg class="chart" width="310" height="64" viewBox="0 0 310 64" aria-hidden="true"><path d="M180.0,37.3 C210.0,37.3 210.0,45.5 240.0,45.5 C275.0,45.5 275.0,54.0 310.0,54.0" fill="none" style="stroke:var(--on-ink)" stroke-width="1.75" stroke-dasharray="3 4" opacity=".5"/><path d="M0.0,9.1 L10.0,24.1 L20.0,24.6 L30.0,26.0 L40.0,26.7 L50.0,27.6 L60.0,27.8 L70.0,28.3 L80.0,29.5 L90.0,29.9 L100.0,31.6 L110.0,32.1 L120.0,32.8 L130.0,33.1 L140.0,33.5 L150.0,36.3 L160.0,35.8 L170.0,37.3 L180.0,37.3" fill="none" style="stroke:var(--on-ink)" stroke-width="2" stroke-linejoin="round"/><circle cx="180.0" cy="37.3" r="4" style="fill:var(--on-ink)"/><circle cx="310.0" cy="54.0" r="3.5" style="fill:none;stroke:var(--on-ink)" stroke-width="1.5" opacity=".7"/></svg></div><div class="row-between" style="font-size:12px;opacity:.6;margin-top:6px"><span>1 Oct · £7,862</span><span>Today · £4,766</span><span>31 Oct · ≈ £2,940</span></div></div><div class="card insight"><span class="ins-tag cau"><svg class="i " width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5c.6 3.9 2.6 5.9 6.5 6.5-3.9.6-5.9 2.6-6.5 6.5-.6-3.9-2.6-5.9-6.5-6.5 3.9-.6 5.9-2.6 6.5-6.5z"/><path d="M18.5 15.5c.25 1.4.85 2 2.25 2.25-1.4.25-2 .85-2.25 2.25-.25-1.4-.85-2-2.25-2.25 1.4-.25 2-.85 2.25-2.25z"/></svg>Unusual</span><h3>Eating out is running 38% above your usual</h3><p>£312.60 so far, against about £226 by this point in a typical month. Dishoom on Saturday was £86.50 of it.</p><div class="compare"><span class="lab">October</span><div class="bar cau" style="width:100%"></div><span class="num">£312.60</span><span class="lab">Typical</span><div class="bar ctx" style="width:72.3%"></div><span class="num">£226</span></div><div class="ins-actions"><button class="ghost" aria-label="Helpful"><svg class="i " width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.5 10.5v9.5M7.5 10.5l3.6-6.3a1.8 1.8 0 0 1 3.3 1.3l-.9 4.5h5.1a1.8 1.8 0 0 1 1.8 2.1l-1.2 6.4a1.8 1.8 0 0 1-1.8 1.5H7.5"/><path d="M3.5 10.5h4v9.5h-4z"/></svg>Helpful</button><button class="ghost" aria-label="Dismiss"><svg class="i " width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg>Dismiss</button><a class="ghost open" href="#">View <svg class="i " width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></a></div></div><div class="card insight"><span class="ins-tag "><svg class="i " width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 4.5v4h-4"/></svg>Subscriptions</span><h3>Streaming &amp; apps now total £41.97 a month</h3><p>Up £3.00 since July after one price rise. Three services renew in the next 10 days.</p><div class="ins-actions"><button class="ghost" aria-label="Helpful"><svg class="i " width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.5 10.5v9.5M7.5 10.5l3.6-6.3a1.8 1.8 0 0 1 3.3 1.3l-.9 4.5h5.1a1.8 1.8 0 0 1 1.8 2.1l-1.2 6.4a1.8 1.8 0 0 1-1.8 1.5H7.5"/><path d="M3.5 10.5h4v9.5h-4z"/></svg>Helpful</button><button class="ghost" aria-label="Dismiss"><svg class="i " width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg>Dismiss</button><a class="ghost open" href="#">View <svg class="i " width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></a></div></div><div class="card insight"><span class="ins-tag pos"><svg class="i " width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Going well</span><h3>Transport is your lowest in 6 months: £214.80</h3><p>Fewer taxis than usual. You’ve taken 2 Ubers this month against 6 in September.</p></div></div>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:88px;padding:12px 20px 14px;background:linear-gradient(to bottom, transparent, var(--bg) 22%);z-index:4">
+  <div class="chips nowrap" style="margin-bottom:10px"><span class="chip soft plain" style="background:var(--surface)">What did I spend on travel this year?</span><span class="chip soft plain" style="background:var(--surface)">Why is this month lower?</span></div>
+  <div class="field" style="background:var(--surface);height:50px;padding-right:6px;box-shadow:0 0 0 1px var(--rule-strong)"><svg class="i faint" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5c.6 3.9 2.6 5.9 6.5 6.5-3.9.6-5.9 2.6-6.5 6.5-.6-3.9-2.6-5.9-6.5-6.5 3.9-.6 5.9-2.6 6.5-6.5z"/><path d="M18.5 15.5c.25 1.4.85 2 2.25 2.25-1.4.25-2 .85-2.25 2.25-.25-1.4-.85-2-2.25-2.25 1.4-.25 2-.85 2.25-2.25z"/></svg><span class="ph" style="flex:1">Ask about your money…</span>
+    <span style="width:38px;height:38px;border-radius:50%;background:var(--ink);color:var(--on-ink);display:grid;place-items:center"><svg class="i " width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg></span></div>
+</div>
+<nav class="tabbar" aria-label="Main"><a class="tab" href="#"><svg class="i " width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10.2 12 3.5l8.5 6.7V19a1.5 1.5 0 0 1-1.5 1.5h-4.5v-6h-5v6H5A1.5 1.5 0 0 1 3.5 19z"/></svg><span>Home</span></a><a class="tab" href="#"><svg class="i " width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.75" cy="6.5" r="1" fill="currentColor" stroke="none"/><circle cx="4.75" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="4.75" cy="17.5" r="1" fill="currentColor" stroke="none"/></svg><span>Activity</span></a><button class="tab-add" aria-label="Add transaction"><svg class="i " width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button><a class="tab" href="#"><svg class="i " width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20.5v-7M12 20.5v-15M19 20.5v-10"/></svg><span>Analytics</span></a><a class="tab active" href="#"><svg class="i " width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5c.6 3.9 2.6 5.9 6.5 6.5-3.9.6-5.9 2.6-6.5 6.5-.6-3.9-2.6-5.9-6.5-6.5 3.9-.6 5.9-2.6 6.5-6.5z"/><path d="M18.5 15.5c.25 1.4.85 2 2.25 2.25-1.4.25-2 .85-2.25 2.25-.25-1.4-.85-2-2.25-2.25 1.4-.25 2-.85 2.25-2.25z"/></svg><span>Insights</span></a></nav>
+</div></body></html>

@@ -1,0 +1,57 @@
+/* Sterling design tokens — the single source for Tailwind theme + components.
+   Sterling is dark-only: there is no light theme. */
+:root {
+  color-scheme: dark;
+  /* colour */
+  --bg: #0C0D0C;
+  --surface: #18191A;
+  --surface-2: #212224;
+  --surface-3: #2A2B2D;
+  --ink: #F3F2EE;
+  --ink-2: #A9AAA4;
+  --ink-3: #8D8F89;
+  --rule: rgba(255, 255, 255, 0.08);
+  --rule-strong: rgba(255, 255, 255, 0.14);
+  --on-ink: #0C0D0C;
+  --positive: #4FC487;
+  --positive-tint: rgba(79, 196, 135, 0.14);
+  --caution: #EE9A52;
+  --caution-tint: rgba(238, 154, 82, 0.14);
+  --danger: #F0645A;
+  --chart-ink: #F3F2EE;
+  --chart-context: #3A3B3D;
+  --chart-fill: rgba(255, 255, 255, 0.06);
+  --scrim: rgba(0, 0, 0, 0.6);
+  --tabbar: rgba(24, 25, 26, 0.82);
+
+  /* category chart tones (multi-series only) */
+  --cat-stone: #8A877E; --cat-sage: #8FA48C; --cat-moss: #5F7457; --cat-sky: #7E9DB4; --cat-slate: #5B6675;
+  --cat-clay: #B57A5E; --cat-sand: #C9B48A; --cat-plum: #8A6C82; --cat-rose: #C08F8F; --cat-ochre: #C29A3E;
+
+  /* type */
+  --font: "Instrument Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --t-hero: 64px;      /* available cash whole pounds */
+  --t-large: 32px;     /* large screen titles */
+  --t-title: 22px;
+  --t-headline: 17px;
+  --t-body: 17px;
+  --t-callout: 15px;
+  --t-sub: 13px;
+  --t-caption: 12px;
+
+  /* space (4pt) */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 20px; --s6: 24px; --s8: 32px; --s10: 40px; --s14: 56px;
+  --gutter: 20px;
+
+  /* shape */
+  --r-card: 16px;
+  --r-sheet: 28px;
+  --r-key: 14px;
+  --r-tile: 10px;
+  --r-pill: 999px;
+  --shadow-sheet: 0 -8px 40px rgba(0, 0, 0, 0.5);
+
+  /* motion */
+  --spring: cubic-bezier(.2, .8, .2, 1);
+}
+
