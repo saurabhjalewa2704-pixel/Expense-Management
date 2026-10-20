@@ -6,7 +6,8 @@ import { del, get, set } from "idb-keyval";
 import { useState } from "react";
 
 const KEY = "sterling-query-cache";
-const BUSTER = "v1";
+/** Changes with every deployment (see next.config.ts), so a cache written by an older build is never trusted by a newer one. */
+const BUSTER = process.env.NEXT_PUBLIC_BUILD_ID ?? "dev";
 const DAY = 24 * 60 * 60 * 1000;
 
 /** Persist the query cache to IndexedDB (throttled), so repeat launches render instantly and offline. */

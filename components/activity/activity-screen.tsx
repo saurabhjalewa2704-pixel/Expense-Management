@@ -87,7 +87,7 @@ export function ActivityScreen() {
 
       {payeeId && <div className="chips" style={{ marginTop: 10 }}><button className="chip plain sel" onClick={() => setPayeeId(undefined)} aria-label="Remove payee filter">One payee <UI.X size={14} strokeWidth={2} aria-hidden /></button></div>}
       <div className="sub" style={{ margin: "14px 2px 0" }} data-testid="summary" aria-live="polite">
-        {t ? (<>{t.txn_count.toLocaleString("en-GB")} transaction{t.txn_count === 1 ? "" : "s"} · <span className="num">{formatGBP(t.spend_pence)}</span> out{t.income_pence > 0 && <> · <span className="num pos">{formatGBP(t.income_pence)}</span> in</>}{t.pot_pence !== 0 && <> · <span className="num" data-testid="pot-total">{formatGBP(Math.abs(t.pot_pence))}</span> {t.pot_pence < 0 ? "out" : "in"} in pots</>}</>) : " "}
+        {t ? (<>{t.txn_count.toLocaleString("en-GB")} transaction{t.txn_count === 1 ? "" : "s"} · <span className="num">{formatGBP(t.spend_pence)}</span> out{t.income_pence > 0 && <> · <span className="num pos">{formatGBP(t.income_pence)}</span> in</>}{!!t.pot_pence && <> · <span className="num" data-testid="pot-total">{formatGBP(Math.abs(t.pot_pence))}</span> {t.pot_pence < 0 ? "out" : "in"} in pots</>}</>) : " "}
       </div>
 
       {activity.isLoading && activity.rows.length === 0 ? (

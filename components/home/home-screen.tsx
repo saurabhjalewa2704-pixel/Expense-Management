@@ -51,7 +51,7 @@ function MobileHome() {
             <Term k="Opening" v={formatGBP(flow.opening_pence)} />
             <Pair op="+"><Term k="In" v={formatGBP(flow.income_pence)} pos /></Pair>
             <Pair op="−"><Term k="Out" v={formatGBP(flow.spend_pence)} /></Pair>
-            {flow.pot_pence !== 0 && <Pair op={flow.pot_pence < 0 ? "−" : "+"}><Term k="One-off" v={formatGBP(Math.abs(flow.pot_pence))} /></Pair>}
+            {!!flow.pot_pence && <Pair op={flow.pot_pence < 0 ? "−" : "+"}><Term k="One-off" v={formatGBP(Math.abs(flow.pot_pence))} /></Pair>}
             {flow.set_aside_pence !== 0 && <Pair op={flow.set_aside_pence < 0 ? "−" : "+"}><Term k="Set aside" v={formatGBP(Math.abs(flow.set_aside_pence))} /></Pair>}
             {flow.adjust_pence !== 0 && <Pair op={flow.adjust_pence < 0 ? "−" : "+"}><Term k="Adjusted" v={formatGBP(Math.abs(flow.adjust_pence))} /></Pair>}
           </div>

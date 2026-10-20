@@ -21,6 +21,9 @@ const csp = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Every deployment gets its own id, which the persisted query cache uses as its "buster": data cached by an older version is
+  // thrown away instead of being rendered by newer code that expects a different shape.
+  env: { NEXT_PUBLIC_BUILD_ID: process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.BUILD_ID ?? "dev" },
   async headers() {
     return [
       {
