@@ -47,7 +47,7 @@ export function applyFlow(flow: CashFlow, items: readonly OutboxItem[], accounts
     ...flow,
     income_pence: flow.income_pence + income,
     spend_pence: flow.spend_pence + spend,
-    pot_pence: flow.pot_pence + pot,
+    pot_pence: (flow.pot_pence ?? 0) + pot,
     set_aside_pence: flow.set_aside_pence + setAside,
     closing_pence: flow.closing_pence + income - spend + pot + setAside,
   };

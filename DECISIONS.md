@@ -99,3 +99,10 @@ Record judgement calls here as: date · decision · reason.
 - **2026-10-19 · Search spans both levels** and shows each match's parent underneath.
 - **2026-10-19 · The desktop modal uses two panes** (parents left, the highlighted parent's list right) because a 480px modal has room for both, and hover/click feels natural there.
 - **2026-10-19 · A category picked from the full list leads Quick Add's chips as "Transport › Taxis"**, so the parent is visible after choosing. Chips from the usual suggestions stay short, to keep the three-tap capture quick.
+
+## Stale cached data after an upgrade (bug found after the pots release)
+
+- **2026-10-20 · What went wrong.** The query cache is persisted to IndexedDB and restored before anything is refetched. The pots release added fields (`pot_pence`) that data cached by the previous build did not have, so Home computed `formatGBP(Math.abs(undefined))` on first paint and the error page appeared. A browser with an old cache (the production domain) crashed; a fresh origin (the per-deployment URL) did not. The cache "buster" was a constant (`v1`), so nothing told the new build to distrust the old cache.
+- **2026-10-20 · Three layers of fix.** (1) The buster is now the deployment's commit id (`NEXT_PUBLIC_BUILD_ID`, set from `VERCEL_GIT_COMMIT_SHA`), so a cache written by another build is discarded, never rendered. (2) Pages treat a missing `pot_pence` as zero. (3) The error page clears the cache and reloads once per session by itself, and "Try again" does the same, so a stuck device recovers without clearing site data. Unsent offline entries live in a separate store and are not touched.
+- **2026-10-20 · Cost, accepted.** After each deployment the first launch shows loading placeholders until the data is fetched, instead of last visit's numbers. That only happens when the device is online (it just downloaded the update).
+- **2026-10-20 · Rule going forward.** Any new field read from a cached query must tolerate being absent; the build-id buster is the backstop. `tests/e2e/17-cache-compat.spec.ts` reproduces the failure (cache without the new fields), the discard on a different build, and the self-heal.
