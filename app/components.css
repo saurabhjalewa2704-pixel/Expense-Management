@@ -43,10 +43,11 @@ input,textarea,select{font:inherit;color:inherit}
 .figure .pence{font-size:32px;margin:7px 0 0 1px;color:var(--ink-3);letter-spacing:-.02em;font-weight:500}
 .figure.xl .whole{font-size:76px}
 .figure.xl .cur,.figure.xl .pence{font-size:36px;margin-top:9px}
-.equation{display:flex;align-items:flex-end;gap:12px;margin-top:22px;padding-top:16px;border-top:1px solid var(--rule-strong)}
+.equation{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;row-gap:14px;margin-top:22px;padding-top:16px;border-top:1px solid var(--rule-strong)}
 .eq-term{display:flex;flex-direction:column;gap:4px}
 .eq-k{font-size:var(--t-caption);font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
 .eq-v{font-size:var(--t-callout);font-weight:500;letter-spacing:-.01em}
+.eq-pair{display:flex;align-items:flex-end;gap:12px}
 .eq-op{font-size:var(--t-callout);color:var(--ink-3);padding-bottom:1px}
 
 /* ---------- surfaces ---------- */
@@ -141,8 +142,9 @@ input,textarea,select{font:inherit;color:inherit}
 .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
 .key{height:54px;border-radius:var(--r-key);background:var(--surface-2);display:grid;place-items:center;font-size:26px;font-weight:500;letter-spacing:-.01em}
 .key.fn{background:transparent;color:var(--ink-2)}
-.meta{display:flex;gap:8px;margin-top:12px}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .meta .chip{height:34px;font-size:13px;background:var(--surface);}
+.meta .chip.sel{background:var(--ink);color:var(--on-ink)}
 
 /* ---------- category grid ---------- */
 .cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px 8px}
@@ -187,3 +189,37 @@ section > .card.card,.stack > .card.card{margin-top:0}
 td + td{padding-left:14px}
 @keyframes spin{to{transform:rotate(360deg)}} .spin{animation:spin 900ms linear infinite}
 @media (prefers-reduced-motion:reduce){.spin{animation:none}}
+
+/* ---------- update banner ---------- */
+.update-banner{position:fixed;top:0;left:0;right:0;z-index:60;display:flex;align-items:center;gap:10px;padding:calc(var(--safe-top) + 8px) 16px 10px;background:var(--surface-2);box-shadow:0 1px 0 var(--rule-strong);font-size:var(--t-sub)}
+.update-banner .msg{flex:1;min-width:0}
+.update-banner .go{height:30px;padding:0 14px;border-radius:var(--r-pill);background:var(--ink);color:var(--on-ink);font-weight:600}
+.update-banner .x{width:30px;height:30px;display:grid;place-items:center;color:var(--ink-2)}
+
+/* ---------- Ask Sterling ---------- */
+.ask-scroll{padding-bottom:calc(var(--tabbar-h) + 150px)}
+.ask-thread{display:flex;flex-direction:column;gap:12px;margin-top:20px}
+.ask-q{align-self:flex-end;max-width:86%;background:var(--surface-3);border-radius:var(--r-card);padding:10px 14px;font-size:var(--t-callout)}
+.ask-a{align-self:flex-start;max-width:100%;font-size:var(--t-callout);line-height:1.45}
+.ask-facts{margin-top:12px;padding-top:10px;border-top:1px solid var(--rule);font-size:var(--t-sub);color:var(--ink-2)}
+.ask-facts summary{cursor:pointer;list-style:none;font-weight:500}
+.ask-facts ul{margin-top:8px;display:flex;flex-direction:column;gap:6px;list-style:none;padding:0}
+.ask-facts li{display:flex;justify-content:space-between;gap:12px}
+.ask-facts li b{color:var(--ink);font-weight:500;white-space:nowrap}
+.ask-dock{position:fixed;left:0;right:0;bottom:var(--tabbar-h);padding:12px var(--gutter) 14px;background:linear-gradient(to bottom,transparent,var(--bg) 22%);z-index:4}
+.ask-field{background:var(--surface);height:50px;padding-right:6px;box-shadow:0 0 0 1px var(--rule-strong);display:flex;align-items:center;gap:10px}
+.ask-field input{flex:1;min-width:0;background:none;border:0;outline:none;color:var(--ink)}
+.ask-send{width:38px;height:38px;border-radius:50%;background:var(--ink);color:var(--on-ink);display:grid;place-items:center;flex:none}
+.ask-send:disabled{opacity:.35}
+@media (min-width:1024px){.ask-dock{bottom:0;left:248px}.ask-scroll{padding-bottom:180px}}
+
+/* ---------- category picker ---------- */
+.cat-panes{display:grid;grid-template-columns:minmax(0,184px) minmax(0,1fr);gap:12px;margin-top:16px;align-items:start;max-height:min(56dvh,480px);overflow-y:auto}
+.cat-panes .row[aria-current="true"]{background:var(--surface-3)}
+.cat-panes .row{gap:10px;padding:10px 12px}
+.cat-panes .row + .row::before{left:12px}
+.cat-panes .tile{width:28px;height:28px;border-radius:8px}
+.cat-panes .radio{margin-left:auto}
+.pane-in{animation:pane-in 180ms ease-out}
+@keyframes pane-in{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.pane-in{animation:none}}

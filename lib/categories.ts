@@ -47,6 +47,7 @@ export function rowSubtitle(r: TxnRow, time?: string): string {
   else if (r.type === "adjustment") parts.push("Adjustment");
   else if (r.payee_name && r.category_name) parts.push(r.category_name);
   if (r.type !== "transfer") parts.push(r.account_name);
+  if (r.pot_name) parts.push(`${r.pot_name} pot`);
   if (time) parts.push(time);
   return parts.join(" · ");
 }

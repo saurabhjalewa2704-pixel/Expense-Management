@@ -2,6 +2,8 @@
 export const MODELS = {
   /** Insight digests: narrative over numbers. */
   digest: "claude-sonnet-5-5",
+  /** Ask Sterling: tool choice and wording of an answer. */
+  ask: "claude-sonnet-5-5",
   /** Natural-language parse and payee guesses (P1): fast and cheap, latency matters inside Quick Add. */
   parse: "claude-haiku-5-5",
 } as const;

@@ -33,6 +33,7 @@ test.describe("accounts (ACC-01..05)", () => {
   test("ACC-05: reconcile makes the balance equal the bank's to the penny, and is not spend", async ({ page }) => {
     await page.goto("/settings/accounts");
     await page.getByTestId("account-row").filter({ hasText: "Monzo" }).click();
+    await expect(page.getByTestId("account-balance")).toBeVisible();                 // let the page settle after the route change
     await page.getByRole("button", { name: "Reconcile" }).first().click();
     await page.getByLabel("Balance in your bank app").fill("3200.00");
     await expect(page.getByTestId("reconcile-diff")).toHaveText("−£14.08");
@@ -55,6 +56,7 @@ test.describe("accounts (ACC-01..05)", () => {
   test("a credit card reconciles on the amount owed", async ({ page }) => {
     await page.goto("/settings/accounts");
     await page.getByTestId("account-row").filter({ hasText: "Amex Gold" }).click();
+    await expect(page.getByTestId("account-balance")).toBeVisible();
     await page.getByRole("button", { name: "Reconcile" }).first().click();
     await page.getByLabel("Balance in your bank app").fill("1000");
     await expect(page.getByTestId("reconcile-diff")).toHaveText("+£184.73");

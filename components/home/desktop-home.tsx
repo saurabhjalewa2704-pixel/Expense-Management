@@ -91,6 +91,7 @@ export function DesktopHome() {
               <div className="eq-term"><span className="eq-k">Opening</span><span className="eq-v">{formatGBP(f.opening_pence)}</span></div><span className="eq-op">+</span>
               <div className="eq-term"><span className="eq-k">In</span><span className="eq-v pos">{formatGBP(f.income_pence)}</span></div><span className="eq-op">−</span>
               <div className="eq-term"><span className="eq-k">Out</span><span className="eq-v">{formatGBP(f.spend_pence)}</span></div>
+              {f.pot_pence !== 0 && <><span className="eq-op">{f.pot_pence < 0 ? "−" : "+"}</span><div className="eq-term"><span className="eq-k">One-off</span><span className="eq-v">{formatGBP(Math.abs(f.pot_pence))}</span></div></>}
               {f.set_aside_pence !== 0 && <><span className="eq-op">{f.set_aside_pence < 0 ? "−" : "+"}</span><div className="eq-term"><span className="eq-k">Set aside</span><span className="eq-v">{formatGBP(Math.abs(f.set_aside_pence))}</span></div></>}
             </div>
           )}

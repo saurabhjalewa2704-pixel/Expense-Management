@@ -26,8 +26,9 @@ test.describe("desktop (WEB-01..03)", () => {
     await page.getByRole("button", { name: /Add transaction/ }).first().click();
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
+    // the modal scales in over ~220 ms, so wait for it to settle before measuring
+    await expect.poll(async () => Math.round((await dialog.boundingBox())!.width)).toBe(480);
     const box = (await dialog.boundingBox())!;
-    expect(Math.round(box.width)).toBe(480);
     expect(Math.abs(box.x + box.width / 2 - 1440 / 2)).toBeLessThan(2);          // centred
     await page.keyboard.press("Escape");
     await expect(dialog).toHaveCount(0);
@@ -69,5 +70,21 @@ test.describe("desktop (WEB-01..03)", () => {
       await page.waitForTimeout(800);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), path).toBe(true);
     }
+  });
+
+  test("category picker is two panes in the modal: parents on the left, the parent's list on the right", async ({ page }) => {
+    await page.keyboard.press("n");
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await page.keyboard.type("15");
+    await page.getByRole("button", { name: "More categories" }).click();
+    const panes = page.getByTestId("cat-panes");
+    await expect(panes).toBeVisible();
+    await panes.getByRole("button", { name: "Transport" }).click();                         // highlights; the list opens beside it
+    await expect(panes.getByTestId("cat-list")).toContainText("Transport (general)");
+    await panes.getByRole("button", { name: "Eating out" }).click();                        // switching parent swaps the right pane
+    await expect(panes.getByTestId("cat-list")).toContainText("Eating out (general)");
+    await panes.getByTestId("cat-list").getByRole("button", { name: "Restaurants" }).click();
+    await expect(page.getByLabel("Search categories")).toHaveCount(0);
+    await expect(page.getByRole("radio", { name: /Restaurants/ })).toBeChecked();
   });
 });

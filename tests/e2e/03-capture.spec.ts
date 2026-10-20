@@ -70,7 +70,7 @@ test.describe("capture (CAP-01..05)", () => {
     await amountKeys(page, "5");
     await page.getByRole("button", { name: "More categories" }).click();
     await page.getByRole("button", { name: "Transport", exact: true }).click();
-    await expect(page.getByText("In Transport")).toBeVisible();
+    await expect(page.getByTestId("cat-list")).toContainText("Transport (general)");     // the parent's own list slides in
     await page.getByRole("button", { name: "Taxis" }).click();
     await expect(page.getByRole("radio", { name: "Taxis" })).toBeChecked();   // the chosen sub-category leads the chips
     await page.getByRole("button", { name: "Add £5.00" }).click();

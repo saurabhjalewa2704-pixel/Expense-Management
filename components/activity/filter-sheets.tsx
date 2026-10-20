@@ -4,7 +4,8 @@ import { Sheet } from "@/components/ui/sheet";
 import { addDays, formatMonthYear, monthEnd, monthStart, addMonths, yearStart, type ISODate } from "@/lib/dates";
 import { UI } from "@/lib/icons";
 import { toPence } from "@/lib/money";
-import { useAccounts, useCategoryTree } from "@/lib/queries/hooks";
+import { useAccounts, useCategoryTree, usePots } from "@/lib/queries/hooks";
+import type { ActivityFilters } from "@/lib/queries/keys";
 
 export type PeriodKey = "this-month" | "last-month" | "90-days" | "this-year" | "all" | "custom";
 export interface Period { key: PeriodKey; from?: ISODate; to?: ISODate }
@@ -144,6 +145,32 @@ export function TypeFilterSheet({ open, onOpenChange, value, onChange }: { open:
             <button key={t.id} className="row" style={{ width: "100%", textAlign: "left" }} onClick={() => toggle(t.id)} aria-pressed={value.includes(t.id)}>
               <div className="row-main"><div className="row-t">{t.label}</div></div>
               <span className={`radio ${value.includes(t.id) ? "on" : ""}`}>{value.includes(t.id) && <UI.Check size={14} strokeWidth={2.5} />}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </Sheet>
+  );
+}
+
+/** One-off pots: everything (default), usual spending only, any pot, or one pot. */
+export function PotFilterSheet({ open, onOpenChange, value, onChange }: { open: boolean; onOpenChange: (o: boolean) => void; value: ActivityFilters["pot"]; onChange: (v: ActivityFilters["pot"]) => void }) {
+  const pots = usePots().data ?? [];
+  const options: { id: ActivityFilters["pot"]; label: string; sub?: string }[] = [
+    { id: undefined, label: "Everything" },
+    { id: "exclude", label: "Usual spending only", sub: "Hide one-off pots" },
+    { id: "only", label: "One-off pots only" },
+    ...pots.map((p) => ({ id: p.pot_id, label: p.name, sub: p.closed_at ? "Closed" : undefined })),
+  ];
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange} title="Filter by one-off pot">
+      <div className="vaul-body">
+        <div className="sheet-head"><button className="txt" onClick={() => onChange(undefined)}>Clear</button><span className="t">One-off pots</span><button className="txt" style={{ color: "var(--ink)", fontWeight: 600 }} onClick={() => onOpenChange(false)}>Done</button></div>
+        <div className="subs" style={{ marginTop: 0 }}>
+          {options.map((o) => (
+            <button key={String(o.id)} className="row" style={{ width: "100%", textAlign: "left" }} onClick={() => { onChange(o.id); onOpenChange(false); }} aria-pressed={value === o.id}>
+              <div className="row-main"><div className="row-t">{o.label}</div>{o.sub && <div className="row-s">{o.sub}</div>}</div>
+              <span className={`radio ${value === o.id ? "on" : ""}`}>{value === o.id && <UI.Check size={14} strokeWidth={2.5} />}</span>
             </button>
           ))}
         </div>

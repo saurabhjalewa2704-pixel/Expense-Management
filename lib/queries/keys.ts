@@ -12,6 +12,8 @@ export interface ActivityFilters {
   amount?: number;
   needsReview?: boolean;
   payeeId?: string;
+  /** "exclude": usual spending only · "only": any pot · otherwise a pot id. */
+  pot?: "exclude" | "only" | (string & {});
 }
 
 export const qk = {
@@ -34,5 +36,8 @@ export const qk = {
   categoryMonthly: (id: string, n: number) => ["category-monthly", id, n] as const,
   suggestHistory: ["suggest-history"] as const,
   lastIncomeAccount: ["last-income-account"] as const,
+  pots: ["pots"] as const,
+  ask: ["ask"] as const,
+  potCategories: (id: string) => ["pot-categories", id] as const,
   insights: ["insights"] as const,
 };

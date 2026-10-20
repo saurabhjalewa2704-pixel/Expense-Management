@@ -10,7 +10,7 @@ import type { AccountBalance, TxnRow } from "@/lib/types";
 import {
   fetchAccounts, fetchAccountSeries, fetchActivityPage, fetchBalances, fetchCashFlow, fetchCashSeries, fetchCategories,
   fetchCategoryMonthly, fetchDailySpend, fetchMonthlyTotals, fetchPace, fetchPayees, fetchProfile, fetchSpendByCategory,
-  fetchTransactionCount, fetchWeekActivity, fetchInsightFeedback, fetchInsightRuns, fetchLastIncomeAccount, fetchSuggestHistory, fetchTopPayees, fetchTotals, PAGE_SIZE, type ActivityCursor,
+  fetchAskTurns, fetchPotCategories, fetchPots, fetchTransactionCount, fetchWeekActivity, fetchInsightFeedback, fetchInsightRuns, fetchLastIncomeAccount, fetchSuggestHistory, fetchTopPayees, fetchTotals, PAGE_SIZE, type ActivityCursor,
 } from "./fetchers";
 import { qk, type ActivityFilters } from "./keys";
 
@@ -108,6 +108,9 @@ function matches(row: TxnRow, f: ActivityFilters): boolean {
   if (f.max != null && row.amount_pence > f.max) return false;
   if (f.amount != null && row.amount_pence !== f.amount) return false;
   if (f.needsReview) return false;
+  if (f.pot === "exclude" && row.pot_id) return false;
+  if (f.pot === "only" && !row.pot_id) return false;
+  if (f.pot && f.pot !== "exclude" && f.pot !== "only" && row.pot_id !== f.pot) return false;
   if (f.q) {
     const hay = `${row.payee_name ?? ""} ${row.note ?? ""} ${row.category_name ?? ""}`.toLowerCase();
     if (!hay.includes(f.q.toLowerCase())) return false;
@@ -130,12 +133,13 @@ export function useActivity(filters: ActivityFilters) {
   const accounts = useAccounts().data;
   const { categories } = useCategoryTree();
   const outbox = useOutbox();
+  const pots = usePots().data;
   const rows = useMemo(() => {
     const server = q.data?.pages.flat() ?? [];
     if (!accounts) return server;
-    const pending = livePending(outbox, q.dataUpdatedAt).map((i) => pendingRow(i, accounts, categories)).filter((r) => matches(r, filters));
+    const pending = livePending(outbox, q.dataUpdatedAt).map((i) => pendingRow(i, accounts, categories, pots ?? [])).filter((r) => matches(r, filters));
     return mergePending(server, pending);
-  }, [q.data, q.dataUpdatedAt, outbox, accounts, categories, filters]);
+  }, [q.data, q.dataUpdatedAt, outbox, accounts, categories, pots, filters]);
   return { ...q, rows };
 }
 
@@ -148,12 +152,13 @@ export function useRecent(limit = 4) {
   const accounts = useAccounts().data;
   const { categories } = useCategoryTree();
   const outbox = useOutbox();
+  const pots = usePots().data;
   const rows = useMemo(() => {
     const server = q.data ?? [];
     if (!accounts) return server.slice(0, limit);
-    const pending = livePending(outbox, q.dataUpdatedAt).map((i) => pendingRow(i, accounts, categories));
+    const pending = livePending(outbox, q.dataUpdatedAt).map((i) => pendingRow(i, accounts, categories, pots ?? []));
     return mergePending(server, pending).slice(0, limit);
-  }, [q.data, q.dataUpdatedAt, outbox, accounts, categories, limit]);
+  }, [q.data, q.dataUpdatedAt, outbox, accounts, categories, pots, limit]);
   return { ...q, rows };
 }
 
@@ -184,3 +189,8 @@ export const useInsightRuns = () => useQuery({ queryKey: qk.insights, queryFn: (
 export const useInsightFeedback = () => useQuery({ queryKey: [...qk.insights, "feedback"] as const, queryFn: () => fetchInsightFeedback(db()) });
 export const useWeekActivity = (from: ISODate, to: ISODate) => useQuery({ queryKey: ["week-activity", from, to] as const, queryFn: () => fetchWeekActivity(db(), from, to) });
 export const useTransactionCount = () => useQuery({ queryKey: ["txn-count"] as const, queryFn: () => fetchTransactionCount(db()), staleTime: 60_000 });
+
+export const usePots = () => useQuery({ queryKey: qk.pots, queryFn: () => fetchPots(db()) });
+export const usePotCategories = (id: string) => useQuery({ queryKey: qk.potCategories(id), queryFn: () => fetchPotCategories(db(), id) });
+
+export const useAskTurns = () => useQuery({ queryKey: qk.ask, queryFn: () => fetchAskTurns(db()) });

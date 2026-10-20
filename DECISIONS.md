@@ -61,3 +61,41 @@ Record judgement calls here as: date · decision · reason.
 ## Sign-in
 
 - **2026-10-19 · E-mail + password is the default sign-in; the e-mailed code stays as an option.** The PRD chose codes because magic links break the installed iOS app, but codes need an e-mail template containing `{{ .Token }}`, and Supabase's built-in sender does not let you edit it (custom SMTP does). Passwords need no e-mail delivery and work in the installed app. The same allow-list applies before Supabase is called, wrong password and unknown e-mail give the same message, and Supabase's own rate limits apply. The user is created in the dashboard with Auto Confirm, so no sign-up path is exposed. The PRD's AUTH-01 acceptance ("e-mailed 6-digit code") still holds via the secondary option.
+
+## One-off pots (update 3)
+
+- **2026-10-19 · A pot is a flag on the transaction, not an account.** Money in a pot still leaves a real account, so balances and available cash include it. What a pot changes is classification: `pot_id` on a transaction takes it out of *usual spending*. Every analytic (category spend and its "usual" norm, daily rhythm, month pace, monthly totals, top payees, category history, new-payee and biggest-transaction facts) filters `pot_id is null` in SQL, so the AI facts and the charts cannot disagree and the insights pipeline needed no change.
+- **2026-10-19 · The cash equation gets a fourth term instead of hiding the pot.** `cash_flow()` now returns `pot_pence` (net of pot income and expenses); `income`/`spend` are usual only. Opening + In − Out ± One-off ± Set aside ± Adjusted = Available still holds exactly (SQL invariant, unit tests, Home, Cash detail and the AN-03 waterfall all show the "One-off" step), so the hero is never unexplained.
+- **2026-10-19 · Pots take expenses and income, never transfers.** A gift towards a deposit or a refund is as much a one-off as the stamp duty. A DB check enforces it, and the RPCs ignore a pot on a transfer.
+- **2026-10-19 · A pot is closed, not archived, and only an empty pot can be deleted.** A closed pot takes no new transactions but its history stays editable and it can be reopened. `on delete restrict` stops a pot with history disappearing.
+- **2026-10-19 · Ownership of a pot is checked by a trigger.** A foreign key does not prove the pot belongs to the same user, so `transactions_pot_guard` does (cross-user test in `05_pots.test.sql`).
+- **2026-10-19 · Activity is a ledger, so it still shows pot transactions** (labelled "<pot> pot", filterable: everything / usual only / pots only / one pot). Its header totals split usual spend from the pots' net.
+- **2026-10-19 · Quick-add suggestions ignore pot expenses**, so a £12,500 stamp-duty entry cannot skew the category ranking.
+- **2026-10-19 · Not done:** pot totals are server figures; a pot expense still waiting in the offline outbox appears in the lists and the hero but not yet in that pot's own totals until it syncs.
+
+## New-version banner (update 2)
+
+- **2026-10-19 · A new build waits instead of taking over.** The service worker used `skipWaiting: true`, which swaps the worker (and its cached assets) under a page that is already open, so an installed PWA could run old JS against new caches until someone happened to relaunch it. Now `skipWaiting` is off: a new build installs and waits, the app shows a banner ("A new version of Sterling is ready · Refresh"), and Refresh posts `SKIP_WAITING`, then reloads once the new worker controls the page.
+- **2026-10-19 · The app asks for updates itself.** iOS rarely re-checks a PWA that stays in memory, so the banner component calls `registration.update()` on launch, whenever the app returns to the foreground, when the network comes back, and every 15 minutes.
+- **2026-10-19 · Nothing is offered on the first install** (no controller yet, so there is nothing "old"), and the banner can be dismissed for the session; it returns for the next new build.
+- **2026-10-19 · Tested against a real worker update.** Playwright cannot intercept the browser's own worker-script fetch, so `tests/e2e/proxy.ts` is a tiny pass-through that serves a changed `sw.js`; the test proves the old page is left alone, the banner appears, and Refresh switches versions.
+
+## Ask Sterling (update 4)
+
+- **2026-10-19 · The model chooses tools and words the result; it never computes.** Questions are answered by a tool-using loop (`lib/ai/ask`): the model calls SQL-backed tools (spend summary, period comparison, monthly totals, top payees, largest purchases, search, weekday pattern, cash position, pots), each of which runs as the signed-in user (RLS) and returns labelled figures already formatted (`£312.60`, `38%`). Percentage changes, shares and averages are computed in the tools (deterministic code), not by the model.
+- **2026-10-19 · The grounding rule (CLAUDE.md) applies to chat too.** Every £ figure and percentage in an answer must equal a `display` string returned by a tool for that question (or one of the last three turns, so "and last month?" can refer back). A rejected answer gets one retry that names the offending figures; a second rejection (or exhausting six steps) shows the tool figures as a labelled list instead. Unvalidated model text is never shown. "Numbers used" under each answer shows exactly what the answer was allowed to quote.
+- **2026-10-19 · Usual spending by default; pots only on request.** All spending tools exclude one-off pots, and the prompt tells the model to mention a pot only when asked (`pot_summary`).
+- **2026-10-19 · Privacy.** Only totals, categories, payee names, dates, balances and pot names reach the model, as tool results. Transaction notes are never sent. The category catalogue (ids and names) and today's date are in the system prompt, which is cached across a conversation's steps.
+- **2026-10-19 · Limits.** 30 questions per London day and the monthly token cap, which now sums digests and questions (`insight_runs` + `ask_turns`). Questions stop at the cap; digests fall back to templates.
+- **2026-10-19 · Stored, private, clearable.** `ask_turns` (RLS, cross-user test) keeps the question, validated answer, the figures it could quote and token use. Clear AI history and Delete all data remove it.
+- **2026-10-19 · Testing without a key.** `STERLING_ASK_STUB` swaps in a scripted model that picks tools by keyword and words the result, including deliberately ungrounded answers to exercise retry and fallback. Real model quality (tool choice, wording) is for the owner to judge with `scripts/ask-check.ts`.
+- **2026-10-19 · A separate screen, not a sheet.** The Insights screen docks an "Ask about your money…" field with starter questions (mock-up 06); it opens `/insights/ask`, a conversation with the input pinned above the tab bar, which behaves better with the iOS keyboard than a nested sheet.
+
+## Category picker (update 1)
+
+- **2026-10-19 · Drill in instead of expanding below.** The old picker revealed a parent's sub-categories under the grid (often off-screen) and made "the parent itself" a hidden second tap. Now a tap on a parent slides the same sheet to that parent's list ("‹ Categories", the parent's name as the title); the first row is an explicit "<Parent> (general)", then the sub-categories, and any row saves and closes at once. A parent with no sub-categories is chosen immediately.
+- **2026-10-19 · A Suggested row leads the list**, built from the same ranking as Quick Add's chips (this payee's category, then the most used), each shown with its parent ("Eating out › Restaurants"). Its buttons are labelled "Suggested: …" so they never collide with the grid tiles.
+- **2026-10-19 · Reopening lands where you were.** With a category already chosen, the picker opens on its parent's list with the choice marked; Back shows all parents with the right one highlighted.
+- **2026-10-19 · Search spans both levels** and shows each match's parent underneath.
+- **2026-10-19 · The desktop modal uses two panes** (parents left, the highlighted parent's list right) because a 480px modal has room for both, and hover/click feels natural there.
+- **2026-10-19 · A category picked from the full list leads Quick Add's chips as "Transport › Taxis"**, so the parent is visible after choosing. Chips from the usual suggestions stay short, to keep the three-tap capture quick.

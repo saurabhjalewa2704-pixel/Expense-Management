@@ -47,6 +47,7 @@ export function buildWaterfall(flow: CashFlow, cats: readonly Pick<CategorySpend
   for (const c of shown) move(`cat:${c.name}`, c.name, -c.total_pence);
   const shownSum = shown.reduce((s, c) => s + c.total_pence, 0);
   move("other", "Other", -(flow.spend_pence - shownSum));
+  move("pot", "One-off", flow.pot_pence);
   move("set-aside", "Set aside", flow.set_aside_pence);
   move("adjust", "Adjustments", flow.adjust_pence);
   steps.push({ key: "available", label: "Available", kind: "total", value: level, from: 0, to: level });

@@ -7,6 +7,7 @@ import type { Facts } from "./types";
 import { anthropicWriter, type CardWriter } from "./writer";
 
 export const ADHOC_PER_DAY = 10;
+export const ASK_PER_DAY = 30;
 
 /** The real writer when ANTHROPIC_API_KEY is set; otherwise null, and digests use the deterministic template cards. */
 export function configuredWriter(): CardWriter | null {
@@ -24,10 +25,20 @@ const londonMidnight = (d: ISODate) => {
   return new TZDate(y, m - 1, day, LONDON).toISOString();
 };
 
-/** Tokens used this calendar month (London), summed from insight_runs (PRD §12.6). */
+/** Tokens used this calendar month (London): digests plus Ask Sterling answers (PRD §12.6). */
 export async function tokensUsedThisMonth(db: SupabaseClient, userId: string, today: ISODate = serverToday()): Promise<number> {
-  const { data } = await db.from("insight_runs").select("input_tokens,output_tokens").eq("user_id", userId).gte("created_at", londonMidnight(monthStart(today)));
-  return ((data ?? []) as { input_tokens: number | null; output_tokens: number | null }[]).reduce((s, r) => s + (r.input_tokens ?? 0) + (r.output_tokens ?? 0), 0);
+  const since = londonMidnight(monthStart(today));
+  const [runs, asks] = await Promise.all([
+    db.from("insight_runs").select("input_tokens,output_tokens").eq("user_id", userId).gte("created_at", since),
+    db.from("ask_turns").select("input_tokens,output_tokens").eq("user_id", userId).gte("created_at", since),
+  ]);
+  const rows = [...(runs.data ?? []), ...(asks.data ?? [])] as { input_tokens: number | null; output_tokens: number | null }[];
+  return rows.reduce((s, r) => s + (r.input_tokens ?? 0) + (r.output_tokens ?? 0), 0);
+}
+
+export async function askedToday(db: SupabaseClient, userId: string, today: ISODate = serverToday()): Promise<number> {
+  const { count } = await db.from("ask_turns").select("id", { count: "exact", head: true }).eq("user_id", userId).gte("created_at", londonMidnight(today));
+  return count ?? 0;
 }
 
 export async function adhocRunsToday(db: SupabaseClient, userId: string, today: ISODate = serverToday()): Promise<number> {

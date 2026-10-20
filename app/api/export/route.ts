@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
   const stamp = new Date().toISOString().slice(0, 10);
 
   if (format === "json") {
-    const tables = ["profiles", "accounts", "categories", "payees", "transactions", "budgets", "recurring_rules", "no_spend_days"] as const;
+    const tables = ["profiles", "accounts", "categories", "payees", "pots", "transactions", "budgets", "recurring_rules", "no_spend_days"] as const;
     const out: Record<string, unknown> = { exported_at: new Date().toISOString(), format: "sterling-backup-v1", money: "integer pence" };
     for (const t of tables) {
       const rows: unknown[] = [];
@@ -40,8 +40,9 @@ export async function GET(req: NextRequest) {
   const filters: ActivityFilters = {
     q: p.get("q") || undefined, from: p.get("from") || undefined, to: p.get("to") || undefined,
     accountIds: list(p.get("accounts")), categoryIds: list(p.get("categories")), types: list(p.get("types")),
+    pot: p.get("pot") || undefined,
   };
-  const header = csvRow(["Date", "Type", "Amount (GBP)", "Account", "To account", "Category", "Sub-category", "Payee", "Note", "Tags", "Source", "ID"]);
+  const header = csvRow(["Date", "Type", "Amount (GBP)", "Account", "To account", "Category", "Sub-category", "Payee", "Note", "Tags", "One-off pot", "Source", "ID"]);
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
@@ -54,7 +55,7 @@ export async function GET(req: NextRequest) {
             const signed = r.type === "expense" ? -r.amount_pence : r.amount_pence;
             controller.enqueue(encoder.encode(csvRow([
               r.occurred_on, r.type, penceToDecimal(r.type === "transfer" ? r.amount_pence : signed), r.account_name, r.counter_account_name,
-              r.parent_category_name ?? r.category_name, r.parent_category_name ? r.category_name : "", r.payee_name, r.note, r.tags.join(" "), r.source, r.id,
+              r.parent_category_name ?? r.category_name, r.parent_category_name ? r.category_name : "", r.payee_name, r.note, r.tags.join(" "), r.pot_name, r.source, r.id,
             ]) + "\r\n"));
           }
           const tail = rows[rows.length - 1];

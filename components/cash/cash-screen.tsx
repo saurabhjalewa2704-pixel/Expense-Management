@@ -75,6 +75,7 @@ export function CashScreen() {
             <Line k="Opening cash" sub={formatLong(eqFrom).split(" ").slice(1).join(" ")} v={formatGBP(f.opening_pence)} />
             <Line k="Income" sub={n(incomeN, "transaction")} v={formatGBP(f.income_pence, { signed: true })} pos />
             <Line k="Spending" sub={n(spendN, "transaction")} v={`−${formatGBP(f.spend_pence)}`} />
+            {f.pot_pence !== 0 && <Line k="One-off pots" sub="Kept out of monthly spend" v={formatGBP(f.pot_pence, { signed: true })} />}
             {f.set_aside_pence !== 0 && <Line k="Set aside" sub="Moved to savings" v={formatGBP(f.set_aside_pence, { signed: true })} />}
             {f.adjust_pence !== 0 && <Line k="Adjustments" sub="Balance corrections" v={formatGBP(f.adjust_pence, { signed: true })} />}
             <div className="row-between" style={{ padding: "14px 0 10px", borderTop: "1.5px solid var(--ink)" }}>

@@ -20,8 +20,10 @@ export async function clearAiHistory(): Promise<ActionResult> {
   const db = await supabaseServer();
   const { data: u } = await db.auth.getUser();
   if (!u.user) return fail("Please sign in again.");
-  const { error } = await db.from("insight_runs").delete().eq("user_id", u.user.id);
-  return error ? fail(friendlyDbError(error)) : ok(undefined);
+  const runs = await db.from("insight_runs").delete().eq("user_id", u.user.id);
+  if (runs.error) return fail(friendlyDbError(runs.error));
+  const asks = await db.from("ask_turns").delete().eq("user_id", u.user.id);
+  return asks.error ? fail(friendlyDbError(asks.error)) : ok(undefined);
 }
 
 /** Settings → AI: tokens used this month against the cap (PRD §12.6). */

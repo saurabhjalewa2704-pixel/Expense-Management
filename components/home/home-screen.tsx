@@ -4,6 +4,7 @@ import { TxnItem, recentWhen } from "@/components/activity/txn-row";
 import { useQuickAdd } from "@/components/capture/quick-add";
 import { Figure } from "@/components/money";
 import { ReminderPrompt } from "@/components/home/reminder-prompt";
+import { PotsSection } from "@/components/home/pots-section";
 import { InsightCard } from "@/components/insights/insight-card";
 import { formatLong, formatMonth, addMonths, monthStart } from "@/lib/dates";
 import { UI } from "@/lib/icons";
@@ -48,12 +49,11 @@ function MobileHome() {
         {flow ? (
           <div className="equation" data-testid="equation">
             <Term k="Opening" v={formatGBP(flow.opening_pence)} />
-            <span className="eq-op">+</span>
-            <Term k="In" v={formatGBP(flow.income_pence)} pos />
-            <span className="eq-op">−</span>
-            <Term k="Out" v={formatGBP(flow.spend_pence)} />
-            {flow.set_aside_pence !== 0 && (<><span className="eq-op">{flow.set_aside_pence < 0 ? "−" : "+"}</span><Term k="Set aside" v={formatGBP(Math.abs(flow.set_aside_pence))} /></>)}
-            {flow.adjust_pence !== 0 && (<><span className="eq-op">{flow.adjust_pence < 0 ? "−" : "+"}</span><Term k="Adjusted" v={formatGBP(Math.abs(flow.adjust_pence))} /></>)}
+            <Pair op="+"><Term k="In" v={formatGBP(flow.income_pence)} pos /></Pair>
+            <Pair op="−"><Term k="Out" v={formatGBP(flow.spend_pence)} /></Pair>
+            {flow.pot_pence !== 0 && <Pair op={flow.pot_pence < 0 ? "−" : "+"}><Term k="One-off" v={formatGBP(Math.abs(flow.pot_pence))} /></Pair>}
+            {flow.set_aside_pence !== 0 && <Pair op={flow.set_aside_pence < 0 ? "−" : "+"}><Term k="Set aside" v={formatGBP(Math.abs(flow.set_aside_pence))} /></Pair>}
+            {flow.adjust_pence !== 0 && <Pair op={flow.adjust_pence < 0 ? "−" : "+"}><Term k="Adjusted" v={formatGBP(Math.abs(flow.adjust_pence))} /></Pair>}
           </div>
         ) : (
           <div className="equation"><div className="skeleton" style={{ height: 40, width: "100%" }} aria-busy /></div>
@@ -80,8 +80,14 @@ function MobileHome() {
           {recent.map((r) => <TxnItem key={r.client_id} row={r} subtitle={`${rowSubtitle(r)} · ${recentWhen(r, today)}`} />)}
         </div>
       )}
+      <PotsSection />
     </div>
   );
+}
+
+/** An operator and its term stay together if the equation has to wrap onto a second line. */
+function Pair({ op, children }: { op: string; children: React.ReactNode }) {
+  return <span className="eq-pair"><span className="eq-op">{op}</span>{children}</span>;
 }
 
 function Term({ k, v, pos }: { k: string; v: string; pos?: boolean }) {

@@ -11,7 +11,7 @@ test.describe("export (AN-11)", () => {
     expect(res.headers()["content-disposition"]).toContain("sterling-activity-");
     const text = (await res.text()).replace(/^﻿/, "");
     const lines = text.trim().split("\r\n");
-    expect(lines[0]).toBe("Date,Type,Amount (GBP),Account,To account,Category,Sub-category,Payee,Note,Tags,Source,ID");
+    expect(lines[0]).toBe("Date,Type,Amount (GBP),Account,To account,Category,Sub-category,Payee,Note,Tags,One-off pot,Source,ID");
     expect(lines.length - 1).toBe(52);
     expect(lines.some((l) => l.includes(",expense,-6.40,Amex Gold,,Eating out,Coffee & snacks,Gail's Bakery"))).toBe(true);     // spend is negative
     expect(lines.some((l) => l.includes(",income,121.60,Monzo,,Refunds,,ASOS"))).toBe(true);
