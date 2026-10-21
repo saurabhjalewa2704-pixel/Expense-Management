@@ -20,13 +20,14 @@ const filler = (n: number) => Array.from({ length: n }, (_, i) => row("groc", "2
 describe("suggestCategories", () => {
   it("cold start: fewer than 20 transactions falls back to the default order", () => {
     const s = suggestCategories({ history: [row("coffee", "2026-10-18")], categories: cats, now, today });
-    expect(s.map((x) => x.label)).toEqual(["Groceries", "Eating out", "Transport", "Shopping", "Home", "Bills"]);
+    expect(s.map((x) => x.label)).toEqual(["Groceries", "Coffee & snacks", "TfL & rail", "Shopping", "Home", "Bills"]);   // the first sub-category of each group
+    expect(s[1]).toMatchObject({ categoryId: "coffee", parentLabel: "Eating out" });
   });
 
   it("pins the payee's learned category first, even on a cold start", () => {
     const s = suggestCategories({ history: [], categories: cats, now, today, payeeCategoryId: "coffee" });
-    expect(s[0]).toEqual({ categoryId: "coffee", label: "Coffee & snacks" });
-    expect(s.map((x) => x.label)).not.toContain("Eating out"); // same group, not repeated
+    expect(s[0]).toEqual({ categoryId: "coffee", label: "Coffee & snacks", parentLabel: "Eating out" });
+    expect(s.filter((x) => x.categoryId === "coffee")).toHaveLength(1);   // not repeated when the cold-start list reaches it too
     expect(s).toHaveLength(6);
   });
 
@@ -34,19 +35,27 @@ describe("suggestCategories", () => {
     const morning = Array.from({ length: 12 }, (_, i) => row("coffee", `2026-10-${String(i + 1).padStart(2, "0")}`, "07:40"));
     const history = [...morning, ...Array.from({ length: 10 }, (_, i) => row("tfl", `2026-09-${String(i + 1).padStart(2, "0")}`, "17:30"))];
     const s = suggestCategories({ history, categories: cats, now, today });
-    expect(s[0]!.label).toBe("Coffee & snacks"); // sub-category shown: used 12 times
+    expect(s[0]!.label).toBe("Coffee & snacks"); // the sub-category itself, with its parent beside it
     // and in the evening the commute leads instead
     const evening = suggestCategories({ history, categories: cats, now: new Date("2026-10-19T16:30:00Z"), today });
     expect(evening[0]!.label).toBe("TfL & rail");
   });
 
-  it("shows the parent name until a sub-category has been used 3 times", () => {
-    const two = [row("coffee", "2026-10-10", "07:40"), row("coffee", "2026-10-11", "07:40"), ...filler(20)];
-    expect(suggestCategories({ history: two, categories: cats, now, today }).map((x) => x.label)).toContain("Eating out");
-    const three = [...two, row("coffee", "2026-10-12", "07:40")];
-    const labels = suggestCategories({ history: three, categories: cats, now, today }).map((x) => x.label);
-    expect(labels).toContain("Coffee & snacks");
-    expect(labels).not.toContain("Eating out");
+  it("ranks the lowest level used, so two sub-categories of one parent can both lead", () => {
+    const history = [
+      ...Array.from({ length: 8 }, (_, i) => row("coffee", `2026-10-${String(i + 1).padStart(2, "0")}`, "07:40")),
+      ...Array.from({ length: 6 }, (_, i) => row("rest", `2026-10-${String(i + 1).padStart(2, "0")}`, "07:50")),
+      ...filler(10),
+    ];
+    const s = suggestCategories({ history, categories: cats, now, today });
+    expect(s.slice(0, 2).map((x) => x.label).sort()).toEqual(["Coffee & snacks", "Restaurants"]);
+    expect(s.slice(0, 2).every((x) => x.parentLabel === "Eating out")).toBe(true);
+  });
+
+  it("a category used directly (not a sub-category) has no parent label", () => {
+    const s = suggestCategories({ history: filler(25), categories: cats, now, today });
+    expect(s[0]).toMatchObject({ label: "Groceries" });
+    expect(s[0]!.parentLabel).toBeUndefined();
   });
 
   it("ignores history older than 180 days", () => {
@@ -55,7 +64,7 @@ describe("suggestCategories", () => {
     expect(s[0]!.label).not.toBe("Health");
   });
 
-  it("never returns archived categories or duplicate groups", () => {
+  it("never returns archived categories or duplicates", () => {
     const archived = cats.map((c) => (c.id === "groc" ? { ...c, archived_at: "2026-01-01" } : c));
     const s = suggestCategories({ history: filler(25), categories: archived, now, today });
     expect(s.map((x) => x.label)).not.toContain("Groceries");

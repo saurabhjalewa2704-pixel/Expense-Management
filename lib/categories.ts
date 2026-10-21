@@ -34,10 +34,10 @@ export function buildTree(all: readonly Category[]): CategoryTree {
 }
 
 /** What a list row calls itself: the payee, else the category, else what kind of entry it is. */
-export function rowTitle(r: Pick<TxnRow, "type" | "payee_name" | "category_name" | "counter_account_name" | "account_name" | "note">): string {
+export function rowTitle(r: Pick<TxnRow, "type" | "payee_name" | "category_name" | "counter_account_name" | "account_name" | "note"> & { pot_name?: string | null }): string {
   if (r.type === "transfer") return `${r.account_name} → ${r.counter_account_name ?? "account"}`;
   if (r.type === "adjustment") return "Balance adjustment";
-  return r.payee_name || r.category_name || "Untitled";
+  return r.payee_name || r.category_name || (r.pot_name ? `${r.pot_name} pot` : "Untitled");
 }
 
 /** Second line of a list row: sub-category · account · time. */
@@ -46,8 +46,9 @@ export function rowSubtitle(r: TxnRow, time?: string): string {
   if (r.type === "transfer") parts.push("Transfer");
   else if (r.type === "adjustment") parts.push("Adjustment");
   else if (r.payee_name && r.category_name) parts.push(r.category_name);
+  else if (!r.payee_name && !r.category_name && r.pot_name) parts.push("No category");
   if (r.type !== "transfer") parts.push(r.account_name);
-  if (r.pot_name) parts.push(`${r.pot_name} pot`);
+  if (r.pot_name && (r.payee_name || r.category_name)) parts.push(`${r.pot_name} pot`);   // with neither, the pot is already the title
   if (time) parts.push(time);
   return parts.join(" · ");
 }

@@ -72,7 +72,7 @@ export function PotDetail({ id }: { id: string }) {
           <div className="section-h"><h2>By category</h2></div>
           <div className="list" data-testid="pot-categories">
             {cats.data!.map((c) => (
-              <div key={c.category_id} className="row">
+              <div key={c.category_id ?? "none"} className="row">
                 <div className="tile"><CategoryIcon name={c.icon} size={20} /></div>
                 <div className="row-main"><div className="row-t">{c.name}</div><div className="row-s">{c.txn_count} transaction{c.txn_count === 1 ? "" : "s"}</div>
                   <div style={{ height: 4, borderRadius: 2, background: "var(--surface-3)", marginTop: 6 }}><div style={{ width: `${(c.total_pence / maxCat) * 100}%`, height: "100%", borderRadius: 2, background: "var(--chart-ink)" }} /></div></div>

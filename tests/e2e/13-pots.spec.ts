@@ -14,13 +14,15 @@ async function createPotViaUi(page: Page, name = "Home purchase", budget = "4500
   await expect(page.getByTestId("pot-row").filter({ hasText: name })).toBeVisible();
 }
 
+/** A pot expense needs no category: pick the pot, and Add is available straight away. */
 async function addPotExpense(page: Page, amount: string, pot = "Home purchase") {
   await openAdd(page);
   await amountKeys(page, amount);
-  await page.getByRole("radio", { name: /Supermarket/ }).click();                 // selects (no remembered payee, so it does not save)
+  await expect(page.getByRole("button", { name: /^Add £/ })).toBeDisabled();       // outside a pot a category is still required
   await page.getByRole("button", { name: "One-off pot" }).click();
   await page.getByRole("button", { name: pot }).click();
-  await expect(page.getByTestId("pot-note")).toContainText(`In “${pot}”. Not counted in monthly spend or insights.`);
+  await expect(page.getByTestId("pot-note")).toContainText(`In “${pot}”. No category needed. Kept out of monthly spend.`);
+  await expect(page.getByRole("radio", { checked: true })).toHaveCount(0);        // and none was chosen for you
   await page.getByRole("button", { name: /^Add £/ }).click();
   await expect(page.getByTestId("quick-add")).toHaveCount(0);
 }
@@ -184,5 +186,65 @@ test.describe("one-off pots", () => {
     await page.getByRole("button", { name: "Not in a pot" }).click();
     await page.getByRole("button", { name: /^Save/ }).click();
     await expect.poll(() => sqlOne<{ n: number }>(`select count(*)::int n from transactions where pot_id is not null`).then((r) => r.n)).toBe(0);
+  });
+
+  test("a pot expense needs no category: it saves without one, shows as 'No category', and stays out of usual spending", async ({ page }) => {
+    await startDemo(page);
+    await createPotViaUi(page);
+    await page.goto("/");
+    await addPotExpense(page, "850");
+    const row = await sqlOne<{ category_id: string | null; pot_id: string | null }>(`select category_id, pot_id from transactions where amount_pence = 85000`);
+    expect(row.category_id).toBeNull();
+    expect(row.pot_id).not.toBeNull();
+
+    await page.goto("/activity");
+    const item = page.getByTestId("txn-row").filter({ hasText: "£850.00" });
+    await expect(item).toContainText("Home purchase pot");                             // the pot is the title when there is no payee or category
+    await expect(item).toContainText("No category");
+    await page.goto("/pots");
+    await page.getByTestId("pot-row").click();
+    await expect(page.getByTestId("pot-categories")).toContainText("No category");
+    await expect(page.getByTestId("pot-categories")).toContainText("£850.00");
+    await page.goto("/");
+    await expect(page.getByText(`${SPENT} spent`)).toBeVisible();                      // usual spending unchanged
+    expect((await sqlOne<{ n: number }>(`select count(*)::int n from spend_by_category('2026-10-01','2026-10-18') where name is null`)).n).toBe(0);
+    const csv = await (await page.request.get("/api/export?format=csv&pot=only")).text();
+    expect(csv).toContain("-850.00");
+  });
+
+  test("with a pot a category is optional (tap again to clear it), and taking the pot away brings the requirement back", async ({ page }) => {
+    await startDemo(page);
+    await createPotViaUi(page);
+    await page.goto("/");
+    await openAdd(page);
+    await amountKeys(page, "40");
+    await page.getByRole("button", { name: "One-off pot" }).click();
+    await page.getByRole("button", { name: "Home purchase" }).click();
+    await expect(page.getByText("Category (optional)")).toBeVisible();
+    await page.getByTestId("qcard").first().click();
+    await expect(page.getByTestId("qcard").first()).toHaveAttribute("aria-checked", "true");
+    await page.getByTestId("qcard").first().click();                                   // tap again: cleared
+    await expect(page.getByTestId("qcard").first()).toHaveAttribute("aria-checked", "false");
+    await expect(page.getByRole("button", { name: "Add £40.00" })).toBeEnabled();
+    const add = (await page.getByRole("button", { name: "Add £40.00" }).boundingBox())!;
+    expect(add.y + add.height).toBeLessThanOrEqual(844);                               // Add stays on screen with a pot chosen
+
+    await page.getByRole("button", { name: /One-off pot Home purchase/ }).click();
+    await page.getByRole("button", { name: "Not in a pot" }).click();
+    await expect(page.getByText("Your top categories")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Add £40.00" })).toBeDisabled();     // back to needing a category
+  });
+
+  test("income can go in a pot without a category too (a gift towards the deposit)", async ({ page }) => {
+    await startDemo(page);
+    await createPotViaUi(page);
+    await page.goto("/");
+    await openAdd(page);
+    await page.getByRole("tab", { name: "Income" }).click();
+    await amountKeys(page, "2000");
+    await page.getByRole("button", { name: "One-off pot" }).click();
+    await page.getByRole("button", { name: "Home purchase" }).click();
+    await page.getByRole("button", { name: /^Add income/ }).click();
+    await expect.poll(async () => (await sqlOne<{ n: number }>(`select count(*)::int n from transactions where type='income' and amount_pence = 200000 and category_id is null and pot_id is not null`)).n).toBe(1);
   });
 });

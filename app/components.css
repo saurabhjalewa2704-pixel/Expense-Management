@@ -131,16 +131,16 @@ input,textarea,select{font:inherit;color:inherit}
 .sheet-head .txt{font-size:var(--t-body);color:var(--ink-2)}
 
 /* ---------- quick add ---------- */
-.amount{display:flex;justify-content:center;align-items:flex-start;font-weight:600;letter-spacing:-.045em;line-height:1;margin:22px 0 20px}
+.amount{display:flex;justify-content:center;align-items:flex-start;font-weight:600;letter-spacing:-.045em;line-height:1;margin:10px 0 10px}
 .amount .cur{font-size:30px;margin:8px 3px 0 0;font-weight:500;letter-spacing:0;color:var(--ink-2)}
-.amount .whole{font-size:64px}
-.amount .pence{font-size:64px}
-.amount .caret{width:3px;height:56px;background:var(--ink);border-radius:2px;margin:4px 0 0 4px;opacity:.85}
+.amount .whole{font-size:56px}
+.amount .pence{font-size:56px}
+.amount .caret{width:3px;height:50px;background:var(--ink);border-radius:2px;margin:4px 0 0 4px;opacity:.85}
 .payee{display:flex;align-items:center;gap:10px;height:48px;padding:0 14px;border-radius:12px;background:var(--surface-2)}
 .payee .v{font-size:var(--t-body);font-weight:500;flex:1}
 .learned{font-size:12px;color:var(--ink-2);display:flex;align-items:center;gap:4px;font-weight:500}
-.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
-.key{height:54px;border-radius:var(--r-key);background:var(--surface-2);display:grid;place-items:center;font-size:26px;font-weight:500;letter-spacing:-.01em}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.key{height:52px;border-radius:var(--r-key);background:var(--surface-2);display:grid;place-items:center;font-size:26px;font-weight:500;letter-spacing:-.01em}
 .key.fn{background:transparent;color:var(--ink-2)}
 .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .meta .chip{height:34px;font-size:13px;background:var(--surface);}
@@ -223,3 +223,19 @@ td + td{padding-left:14px}
 .pane-in{animation:pane-in 180ms ease-out}
 @keyframes pane-in{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.pane-in{animation:none}}
+
+/* ---------- Quick Add (mock-up 02): header, top-category cards ---------- */
+.qa-head{display:flex;align-items:center;justify-content:space-between;height:44px;margin-bottom:8px}
+.qa-head .t{font-size:var(--t-headline);font-weight:600}
+.qa-x{width:40px;height:40px;border-radius:50%;background:var(--surface-2);display:grid;place-items:center;color:var(--ink)}
+.cat-head{display:flex;align-items:baseline;justify-content:space-between;margin:12px 2px 6px}
+.cat-head .link{display:flex;align-items:center;gap:2px;font-size:var(--t-callout);color:var(--ink-2)}
+.qcards{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.qcard{display:flex;align-items:center;gap:10px;min-height:50px;padding:8px 10px;border-radius:14px;background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--rule);text-align:left;min-width:0}
+.qcard .qi{width:32px;height:32px;border-radius:var(--r-tile);background:var(--surface-3);display:grid;place-items:center;flex:none}
+.qcard .qt{display:flex;flex-direction:column;gap:1px;min-width:0}
+.qcard .qt b{font-size:var(--t-sub);font-weight:600;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qcard .qt small{font-size:var(--t-caption);color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qcard.sel{background:var(--ink);color:var(--on-ink);box-shadow:none}
+.qcard.sel .qi{background:color-mix(in srgb, var(--on-ink) 14%, transparent);color:var(--on-ink)}
+.qcard.sel .qt small{color:var(--on-ink);opacity:.62}

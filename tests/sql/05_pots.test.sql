@@ -158,3 +158,37 @@ begin
   assert (select count(*) from ask_turns) = 0, 'delete_all_my_data removes ask turns';
   reset role;
 end $$;
+
+-- A pot transaction needs no category; anything else still does.
+do $$
+declare ua uuid := gen_random_uuid(); acc uuid; cat uuid; pot uuid; tx transactions; denied boolean; r record;
+begin
+  insert into auth.users (id, email) values (ua, 'sa@test.local');
+  perform set_config('request.jwt.claims', json_build_object('sub', ua, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  insert into accounts (name, type, opening_balance_pence, opening_date) values ('A', 'current', 10000000, '2026-01-01') returning id into acc;
+  select id into cat from categories where name = 'Groceries' and parent_id is null;
+  insert into pots (name) values ('House') returning id into pot;
+
+  tx := create_transaction(gen_random_uuid(), 'expense', 1250000, acc, null, null, 'HMRC', null, '{}', '2026-10-10', null, 'app', false, false, pot);
+  assert tx.pot_id = pot and tx.category_id is null, 'a pot expense can have no category';
+  tx := create_transaction(gen_random_uuid(), 'income', 200000, acc, null, null, 'Mum', null, '{}', '2026-10-11', null, 'app', false, false, pot);
+  assert tx.category_id is null, 'so can pot income';
+  perform create_transaction(gen_random_uuid(), 'expense', 50000, acc, null, cat, 'Solicitor', null, '{}', '2026-10-12', null, 'app', false, false, pot);
+
+  denied := false;
+  begin perform create_transaction(gen_random_uuid(), 'expense', 100, acc, null, null, null, null, '{}', '2026-10-12'); exception when check_violation then denied := true; end;
+  assert denied, 'an expense outside a pot still needs a category';
+  denied := false;
+  begin update transactions set pot_id = null where id = tx.id; exception when check_violation then denied := true; end;
+  assert denied, 'taking an uncategorised transaction out of its pot is refused until it has a category';
+
+  -- the pot's totals and breakdown include it, usual spending does not
+  select * into r from pot_summary(pot);
+  assert r.spent_pence = 1300000 and r.received_pence = 200000, 'pot totals: ' || r::text;
+  assert (select count(*) from pot_by_category(pot)) = 2, 'one real category and "No category"';
+  assert (select name from pot_by_category(pot) order by total_pence desc limit 1) = 'No category';
+  assert (select coalesce(sum(total_pence), 0) from spend_by_category('2026-10-01', '2026-10-31')) = 0, 'not usual spending';
+  assert (select count(*) from list_transactions()) = 3 and (select count(*) from list_transactions(p_q => 'HMRC')) = 1, 'the ledger lists it';
+  reset role;
+end $$;

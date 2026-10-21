@@ -158,4 +158,4 @@ export interface TxnTotals { txn_count: number; spend_pence: number; income_penc
 
 /** A one-off pot such as "Home purchase": real money, never part of usual spending. */
 export interface Pot { pot_id: string; name: string; target_pence: number | null; closed_at: string | null; spent_pence: number; received_pence: number; net_pence: number; txn_count: number; first_on: ISODate | null; last_on: ISODate | null }
-export interface PotCategory { category_id: string; name: string; icon: string; color: CategoryColor; total_pence: number; txn_count: number }
+export interface PotCategory { category_id: string | null; name: string; icon: string; color: CategoryColor; total_pence: number; txn_count: number }

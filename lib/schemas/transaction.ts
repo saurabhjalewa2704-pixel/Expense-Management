@@ -25,7 +25,8 @@ const rules = (v: Shape, ctx: z.RefinementCtx) => {
     if (!v.counter_account_id) ctx.addIssue({ code: "custom", path: ["counter_account_id"], message: "Choose the account it goes to." });
     else if (v.counter_account_id === v.account_id) ctx.addIssue({ code: "custom", path: ["counter_account_id"], message: "Choose two different accounts." });
     if (v.pot_id) ctx.addIssue({ code: "custom", path: ["pot_id"], message: "A transfer can't go in a pot." });
-  } else if (!v.category_id) {
+  } else if (!v.category_id && !v.pot_id) {
+    // a one-off pot classifies the transaction on its own, so it needs no category
     ctx.addIssue({ code: "custom", path: ["category_id"], message: "Choose a category." });
   }
 };
