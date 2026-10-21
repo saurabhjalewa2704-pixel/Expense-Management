@@ -11,7 +11,7 @@ import { formatGBP, pressKey, toPence } from "@/lib/money";
 import { discard, enqueue, flushIdle, getItem, newClientId, updatePending } from "@/lib/outbox";
 import { useAccounts, useCategoryTree, useLastIncomeAccount, useOutbox, usePayees, useProfile, useSuggestHistory } from "@/lib/queries/hooks";
 import { TxnInput } from "@/lib/schemas/transaction";
-import { suggestCategories, type HistoryRow } from "@/lib/suggest";
+import { suggestCategories, type HistoryRow, type Suggestion } from "@/lib/suggest";
 import { requestSync } from "@/lib/sync";
 import type { Account, Payee, TxnRow } from "@/lib/types";
 import { useKeyboardInset } from "@/lib/use-keyboard-inset";
@@ -144,7 +144,7 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
 
   const chips = useMemo(() => {
     if (mode === "transfer") return [];
-    if (mode === "income") return tree.parents("income").slice(0, 6).map((c) => ({ categoryId: c.id, label: c.name }));
+    if (mode === "income") return tree.parents("income").slice(0, 6).map((c): Suggestion => ({ categoryId: c.id, label: c.name }));
     const pending = outbox.filter((i) => i.status === "pending" && i.payload.type === "expense" && i.payload.category_id)
       .map((i) => ({ category_id: i.payload.category_id!, occurred_on: i.payload.occurred_on, at: new Date(i.created_at).toISOString() }));
     return suggestCategories({
@@ -153,10 +153,10 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
     });
   }, [mode, tree, history, categories, matchedPayee, outbox, nowMs]);
 
-  // a category picked from the full list leads the chips with its parent shown ("Transport › Taxis")
-  const selectedLabel = categoryId ? tree.path(categoryId) : undefined;
-  const chipList = categoryId && !chips.some((c) => c.categoryId === categoryId) && selectedLabel
-    ? [{ categoryId, label: selectedLabel }, ...chips.slice(0, 5)] : chips;
+  // a category picked from the full list leads the cards, with its parent beside it
+  const picked = categoryId ? tree.byId.get(categoryId) : undefined;
+  const chipList: Suggestion[] = picked && !chips.some((c) => c.categoryId === picked.id)
+    ? [{ categoryId: picked.id, label: picked.name, parentLabel: picked.parent_id ? tree.byId.get(picked.parent_id)?.name : undefined }, ...chips.slice(0, 5)] : chips;
 
   const dirty = !editing && (amount !== "" || payee !== "" || note !== "");
 
@@ -209,7 +209,7 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
     pot_id: mode === "transfer" ? null : potId,
   });
 
-  const canSave = pence > 0 && !!effAccount && (mode === "transfer" ? !!effCounter && effCounter !== effAccount : !!categoryId);
+  const canSave = pence > 0 && !!effAccount && (mode === "transfer" ? !!effCounter && effCounter !== effAccount : !!categoryId || !!potId);
 
   const save = async (categoryOverride?: string) => {
     if (busy) return;
@@ -275,6 +275,7 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
   };
 
   const tapChip = (id: string) => {
+    if (potId && categoryId === id) { setCategoryId(null); return; }          // in a pot a category is optional: tap again to clear it
     setCategoryId(id);
     setError(undefined);
     // CAP-01: with a remembered payee, tapping a category IS the save action (setting "Tap category to save").
@@ -310,9 +311,14 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
   return (
     <Sheet
       open={open} onOpenChange={requestClose} title={editing ? "Edit transaction" : "Add transaction"}
-      bottomInset={isDesktop ? 0 : inset} maxHeight={!isDesktop && viewportHeight ? `${Math.floor(viewportHeight - 8)}px` : undefined}
+      bottomInset={isDesktop ? 0 : inset} maxHeight={!isDesktop && viewportHeight ? `${Math.floor(viewportHeight - 8)}px` : undefined} handle={false}
     >
       <div className="vaul-body" onKeyDown={onKeyDown} data-testid="quick-add" style={{ paddingBottom: 4 }}>
+        <div className="qa-head">
+          <button className="qa-x" aria-label="Close" onClick={() => requestClose(false)}><UI.X size={18} strokeWidth={2} aria-hidden /></button>
+          <span className="t">{editing ? "Edit transaction" : mode === "income" ? "New income" : mode === "transfer" ? "New transfer" : "New expense"}</span>
+          <span className="qa-x" aria-hidden style={{ visibility: "hidden" }} />
+        </div>
         <div className="seg" role="tablist" aria-label="Type">
           {MODES.map((m) => (
             <button key={m.id} role="tab" aria-selected={mode === m.id} className={mode === m.id ? "on" : ""} disabled={!!editing && editing.type !== m.id}
@@ -348,13 +354,18 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
                 ))}
               </div>
             )}
-            <div className="chips nowrap fade" style={{ marginTop: 14, overflowX: "auto", scrollbarWidth: "none" }} role="radiogroup" aria-label="Category">
-              {chipList.map((c) => (
-                <button key={c.categoryId} role="radio" aria-checked={categoryId === c.categoryId} className={`chip ${categoryId === c.categoryId ? "sel" : ""}`} onClick={() => tapChip(c.categoryId)}>
-                  <CategoryIcon name={tree.byId.get(c.categoryId)?.icon} size={16} />{c.label}
+            <div className="cat-head">
+              <span className="eyebrow">{potId ? "Category (optional)" : mode === "income" ? "Income type" : "Your top categories"}</span>
+              <button className="link" onClick={() => setPicker("category")} aria-label="More categories">All categories <UI.ChevronRight size={14} strokeWidth={2} aria-hidden /></button>
+            </div>
+            <div className="qcards" role="radiogroup" aria-label="Category">
+              {(potId ? chipList.slice(0, 4) : chipList).map((c) => (
+                <button key={c.categoryId} role="radio" aria-checked={categoryId === c.categoryId} aria-label={c.label} title={c.parentLabel ? `${c.parentLabel} › ${c.label}` : c.label}
+                  className={`qcard ${categoryId === c.categoryId ? "sel" : ""}`} onClick={() => tapChip(c.categoryId)} data-testid="qcard">
+                  <span className="qi"><CategoryIcon name={tree.byId.get(c.categoryId)?.icon} size={18} /></span>
+                  <span className="qt"><b>{c.label}</b>{c.parentLabel && <small>{c.parentLabel}</small>}</span>
                 </button>
               ))}
-              <button className="chip soft plain" onClick={() => setPicker("category")} aria-label="More categories">More <UI.ChevronRight size={14} strokeWidth={2} aria-hidden /></button>
             </div>
           </>
         ) : (
@@ -380,16 +391,16 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
                 <UI.Calendar size={16} strokeWidth={1.75} aria-hidden />{dateChipLabel(date)}
               </button>
               {mode !== "transfer" && (
-                <button className={`chip ${potId ? "sel" : ""}`} onClick={() => setPicker("pot")} aria-label={potId ? `One-off pot ${potName}` : "One-off pot"} style={{ maxWidth: 150 }}>
-                  <UI.PiggyBank size={16} strokeWidth={1.75} aria-hidden /><span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{potId ? potName : "One-off"}</span>
+                <button className={`chip ${potId ? "sel" : ""}`} onClick={() => setPicker("pot")} aria-label={potId ? `One-off pot ${potName}` : "One-off pot"} style={{ maxWidth: potId ? 112 : 150, ...(potId ? {} : { padding: "0 11px" }) }}>
+                  <UI.PiggyBank size={16} strokeWidth={1.75} aria-hidden />{potId && <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{potName}</span>}
                 </button>
               )}
-              <button className="chip" onClick={() => setPicker("note")} aria-label="Note" style={{ maxWidth: 150 }}>
-                <UI.FileText size={16} strokeWidth={1.75} aria-hidden /><span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{note ? note : "Note"}</span>
+              <button className="chip" onClick={() => setPicker("note")} aria-label="Note" style={{ maxWidth: 150, ...(potId && !note ? { padding: "0 11px" } : {}) }}>
+                <UI.FileText size={16} strokeWidth={1.75} aria-hidden />{(note || !potId) && <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{note ? note : "Note"}</span>}
               </button>
             </div>
 
-            {potId && mode !== "transfer" && <p className="sub" data-testid="pot-note" style={{ margin: "8px 2px 0" }}>In “{potName}”. Not counted in monthly spend or insights.</p>}
+            {potId && mode !== "transfer" && <p className="sub" data-testid="pot-note" style={{ margin: "8px 2px 0" }}>In “{potName}”. No category needed. Kept out of monthly spend.</p>}
 
             <div className="keypad num" role="group" aria-label="Amount keypad">
               {["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0"].map((k) => (

@@ -17,6 +17,8 @@ interface SheetProps {
   bottomInset?: number;
   maxHeight?: string;
   className?: string;
+  /** Show the drag handle at the top (default). A sheet with its own close button can turn it off. */
+  handle?: boolean;
 }
 
 /**
@@ -28,7 +30,7 @@ export function Sheet(props: SheetProps) {
   return desktop ? <DesktopModal {...props} /> : <MobileSheet {...props} />;
 }
 
-function MobileSheet({ open, onOpenChange, title, children, nested, dismissible = true, bottomInset = 0, maxHeight, className }: SheetProps) {
+function MobileSheet({ open, onOpenChange, title, children, nested, dismissible = true, bottomInset = 0, maxHeight, className, handle = true }: SheetProps) {
   const Root = nested ? Drawer.NestedRoot : Drawer.Root;
   return (
     <Root open={open} onOpenChange={onOpenChange} dismissible={dismissible} shouldScaleBackground={!nested} repositionInputs={false}>
@@ -38,7 +40,7 @@ function MobileSheet({ open, onOpenChange, title, children, nested, dismissible 
           className={`vaul-content ${className ?? ""}`}
           style={{ bottom: bottomInset, maxHeight: maxHeight ?? "96dvh" }}
         >
-          <Drawer.Handle className="grabber" style={{ background: "var(--surface-3)", height: 5, width: 36, margin: "0 auto 14px", opacity: 1 }} />
+          {handle && <Drawer.Handle className="grabber" style={{ background: "var(--surface-3)", height: 5, width: 36, margin: "0 auto 14px", opacity: 1 }} />}
           <Drawer.Title className="sr-only">{title}</Drawer.Title>
           <Drawer.Description className="sr-only">{title}</Drawer.Description>
           {children}

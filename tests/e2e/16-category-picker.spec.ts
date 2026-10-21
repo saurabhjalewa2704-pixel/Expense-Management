@@ -27,7 +27,7 @@ test.describe("category picker (parent → child)", () => {
 
     await page.getByRole("button", { name: "Taxis" }).click();                                         // one tap chooses and closes
     await expect(page.getByLabel("Search categories")).toHaveCount(0);
-    await expect(page.getByRole("radio", { name: "Transport › Taxis" })).toBeChecked();               // the parent is shown on the chip
+    await expect(page.getByRole("radio", { name: "Taxis" })).toBeChecked();               // the chosen category leads the cards, with its parent beneath
     await page.getByRole("button", { name: "Add £7.50" }).click();
     await expect(toast(page)).toContainText("Added £7.50 · Taxis");
     await expect.poll(() => saved("Taxis", 750)).toBe(1);
@@ -98,7 +98,7 @@ test.describe("category picker (parent → child)", () => {
     await page.getByLabel("Category name").fill("Scooter hire");
     await page.getByRole("radio", { name: "bike" }).click();
     await page.getByRole("button", { name: "Create" }).click();
-    await expect(page.getByRole("radio", { name: "Transport › Scooter hire" })).toBeChecked();
+    await expect(page.getByRole("radio", { name: "Scooter hire" })).toBeChecked();
     expect((await sql<{ parent: string }>(`select p.name parent from categories c join categories p on p.id=c.parent_id where c.name='Scooter hire'`))[0]?.parent).toBe("Transport");
   });
 });
