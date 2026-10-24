@@ -47,61 +47,91 @@ begin
   create temp table plan (cat text, t18 bigint[], a18 bigint[], n_t int, n_a int, acct uuid, subs text[], shares numeric[], payees text[]) on commit drop;
 
   -- ---------- October 2026, 1 to 18: every transaction listed (52 = 50 expenses + 2 income) ----------
+  -- Sub-category totals are PRD Appendix A: Home 1,812.40 (Rent 1,600 · Council tax 142 · Energy 48.40 · Broadband 22) · Groceries 386.25
+  -- (Supermarket 314.70 · Specialist 48.90 · Household 22.65) · Eating out 312.60 in 21 visits (Restaurants 142.50 ×3 · Coffee 76.80 ×12 ·
+  -- Takeaway 58.30 ×3 · Work lunches 28.60 ×2 · Drinks 6.40) · Transport 214.80 · Shopping 178.90 · Bills 118.43 · Health 96.00 · Entertainment 74.97 · Gifts 42.50
   insert into seed_txn (type, amount, acct, cat, payee, on_date, at_ts)
   select t.type::txn_type, t.amount, case t.acct when 'M' then monzo when 'H' then hsbc when 'A' then amex when 'C' then cash end, t.cat, t.payee,
          make_date(2026, 10, t.d), (make_date(2026, 10, t.d)::text || ' ' || t.tm || ' Europe/London')::timestamptz
     from (values
-      -- Home
-      (1,'09:00','expense',165000,'M','Rent & mortgage','Foxtons Lettings'), (3,'07:30','expense',9240,'M','Energy','Octopus Energy'),
-      (5,'07:30','expense',3500,'M','Broadband & TV','Hyperoptic'), (7,'07:30','expense',3500,'M','Water','Thames Water'),
+      -- Home (fixed)
+      (1,'09:00','expense',160000,'M','Rent & mortgage','Foxtons Lettings'), (3,'07:30','expense',4840,'M','Energy','Octopus Energy'),
+      (5,'07:30','expense',2200,'M','Broadband & TV','Hyperoptic'), (7,'07:30','expense',14200,'M','Council tax','Camden Council'),
       -- Groceries
-      (2,'18:05','expense',6218,'H','Supermarket','Tesco'), (5,'17:40','expense',5430,'M','Supermarket','Sainsbury''s'),
-      (8,'18:20','expense',7145,'M','Supermarket','Waitrose'), (10,'17:55','expense',3890,'A','Supermarket','M&S Food'),
-      (12,'18:10','expense',6675,'H','Supermarket','Tesco'), (14,'12:15','expense',2000,'M','Specialist shops','Borough Market'),
-      (15,'11:40','expense',2395,'M','Specialist shops','Neal''s Yard Dairy'), (17,'17:30','expense',4872,'M','Supermarket','Waitrose'),
-      -- Eating out
-      (1,'12:40','expense',845,'A','Work lunches','Pret A Manger'), (3,'19:30','expense',3420,'A','Restaurants','Franco Manca'),
-      (4,'20:00','expense',4180,'A','Restaurants','Pizza Express'), (16,'13:05','expense',1200,'A','Work lunches','Itsu'),
-      (9,'19:45','expense',3050,'A','Restaurants','Honest Burgers'), (11,'20:15','expense',3860,'A','Restaurants','Wagamama'),
-      (16,'08:50','expense',415,'A','Coffee & snacks','Costa Coffee'), (14,'19:10','expense',1200,'A','Restaurants','Nando''s'),
-      (15,'19:20','expense',1200,'A','Restaurants','Nando''s'), (15,'21:30','expense',2600,'A','Drinks','The Crown Tavern'),
-      (17,'20:40','expense',8650,'A','Restaurants','Dishoom Kensington'), (18,'09:12','expense',640,'A','Coffee & snacks','Gail''s Bakery'),
+      (2,'18:05','expense',9240,'H','Supermarket','Tesco'), (8,'18:20','expense',8430,'M','Supermarket','Sainsbury''s'),
+      (12,'18:10','expense',8928,'H','Supermarket','Tesco'), (17,'17:30','expense',4872,'M','Supermarket','Waitrose'),
+      (14,'12:15','expense',2000,'M','Specialist shops','Borough Market'), (15,'11:40','expense',2890,'M','Specialist shops','Neal''s Yard Dairy'),
+      (6,'11:10','expense',2265,'A','Household supplies','Robert Dyas'),
+      -- Eating out: Restaurants ×3
+      (3,'19:30','expense',3100,'A','Restaurants','Franco Manca'), (9,'19:45','expense',2500,'A','Restaurants','Honest Burgers'),
+      (17,'20:40','expense',8650,'A','Restaurants','Dishoom Kensington'),
+      -- Coffee & snacks ×12 (Gail's Bakery six times at £6.40)
+      (2,'08:55','expense',640,'A','Coffee & snacks','Gail''s Bakery'), (3,'08:20','expense',680,'A','Coffee & snacks','Starbucks'),
+      (5,'08:50','expense',640,'A','Coffee & snacks','Gail''s Bakery'), (6,'08:35','expense',725,'A','Coffee & snacks','Black Sheep Coffee'),
+      (8,'08:52','expense',640,'A','Coffee & snacks','Gail''s Bakery'), (10,'09:05','expense',830,'A','Coffee & snacks','Costa Coffee'),
+      (11,'08:48','expense',640,'A','Coffee & snacks','Gail''s Bakery'), (13,'08:40','expense',550,'A','Coffee & snacks','Pret A Manger'),
+      (14,'08:51','expense',640,'A','Coffee & snacks','Gail''s Bakery'), (15,'08:30','expense',640,'A','Coffee & snacks','Costa Coffee'),
+      (16,'08:50','expense',415,'A','Coffee & snacks','Costa Coffee'), (18,'09:12','expense',640,'A','Coffee & snacks','Gail''s Bakery'),
+      -- Takeaway & delivery ×3
+      (4,'20:30','expense',1940,'A','Takeaway & delivery','Deliveroo'), (11,'20:10','expense',1890,'A','Takeaway & delivery','Deliveroo'),
+      (15,'19:50','expense',2000,'A','Takeaway & delivery','Deliveroo'),
+      -- Work lunches ×2, Drinks ×1
+      (1,'12:40','expense',1660,'A','Work lunches','Pret A Manger'), (16,'13:05','expense',1200,'A','Work lunches','Itsu'),
+      (15,'21:30','expense',640,'A','Drinks','The Crown Tavern'),
       -- Transport
-      (2,'08:10','expense',4500,'A','TfL & rail','TfL'), (9,'08:05','expense',4500,'A','TfL & rail','TfL'), (15,'08:12','expense',4500,'A','TfL & rail','TfL'),
-      (6,'17:50','expense',3860,'A','TfL & rail','Trainline'), (12,'22:10','expense',1200,'A','Taxis','Uber'), (17,'23:05','expense',1420,'A','Taxis','Uber'),
+      (2,'08:10','expense',14260,'A','TfL & rail','TfL'), (12,'22:10','expense',4300,'A','Taxis','Uber'), (17,'23:05','expense',1420,'A','Taxis','Uber'),
       (13,'10:30','expense',1500,'A','Parking & tolls','NCP Parking'),
       -- Shopping
-      (6,'13:20','expense',5990,'A','Clothing & shoes','Uniqlo'), (11,'14:00','expense',4995,'A','Homeware','John Lewis'),
-      (13,'21:15','expense',2396,'A','Online & general','Amazon'), (16,'21:40','expense',4509,'A','Online & general','Amazon'),
+      (6,'13:20','expense',6550,'A','Clothing & shoes','Uniqlo'), (11,'14:00','expense',1500,'A','Homeware','Dunelm'),
+      (13,'21:15','expense',5331,'A','Online & general','Amazon'), (16,'21:40','expense',4509,'A','Online & general','Amazon'),
       -- Bills
-      (4,'09:00','expense',2800,'H','Mobile','Three Mobile'), (8,'09:00','expense',6243,'H','Insurance','Admiral Insurance'),
-      (12,'09:00','expense',300,'H','Bank fees & interest','HSBC Account Fee'), (15,'10:00','expense',2500,'H','Professional fees','Bright Accountants'),
+      (4,'09:00','expense',3600,'H','Mobile','Three Mobile'), (8,'09:00','expense',6243,'H','Insurance','Admiral Insurance'),
+      (12,'09:00','expense',2000,'H','Bank fees & interest','HSBC Account Fee'),
       -- Health
-      (3,'07:00','expense',4950,'M','Gym & fitness','PureGym'), (10,'16:30','expense',3000,'M','Medical & dental','Smile Dental'), (17,'12:10','expense',1650,'M','Pharmacy','Boots'),
+      (3,'07:00','expense',7500,'M','Gym & fitness','PureGym'), (10,'16:30','expense',450,'M','Pharmacy','Boots'), (17,'12:10','expense',1650,'M','Pharmacy','Boots'),
       -- Entertainment
-      (2,'06:00','expense',1299,'A','Streaming & apps','Netflix'), (2,'06:00','expense',1199,'A','Streaming & apps','Spotify'),
-      (5,'06:00','expense',899,'A','Streaming & apps','Apple TV+'), (9,'21:00','expense',2200,'A','Events & culture','Curzon Cinema'),
-      (12,'13:30','expense',950,'M','Books & media','Waterstones'), (14,'13:10','expense',950,'M','Books & media','Foyles'),
+      (2,'06:00','expense',1299,'A','Streaming & apps','Netflix'), (5,'06:00','expense',2898,'A','Streaming & apps','Apple One'),
+      (9,'21:00','expense',3300,'A','Events & culture','Curzon Cinema'),
       -- Family & giving
-      (8,'11:00','expense',3000,'M','Gifts','Interflora'), (15,'11:30','expense',1250,'H','Charity','British Heart Foundation'),
+      (8,'11:00','expense',4250,'M','Gifts','Interflora'),
       -- Income
       (15,'06:00','income',1840,'H','Interest & dividends','HSBC Interest'), (16,'10:00','income',12160,'M','Refunds','ASOS')
     ) as t(d, tm, type, amount, acct, cat, payee);
 
-  -- ---------- April to September: monthly plan by parent category ----------
-  -- t18 = spend on days 1-18 · a18 = spend from the 19th. Chosen so each category's six-month median by day 18 matches the mock-ups
-  -- (Groceries £361.20, Eating out £226.10, Transport £251.10) and September lands on £3,604.10 / £5,316.20.
+  -- ---------- April to September ----------
+  -- Home and Travel are planned by parent. t18 = spend on days 1-18 · a18 = spend from the 19th. September lands on £3,604.10 by day 18 and
+  -- £5,316.20 in full; Travel's September absorbs whatever the planned sub-categories leave, so those two totals never move.
   insert into plan values
    ('Home',          '{180520,181140,179880,180360,181420,180800}', '{0,0,0,0,0,0}',                                 4, 0, monzo, '{Energy,Broadband & TV,Water}', '{50,25,25}', '{Octopus Energy,Hyperoptic,Thames Water}'),
-   ('Groceries',     '{36400,35210,35840,36845,35530,37240}',       '{15100,14200,15900,14800,16100,16830}',        7, 6, monzo, '{Supermarket,Specialist shops}', '{85,15}', '{Tesco,Sainsbury''s,Waitrose,M&S Food,Borough Market}'),
-   ('Eating out',    '{20975,19840,24130,22600,25510,22620}',       '{12900,14300,16800,15200,17900,14250}',        9, 7, amex,  '{Restaurants,Coffee & snacks,Takeaway & delivery,Work lunches}', '{60,15,10,15}', '{Dishoom,Franco Manca,Pizza Express,Pret A Manger,Gail''s Bakery,Wagamama,Deliveroo,Itsu,Honest Burgers}'),
-   ('Transport',     '{25490,24010,26800,23160,24730,26215}',       '{9200,11400,8800,12100,10300,9820}',           6, 4, amex,  '{TfL & rail,Taxis,Parking & tolls}', '{60,25,15}', '{TfL,Uber,Trainline,NCP Parking}'),
-   ('Shopping',      '{16000,24560,19840,18999,30120,21430}',       '{12300,18900,9500,22100,14800,100040}',        3, 3, amex,  '{Clothing & shoes,Online & general,Homeware}', '{40,40,20}', '{Uniqlo,Amazon,John Lewis,Zara,Apple}'),
-   ('Bills',         '{11955,11955,12140,11955,11955,11955}',       '{2400,2400,2400,2400,2400,2400}',              4, 1, hsbc,  '{Mobile,Insurance,Bank fees & interest,Professional fees}', '{25,50,5,20}', '{Three Mobile,Admiral Insurance,HSBC Account Fee,Bright Accountants}'),
-   ('Health',        '{9600,6600,12600,9600,6600,5490}',            '{4500,5100,3000,6000,4500,12000}',             3, 2, monzo, '{Gym & fitness,Pharmacy,Medical & dental}', '{50,20,30}', '{PureGym,Boots,Smile Dental}'),
-   ('Entertainment', '{7497,7497,9846,7497,12000,7297}',            '{3000,2200,6500,2600,8100,3870}',              4, 2, amex,  '{Streaming & apps,Events & culture,Books & media}', '{45,35,20}', '{Netflix,Spotify,Curzon Cinema,Waterstones,Foyles}'),
-   ('Family & giving','{2500,5500,4250,3000,4250,3800}',           '{4000,6000,2500,3500,5000,12000}',             2, 2, hsbc,  '{Gifts,Charity}', '{60,40}', '{Interflora,British Heart Foundation,Oxfam}'),
-   ('Travel',        '{0,0,31200,0,118000,43563}',                  '{0,0,0,0,40000,0}',                            2, 1, amex,  '{Flights,Hotels}', '{50,50}', '{British Airways,Booking.com,Trainline}');
+   ('Travel',        '{0,0,31200,0,118000,36787}',                  '{0,0,0,0,40000,11940}',                         2, 1, amex,  '{Flights,Hotels}', '{50,50}', '{British Airways,Booking.com,Trainline}');
+
+  -- Every other category is planned by sub-category: per month, what was spent on days 1-18 (t18) and from the 19th (a18). Each sub's six
+  -- t18 values have the "usual by day 18" of PRD Appendix A as their median (Supermarket £298, Restaurants £105, ...), and Eating out's
+  -- month totals are May £218.40 · Jun £243.10 · Jul £331.20 · Aug £287.60 · Sep £264.10, as in the Category detail mock-up.
+  create temp table plan_sub (cat text, sub text, t18 bigint[], a18 bigint[], n_t int, n_a int, acct uuid, payees text[]) on commit drop;
+  insert into plan_sub values
+   ('Groceries', 'Supermarket', '{31886,27714,29800,29800,26820,30992}', '{12080,11360,12720,11840,12880,13464}', 4, 3, monzo, '{Tesco,Sainsbury''s,Waitrose,M&S Food}'),
+   ('Groceries', 'Specialist shops', '{4601,3999,4300,4300,3870,4472}', '{1812,1704,1908,1776,1932,2020}', 2, 1, monzo, '{Borough Market,Neal''s Yard Dairy}'),
+   ('Groceries', 'Household supplies', '{2140,1860,2000,2000,1800,2080}', '{1208,1136,1272,1184,1288,1346}', 1, 1, monzo, '{Robert Dyas,Dunelm}'),
+   ('Transport', 'TfL & rail', '{19046,16554,17800,17800,16020,18512}', '{5520,6840,5280,7260,6180,5892}', 2, 2, amex, '{TfL,Trainline}'),
+   ('Transport', 'Taxis', '{6206,5394,5800,5800,5220,6032}', '{2300,2850,2200,3025,2575,2455}', 2, 1, amex, '{Uber}'),
+   ('Transport', 'Parking & tolls', '{1605,1395,1500,1500,1350,1560}', '{1380,1710,1320,1815,1545,1473}', 1, 1, amex, '{NCP Parking}'),
+   ('Shopping', 'Online & general', '{9630,8370,9000,9000,8100,9360}', '{4920,7560,3800,8840,5920,40016}', 2, 2, amex, '{Amazon,Apple}'),
+   ('Shopping', 'Clothing & shoes', '{10058,8742,9400,9400,8460,9776}', '{4920,7560,3800,8840,5920,40016}', 1, 1, amex, '{Uniqlo,Zara}'),
+   ('Shopping', 'Homeware', '{2140,1860,2000,2000,1800,2080}', '{2460,3780,1900,4420,2960,20008}', 1, 1, amex, '{John Lewis,Dunelm}'),
+   ('Health', 'Gym & fitness', '{7500,7500,7500,7500,7500,7500}', '{2250,2550,1500,3000,2250,6000}', 1, 1, monzo, '{PureGym}'),
+   ('Health', 'Pharmacy', '{1391,1209,1300,1300,1170,1352}', '{2250,2550,1500,3000,2250,6000}', 2, 1, monzo, '{Boots}'),
+   ('Entertainment', 'Streaming & apps', '{4170,3624,3897,3897,3507,4053}', '{1650,1210,3575,1430,4455,2128}', 3, 1, amex, '{Netflix,Spotify,Apple TV+}'),
+   ('Entertainment', 'Events & culture', '{3427,2979,3203,3203,2883,3331}', '{1350,990,2925,1170,3645,1742}', 1, 1, amex, '{Curzon Cinema}'),
+   ('Family & giving', 'Gifts', '{5885,5115,5500,5500,4950,5720}', '{4000,6000,2500,3500,5000,12000}', 2, 1, hsbc, '{Interflora}'),
+   ('Eating out', 'Restaurants', '{11710,9850,11150,4920,2950,11205}', '{7700,0,0,12397,12397,1271}', 3, 2, amex, '{Dishoom,Franco Manca,Pizza Express,Wagamama,Honest Burgers}'),
+   ('Eating out', 'Coffee & snacks', '{5905,5065,5745,2575,1435,5735}', '{1400,640,290,2254,2254,231}', 9, 2, amex, '{Gail''s Bakery,Costa Coffee,Starbucks,Pret A Manger}'),
+   ('Eating out', 'Takeaway & delivery', '{4750,4035,4575,1925,1230,4565}', '{2800,0,0,4508,4508,462}', 3, 2, amex, '{Deliveroo}'),
+   ('Eating out', 'Work lunches', '{2020,1780,2020,850,465,2025}', '{2100,0,0,3381,3381,346}', 2, 1, amex, '{Pret A Manger,Itsu}'),
+   ('Eating out', 'Drinks', '{615,470,530,310,140,570}', '{0,0,0,0,0,0}', 1, 1, amex, '{The Crown Tavern}'),
+   ('Bills', 'Mobile', '{3600,3600,3600,3600,3600,3600}', '{0,0,0,0,0,0}', 1, 0, hsbc, '{Three Mobile}'),
+   ('Bills', 'Insurance', '{6243,6243,6243,6243,6243,6243}', '{0,0,0,0,0,0}', 1, 0, hsbc, '{Admiral Insurance}'),
+   ('Bills', 'Bank fees & interest', '{2100,1850,1957,1957,1800,2060}', '{2400,2400,2400,2400,2400,2400}', 1, 1, hsbc, '{HSBC Account Fee}');
 
   for m in 1..6 loop
     mdate := months[m];
@@ -154,6 +184,39 @@ begin
                mdate + (day_n - 1),
                ((mdate + (day_n - 1))::text || ' ' || lpad(hh::text, 2, '0') || ':' || lpad(mi::text, 2, '0') || ' Europe/London')::timestamptz);
           end loop;
+        end loop;
+      end loop;
+    end loop;
+  end loop;
+
+  for m in 1..6 loop
+    mdate := months[m];
+    for c in select * from plan_sub loop
+      for half in 1..2 loop
+        total := case when half = 1 then c.t18[m] else c.a18[m] end;
+        cnt := case when half = 1 then c.n_t else c.n_a end;
+        continue when total <= 0 or cnt <= 0;
+        first_day := case when half = 1 then 1 else 19 end;
+        span := case when half = 1 then 18 else extract(day from (date_trunc('month', mdate) + interval '1 month - 1 day'))::int - 18 end;
+        per := least(cnt, greatest(1, (total / 400)::int));          -- a few small purchases, never a £4 purchase split in three
+        left_amt := total;
+        for idx in 1..per loop
+          if idx < per then
+            each_amt := least(left_amt, round(left_amt::numeric / (per - idx + 1) * (0.7 + (abs(hashtext(c.sub || '-' || idx || '-' || m || half)) % 60) / 100.0)));
+          else
+            each_amt := left_amt;
+          end if;
+          left_amt := left_amt - each_amt;
+          continue when each_amt <= 0;
+          day_n := first_day + (abs(hashtext(c.sub || '-' || idx || '-' || m || half || 'd')) % span);
+          hh := 8 + (abs(hashtext(c.sub || '-' || idx || '-' || m || half || 't')) % 13);
+          mi := abs(hashtext(c.sub || '-' || idx || '-' || m || half || 'm')) % 60;
+          alt := case c.acct when amex then monzo when monzo then hsbc else c.acct end;
+          insert into seed_txn (type, amount, acct, cat, payee, on_date, at_ts) values
+            ('expense', each_amt, case when (idx + m) % 3 = 0 then alt else c.acct end, c.sub,
+             c.payees[1 + (abs(hashtext(c.sub || '-' || idx || '-' || m || half || 'p')) % array_length(c.payees, 1))],
+             mdate + (day_n - 1),
+             ((mdate + (day_n - 1))::text || ' ' || lpad(hh::text, 2, '0') || ':' || lpad(mi::text, 2, '0') || ' Europe/London')::timestamptz);
         end loop;
       end loop;
     end loop;

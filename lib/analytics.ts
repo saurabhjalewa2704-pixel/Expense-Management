@@ -1,7 +1,7 @@
 // Pure logic behind the Analytics charts: finding titles, usual-spend flags, the waterfall, projections and heat levels.
 // Titles are sentences stating the finding, generated from the data (PRD §6.7).
 import { addMonths, daysInMonth, dayOfMonth, diffDays, monthStart, weekdayIndex, type ISODate } from "@/lib/dates";
-import { formatGBP, medianPence, pctChange, type Pence } from "@/lib/money";
+import { formatGBP, medianPence, pctChange, pctOf, type Pence } from "@/lib/money";
 import type { CashFlow, CategorySpend, DailySpend, MonthlyTotal } from "@/lib/types";
 
 const pounds = (p: Pence) => formatGBP(Math.abs(p), { whole: true });
@@ -28,6 +28,22 @@ export function categoryFinding(rows: readonly CategorySpend[], total: Pence): s
   const top = rows[0];
   return top ? `${top.name} is where most of the money went` : total === 0 ? "Nothing spent yet" : "Where it went";
 }
+
+/** AN-02c: the title of the sub-category list. The biggest overspend if any is flagged, otherwise the top one's share of flexible spend. */
+export function subcategoryFinding(flexible: readonly CategorySpend[]): string {
+  const flagged = flexible.map((r) => ({ r, f: deltaFlag(r.total_pence, r.norm_pence) })).filter((x) => x.f)
+    .sort((a, b) => (b.r.total_pence - (b.r.norm_pence ?? 0)) - (a.r.total_pence - (a.r.norm_pence ?? 0)))[0];
+  if (flagged) return `${leafLabel(flagged.r)} ${/s$/.test(flagged.r.name) && !flagged.r.is_parent_direct ? "are" : "is"} up ${flagged.f!.pct}% on your usual`;
+  const total = flexible.reduce((s, r) => s + r.total_pence, 0);
+  const top = flexible[0];
+  return top ? `${leafLabel(top)} is ${pctOf(top.total_pence, total)}% of flexible spend` : "Where it went";
+}
+
+/** A sub-category's display name: spend assigned straight to a parent reads "Other eating out" (as in the category picker). */
+export const leafLabel = (r: Pick<CategorySpend, "name" | "is_parent_direct">) => (r.is_parent_direct ? `Other ${r.name.toLowerCase()}` : r.name);
+
+/** Average per transaction, truncated to the penny (PRD §6.7.1: £312.60 over 21 is £14.88). */
+export const averageTicket = (total: Pence, count: number): Pence => (count > 0 ? Math.floor(total / count) : 0);
 
 export interface WaterfallStep { key: string; label: string; kind: "total" | "up" | "down"; value: Pence; from: Pence; to: Pence }
 

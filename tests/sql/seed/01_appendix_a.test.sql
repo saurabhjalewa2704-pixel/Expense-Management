@@ -31,6 +31,30 @@ begin
   select * into r from spend_by_category('2026-10-01', '2026-10-18') where name = 'Eating out';
   assert round((r.total_pence - r.norm_pence) * 100.0 / r.norm_pence) = 38 and round(r.norm_pence / 100.0) = 226, r::text;
 
+  -- sub-categories (PRD §6.7.1): the leaf view reproduces the appendix and sums to the parent view (invariant 6)
+  assert (select name from spend_by_category('2026-10-01', '2026-10-18', p_level => 'leaf') where not is_fixed order by total_pence desc limit 1) = 'Supermarket';
+  assert (select total_pence from spend_by_category('2026-10-01', '2026-10-18', p_level => 'leaf') where name = 'Supermarket') = 31470;
+  select * into r from spend_by_category('2026-10-01', '2026-10-18', p_level => 'leaf') where name = 'Restaurants';
+  assert r.total_pence = 14250 and r.norm_pence = 10500 and r.parent_name = 'Eating out' and r.visits = 3, r::text;
+  assert round((r.total_pence - r.norm_pence) * 100.0 / r.norm_pence) = 36, 'Restaurants ↑ 36%';
+  assert (select sum(total_pence) from spend_by_category('2026-10-01', '2026-10-18', p_level => 'leaf') where is_fixed) = 191083, 'Fixed costs £1,910.83';
+  assert (select count(*) from spend_by_category('2026-10-01', '2026-10-18', p_level => 'leaf') where is_fixed) = 6, 'Fixed costs · 6';
+  select * into r from spend_by_category('2026-10-01', '2026-10-18') where name = 'Eating out';
+  assert r.total_pence = 31260 and r.txn_count = 21 and r.total_pence / r.txn_count = 1488, r::text;  -- £14.88 (truncated)
+  assert (select array_agg(month::text || ':' || total_pence order by month) from category_monthly((select id from categories where name = 'Eating out'), 6))
+       = array['2026-05-01:21840','2026-06-01:24310','2026-07-01:33120','2026-08-01:28760','2026-09-01:26410','2026-10-01:31260'];
+  assert 31260 + category_remaining((select id from categories where name = 'Eating out'), '2026-10-18') = 53800, 'projection ≈ £538';
+  assert (select name from top_places('2026-10-01', '2026-10-18', 3, (select id from categories where name = 'Eating out')) limit 1) = 'Dishoom Kensington';
+  -- invariant 6 over several ranges
+  for n in 0..5 loop
+    assert not exists (
+      select 1 from spend_by_category('2026-04-01'::date + n * 20, '2026-04-01'::date + n * 20 + 25) p
+       where p.total_pence <> (select coalesce(sum(l.total_pence), 0) from spend_by_category('2026-04-01'::date + n * 20, '2026-04-01'::date + n * 20 + 25, p_level => 'leaf') l
+                                where l.category_id = p.category_id or l.parent_id = p.category_id)), 'leaf sums equal parent rows, range ' || n;
+    assert (select coalesce(sum(total_pence), 0) from spend_by_category('2026-04-01'::date + n * 20, '2026-04-01'::date + n * 20 + 25))
+         = (select coalesce(sum(total_pence), 0) from spend_by_category('2026-04-01'::date + n * 20, '2026-04-01'::date + n * 20 + 25, p_level => 'leaf')), 'grand totals match';
+  end loop;
+
   -- counts and day totals shown on the Activity mock-up
   assert (select txn_count from transaction_totals(p_from => '2026-10-01', p_to => '2026-10-18')) = 52;
   assert (select count(*) from transactions where type = 'income' and occurred_on between '2026-10-01' and '2026-10-18') = 2;

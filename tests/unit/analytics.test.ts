@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildWaterfall, categoryFinding, deltaFlag, heatLevels, paceFinding, projectMonth, rhythmFinding, trendFinding, weekdayAverages } from "@/lib/analytics";
+import { buildWaterfall, categoryFinding, subcategoryFinding, leafLabel, averageTicket, deltaFlag, heatLevels, paceFinding, projectMonth, rhythmFinding, trendFinding, weekdayAverages } from "@/lib/analytics";
 import { canStepForward, resolvePeriod, stepPeriod } from "@/lib/periods";
 import type { CashFlow, CategorySpend, DailySpend } from "@/lib/types";
 
@@ -44,9 +44,19 @@ describe("findings", () => {
     expect(deltaFlag(5000, null)).toBeNull();
   });
   it("names the biggest overshoot, else the top category", () => {
-    const row = (name: string, t: number, n: number | null): CategorySpend => ({ category_id: name, name, icon: "x", color: "stone", parent_id: null, total_pence: t, txn_count: 1, norm_pence: n });
+    const row = (name: string, t: number, n: number | null): CategorySpend => ({ category_id: name, name, icon: "x", color: "stone", parent_id: null, total_pence: t, txn_count: 1, norm_pence: n, parent_name: null, is_fixed: false, is_parent_direct: false, visits: 1 });
     expect(categoryFinding([row("Home", 181240, 180660), row("Eating out", 31260, 22610)], 212500)).toBe("Eating out is up 38% on your usual");
     expect(categoryFinding([row("Home", 181240, 180660)], 181240)).toBe("Home is where most of the money went");
+  });
+  it("names the sub-category with the biggest overshoot, else the top one's share of flexible spend", () => {
+    const sub = (name: string, t: number, n: number | null, direct = false): CategorySpend => ({ category_id: name, name, icon: "x", color: "stone", parent_id: "p", total_pence: t, txn_count: 2, norm_pence: n, parent_name: "Eating out", is_fixed: false, is_parent_direct: direct, visits: 2 });
+    expect(subcategoryFinding([sub("Supermarket", 31470, 29800), sub("Restaurants", 14250, 10500)])).toBe("Restaurants are up 36% on your usual");
+    expect(subcategoryFinding([sub("Supermarket", 30000, 29800), sub("Restaurants", 10000, 10500)])).toBe("Supermarket is 75% of flexible spend");
+    expect(leafLabel(sub("Eating out", 100, null, true))).toBe("Other eating out");
+  });
+  it("averages per transaction truncated to the penny (£312.60 over 21 is £14.88)", () => {
+    expect(averageTicket(31260, 21)).toBe(1488);
+    expect(averageTicket(0, 0)).toBe(0);
   });
   it("trend", () => {
     expect(trendFinding("October", 506200, 523500)).toBe("October is heading for £5,062, near your average");

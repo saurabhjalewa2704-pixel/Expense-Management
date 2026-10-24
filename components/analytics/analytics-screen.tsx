@@ -1,33 +1,62 @@
 "use client";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { CategoryBars } from "@/components/charts/category-bars";
+import { SubcategoryList } from "@/components/charts/subcategory-list";
 import { ChartCard } from "@/components/charts/chart-card";
 import { Heatmap } from "@/components/charts/heatmap";
 import { PaceChart } from "@/components/charts/pace-chart";
 import { TrendChart } from "@/components/charts/trend-chart";
 import { WaterfallChart } from "@/components/charts/waterfall-chart";
 import { PeriodControl } from "./period-control";
-import { average, buildWaterfall, categoryFinding, paceFinding, projectMonth, rhythmFinding, trendBars, trendFinding, waterfallFinding, weekdayAverages, WEEKDAY_NAMES } from "@/lib/analytics";
+import { average, buildWaterfall, categoryFinding, subcategoryFinding, paceFinding, projectMonth, rhythmFinding, trendBars, trendFinding, waterfallFinding, weekdayAverages, WEEKDAY_NAMES } from "@/lib/analytics";
 import { addMonths, formatDayMonth, formatMonthYear, monthStart } from "@/lib/dates";
 import { CategoryIcon, UI } from "@/lib/icons";
 import { formatGBP, pctChange } from "@/lib/money";
-import { resolvePeriod, type PeriodSel } from "@/lib/periods";
+import { resolvePeriod } from "@/lib/periods";
+import { periodQuery, useSharedPeriod } from "@/lib/period-url";
 import type { Category } from "@/lib/types";
 import { useCashFlow, useCategories, useDailySpend, useMonthlyTotals, usePayees, useSpendByCategory, useToday, useTopPayees } from "@/lib/queries/hooks";
 
 const NO_CATEGORIES: Category[] = [];
 
+type GroupBy = "category" | "sub";
+/** The last "Where it went" view, remembered on the device (AN-02a). Read after mount so the server and first client render agree. */
+function useGroupBy(): [GroupBy, (g: GroupBy) => void] {
+  const [g, setG] = useState<GroupBy>("category");
+  useEffect(() => { try { if (localStorage.getItem("an.groupBy") === "sub") setG("sub"); } catch { /* storage unavailable */ } }, []);
+  return [g, (v) => { setG(v); try { localStorage.setItem("an.groupBy", v); } catch { /* storage unavailable */ } }];
+}
+
+/** Categories · Sub-categories, under the card's subtitle. The list cross-fades in 200 ms and the card holds its height until the new list has rendered. */
+function GroupSwitch({ value, onChange, children }: { value: GroupBy; onChange: (g: GroupBy) => void; children: React.ReactNode }) {
+  const box = useRef<HTMLDivElement>(null);
+  const [hold, setHold] = useState<number | null>(null);
+  useLayoutEffect(() => { if (hold === null) return; const t = setTimeout(() => setHold(null), 220); return () => clearTimeout(t); }, [hold, value]);
+  const pick = (g: GroupBy) => { if (g === value) return; setHold(box.current?.offsetHeight ?? null); onChange(g); };
+  return (
+    <>
+      <div className="seg view-seg" role="tablist" aria-label="Group by" data-testid="group-switch">
+        <button role="tab" aria-selected={value === "category"} className={value === "category" ? "on" : ""} onClick={() => pick("category")}>Categories</button>
+        <button role="tab" aria-selected={value === "sub"} className={value === "sub" ? "on" : ""} onClick={() => pick("sub")}>Sub-categories</button>
+      </div>
+      <div ref={box} style={{ minHeight: hold ?? undefined }}><div key={value} className="gb-list">{children}</div></div>
+    </>
+  );
+}
+
 /** S5: the long scroll of finding-titled charts (AN-01..06, AN-08). */
 export function AnalyticsScreen() {
   const today = useToday();
-  const [sel, setSel] = useState<PeriodSel>({ kind: "month", anchor: today });
+  const [sel, setSel] = useSharedPeriod(today);
+  const [groupBy, setGroupBy] = useGroupBy();
   const [showIncome, setShowIncome] = useState(false);
   const p = resolvePeriod(sel, today);
 
   const cur = useDailySpend(p.from, p.to);
   const prev = useDailySpend(p.prevFrom, p.prevEnd);
   const cats = useSpendByCategory(p.from, p.to, null);
+  const leaves = useSpendByCategory(p.from, p.to, null, false, "leaf");
   const prevCats = useSpendByCategory(p.prevFrom, p.prevTo, null);
   const poolCats = useSpendByCategory(p.from, p.to, null, true);
   const flow = useCashFlow(p.from, p.to);
@@ -43,7 +72,10 @@ export function AnalyticsScreen() {
   const curSpend = curRows.at(-1)?.cumulative_pence ?? 0;
   const prevAt = prevRows[Math.min(curRows.length, prevRows.length) - 1]?.cumulative_pence ?? 0;
   const hasPrev = prevRows.some((d) => d.total_pence > 0);
-  const hrefFor = (id: string) => `/analytics/category/${id}?from=${p.from}&to=${p.to}`;
+  const hrefFor = (id: string) => `/analytics/category/${id}?${periodQuery(sel)}`;
+  const leafHref = (r: { category_id: string }) => `/analytics/subcategory/${r.category_id}?${periodQuery(sel)}`;
+  const leafRows = leaves.data ?? [];
+  const flexLeaves = leafRows.filter((r) => !r.is_fixed);
   const showUsual = p.kind === "month";
 
   // fixed costs: a parent where more than half of its sub-categories are fixed (Home yes, Bills no)
@@ -103,11 +135,21 @@ export function AnalyticsScreen() {
           </ChartCard>
         </div>
 
-        <ChartCard testId="chart-categories" loading={cats.isLoading} empty={catRows.length === 0}
-          finding={showUsual ? categoryFinding(catRows, totalSpend) : catRows[0] ? `${catRows[0].name} is where most of the money went` : "Where it went"}
-          sub={showUsual ? `Category spend this month · marker = usual by day ${p.elapsed}` : `Category spend, ${p.label}`}
-          table={{ columns: ["Category", "Spend", "Share", ...(showUsual ? ["Usual by now"] : [])], rows: catRows.map((r) => [r.name, formatGBP(r.total_pence), `${Math.round((r.total_pence * 100) / (totalSpend || 1))}%`, ...(showUsual ? [r.norm_pence == null ? "—" : formatGBP(r.norm_pence)] : [])]) }}>
-          <CategoryBars rows={catRows} fixedIds={fixedIds} showUsual={showUsual} href={hrefFor} total={totalSpend} />
+        <ChartCard testId="chart-categories" loading={cats.isLoading || (groupBy === "sub" && leaves.isLoading)} empty={catRows.length === 0}
+          finding={groupBy === "sub"
+            ? subcategoryFinding(flexLeaves)
+            : showUsual ? categoryFinding(catRows, totalSpend) : catRows[0] ? `${catRows[0].name} is where most of the money went` : "Where it went"}
+          sub={groupBy === "sub"
+            ? (showUsual ? `This month · every sub-category, ranked · marker = usual by day ${p.elapsed}` : `Every sub-category, ranked, ${p.label}`)
+            : showUsual ? `Category spend this month · marker = usual by day ${p.elapsed}` : `Category spend, ${p.label}`}
+          table={groupBy === "sub"
+            ? { columns: ["Sub-category", "Spend", "Share", ...(showUsual ? ["Usual by now"] : [])], rows: leafRows.map((r) => [`${r.name} (${r.parent_name ?? "—"})`, formatGBP(r.total_pence), `${Math.round((r.total_pence * 100) / (totalSpend || 1))}%`, ...(showUsual ? [r.norm_pence == null ? "—" : formatGBP(r.norm_pence)] : [])]) }
+            : { columns: ["Category", "Spend", "Share", ...(showUsual ? ["Usual by now"] : [])], rows: catRows.map((r) => [r.name, formatGBP(r.total_pence), `${Math.round((r.total_pence * 100) / (totalSpend || 1))}%`, ...(showUsual ? [r.norm_pence == null ? "—" : formatGBP(r.norm_pence)] : [])]) }}>
+          <GroupSwitch value={groupBy} onChange={setGroupBy}>
+            {groupBy === "sub"
+              ? <SubcategoryList rows={leafRows} showUsual={showUsual} href={leafHref} total={totalSpend} />
+              : <CategoryBars rows={catRows} fixedIds={fixedIds} showUsual={showUsual} href={hrefFor} total={totalSpend} />}
+          </GroupSwitch>
         </ChartCard>
 
         <ChartCard testId="chart-waterfall" loading={flow.isLoading || poolCats.isLoading} empty={!wf || (flow.data?.spend_pence === 0 && flow.data?.income_pence === 0)}

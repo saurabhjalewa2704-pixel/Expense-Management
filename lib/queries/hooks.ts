@@ -9,7 +9,7 @@ import { supabaseBrowser } from "@/lib/supabase/client";
 import type { AccountBalance, TxnRow } from "@/lib/types";
 import {
   fetchAccounts, fetchAccountSeries, fetchActivityPage, fetchBalances, fetchCashFlow, fetchCashSeries, fetchCategories,
-  fetchCategoryMonthly, fetchDailySpend, fetchMonthlyTotals, fetchPace, fetchPayees, fetchProfile, fetchSpendByCategory,
+  fetchCategoryMonthly, fetchCategoryRemaining, fetchTopPlaces, fetchDailySpend, fetchMonthlyTotals, fetchPace, fetchPayees, fetchProfile, fetchSpendByCategory,
   fetchAskTurns, fetchPotCategories, fetchPots, fetchTransactionCount, fetchWeekActivity, fetchInsightFeedback, fetchInsightRuns, fetchLastIncomeAccount, fetchSuggestHistory, fetchTopPayees, fetchTotals, PAGE_SIZE, type ActivityCursor,
 } from "./fetchers";
 import { qk, type ActivityFilters } from "./keys";
@@ -163,16 +163,20 @@ export function useRecent(limit = 4) {
 }
 
 // ---- analytics (server only: charts are not overlaid with pending entries) ----
-export const useSpendByCategory = (from: ISODate, to: ISODate, parent: string | null = null, pool = false) =>
-  useQuery({ queryKey: qk.spendByCategory(from, to, parent, pool), queryFn: () => fetchSpendByCategory(db(), from, to, parent, pool), placeholderData: keepPreviousData });
+export const useSpendByCategory = (from: ISODate, to: ISODate, parent: string | null = null, pool = false, level: "parent" | "leaf" = "parent") =>
+  useQuery({ queryKey: qk.spendByCategory(from, to, parent, pool, level), queryFn: () => fetchSpendByCategory(db(), from, to, parent, pool, level), placeholderData: keepPreviousData });
 export const useDailySpend = (from: ISODate, to: ISODate, excludeFixed = false) =>
   useQuery({ queryKey: qk.dailySpend(from, to, excludeFixed), queryFn: () => fetchDailySpend(db(), from, to, excludeFixed), placeholderData: keepPreviousData });
 export const useMonthlyTotals = (months = 12) =>
   useQuery({ queryKey: qk.monthlyTotals(months), queryFn: () => fetchMonthlyTotals(db(), months) });
 export const useTopPayees = (from: ISODate, to: ISODate, limit = 10, category: string | null = null) =>
   useQuery({ queryKey: [...qk.topPayees(from, to), limit, category], queryFn: () => fetchTopPayees(db(), from, to, limit, category), placeholderData: keepPreviousData });
-export const useCategoryMonthly = (id: string, months = 12) =>
-  useQuery({ queryKey: qk.categoryMonthly(id, months), queryFn: () => fetchCategoryMonthly(db(), id, months) });
+export const useCategoryMonthly = (id: string, months = 12, children = true) =>
+  useQuery({ queryKey: qk.categoryMonthly(id, months, children), queryFn: () => fetchCategoryMonthly(db(), id, months, children), placeholderData: keepPreviousData });
+export const useTopPlaces = (from: ISODate, to: ISODate, limit: number, id: string, children = true) =>
+  useQuery({ queryKey: qk.topPlaces(from, to, limit, id, children), queryFn: () => fetchTopPlaces(db(), from, to, limit, id, children), placeholderData: keepPreviousData });
+export const useCategoryRemaining = (id: string, asOf: ISODate, children = true, enabled = true) =>
+  useQuery({ queryKey: qk.categoryRemaining(id, asOf, children), queryFn: () => fetchCategoryRemaining(db(), id, asOf, children), enabled });
 
 /** Refresh everything after a write that happened outside the outbox (edits, deletes, account changes). */
 export function useInvalidateAll() {
