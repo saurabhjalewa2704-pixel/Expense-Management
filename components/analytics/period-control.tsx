@@ -7,6 +7,18 @@ import { addDays, type ISODate } from "@/lib/dates";
 
 const KINDS: { id: PeriodKind; label: string }[] = [{ id: "month", label: "Month" }, { id: "quarter", label: "Quarter" }, { id: "year", label: "Year" }, { id: "custom", label: "Custom" }];
 
+/** Just the arrows and the label: the compact period control on the detail screens. */
+export function PeriodStepper({ value, today, onChange }: { value: PeriodSel; today: ISODate; onChange: (v: PeriodSel) => void }) {
+  const p = resolvePeriod(value, today);
+  return (
+    <div className="period" data-testid="period">
+      <button className="icon-btn" aria-label="Previous period" onClick={() => onChange(stepPeriod(value, -1))}><UI.ChevronLeft size={16} strokeWidth={2} aria-hidden /></button>
+      <span className="p" data-testid="period-label" aria-live="polite">{p.label}</span>
+      <button className="icon-btn" aria-label="Next period" disabled={!canStepForward(value, today)} style={{ opacity: canStepForward(value, today) ? 1 : 0.35 }} onClick={() => onChange(stepPeriod(value, 1))}><UI.ChevronRight size={16} strokeWidth={2} aria-hidden /></button>
+    </div>
+  );
+}
+
 /** Month · Quarter · Year · Custom, with arrows to step backwards and forwards (defaults to the current month). */
 export function PeriodControl({ value, today, onChange }: { value: PeriodSel; today: ISODate; onChange: (v: PeriodSel) => void }) {
   const p = resolvePeriod(value, today);

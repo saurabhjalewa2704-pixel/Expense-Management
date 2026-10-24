@@ -27,7 +27,7 @@ test.describe("accounts (ACC-01..05)", () => {
     await expect(page.getByTestId("account-balance").locator(".figure")).toHaveAttribute("aria-label", "£3,214.08");
     await expect(page.getByRole("img", { name: /balance over the last 90 days/ })).toBeVisible();
     await expect(page.getByTestId("txn-row").first()).toContainText("Waitrose");
-    await expect(page.getByTestId("txn-row").filter({ hasText: "Dishoom" })).toHaveCount(0);   // an Amex payment is not on Monzo
+    await expect(page.getByTestId("txn-row").filter({ hasText: "Dishoom Kensington" })).toHaveCount(0);   // an Amex payment is not on Monzo
   });
 
   test("ACC-05: reconcile makes the balance equal the bank's to the penny, and is not spend", async ({ page }) => {

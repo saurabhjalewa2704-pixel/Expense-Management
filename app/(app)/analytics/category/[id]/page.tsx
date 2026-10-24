@@ -1,7 +1,7 @@
 import { Suspense } from "react";
-import { CategoryDeepDive } from "@/components/analytics/category-deep-dive";
+import { CategoryDetail } from "@/components/analytics/category-detail";
 export const metadata = { title: "Category" };
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  return <Suspense fallback={null}><CategoryDeepDive id={id} /></Suspense>;
+  return <Suspense fallback={null}><CategoryDetail id={id} level="category" /></Suspense>;
 }

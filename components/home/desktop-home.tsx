@@ -129,7 +129,7 @@ export function DesktopHome() {
         <div className="card chart-card" style={{ padding: 24 }}>
           <div className="finding">{categoryFinding(catRows, total)}</div>
           <div className="finding-sub">Category spend this month · marker = usual by now</div>
-          <div style={{ marginTop: 4 }}><CategoryBars rows={catRows} fixedIds={fixedIds} showUsual href={(id) => `/analytics/category/${id}?from=${monthFrom}&to=${today}`} total={total} /></div>
+          <div style={{ marginTop: 4 }}><CategoryBars rows={catRows} fixedIds={fixedIds} showUsual href={(id) => `/analytics/category/${id}`} total={total} /></div>
         </div>
 
         <div className="card" style={{ padding: 24 }}>

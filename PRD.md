@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| Version | 1.1 (dark-only; evening reminder in MVP) |
+| Version | 1.3 (sub-category analytics: view switch and Category detail) |
 | Date | 18 October 2026 |
 | Owner | Saurabh (product owner and only user) |
 | Builder | Claude Code |
@@ -76,7 +76,7 @@ laptop now and then.
 
 | # | Job to be done | Frequency | Primary surface |
 |---|---|---|---|
-| J1 | "I just paid for something, so log it before I forget." | 3–8× per day | Quick Add sheet (mobile) |
+| J1 | "I just paid for something, so log it before I forget." | 3–8× per day | Add expense screen (mobile) |
 | J2 | "I got paid or refunded, so log the income." | 2–6× per month | Quick Add → Income |
 | J3 | "How much can I actually spend?" | Daily | Home hero |
 | J4 | "Am I spending more than usual, and on what?" | Weekly | Analytics, Insights |
@@ -139,10 +139,15 @@ max-width 1360 px. Quick Add opens as a centred modal (480 px) rather than a she
 | ID | Screen | Mock-up file |
 |---|---|---|
 | S1 | Home | `01-home.html` |
-| S2 | Quick Add sheet | `02-quick-add.html` |
-| S3 | Category picker (sheet state) | `03-category-picker.html` |
+| S2 | Add expense (full-screen) | `02-quick-add.html` |
+| S2a | Add expense: closing with unsaved input | `03c-discard.html` |
+| S3 | Choose category (whole hierarchy) | `03-category-picker.html` |
+| S3a | Choose category: search | `03b-category-search.html` |
 | S4 | Activity | `04-activity.html` |
 | S5 | Analytics (long scroll) | `05-analytics.html` |
+| S5a | Analytics: Where it went, by category | `05a-analytics-categories.html` |
+| S5b | Analytics: Where it went, by sub-category | `05b-analytics-subcategories.html` |
+| S5c | Category detail (Eating out) | `05c-category-detail.html` |
 | S6 | Insights (AI) | `06-insights.html` |
 | S7 | Available cash detail | `07-available-cash.html` |
 | S8 | Accounts | `08-accounts.html` |
@@ -191,39 +196,102 @@ would never actually get signed in. Codes avoid this entirely.
 
 ### 6.3 Capture: the most important feature
 
-**Target:** median time to log an expense ≤ **5 seconds**, and **3 taps** for the common case
-(＋ → amount → category = saved). The Quick Add sheet must open in under **100 ms** after
-tapping ＋, so it must be pre-rendered and kept mounted, not lazily loaded.
+**Target:** median time to log an expense ≤ **5 seconds**. Common case with a known payee:
+＋ → amount → **Add** (the category is pre-selected). Otherwise: ＋ → amount → tile → Add, and any
+sub-category not in the tiles is two taps away. The Add expense screen must appear in under
+**100 ms** after tapping ＋, so it must be pre-rendered and kept mounted, not lazily loaded.
 
-**CAP-01 Quick Add sheet layout (P0).** See mock-up `03-quick-add.html`. From top to bottom:
-1. Grab handle; segmented control **Expense · Income · Transfer** (Expense is the default; the sheet remembers nothing between opens except the account).
-2. **Amount display**: large, tabular, `£` prefix, pence in a lighter weight. It starts at `£0` with a blinking caret.
-3. **Payee field**: "Where?" placeholder, with autocomplete from the `payees` table (prefix and trigram match, ranked by use_count × recency).
-4. **Smart category row**: six suggested category chips (section 6.3.1), followed by a "More" chip that opens the Category picker (S3).
-5. **Meta row**: account chip (default account), date chip ("Today"; tap for Yesterday / pick a date), note chip.
-6. **Custom numeric keypad**: 3×4 keys `1–9 . 0 ⌫`. Using our own keypad rather than the iOS keyboard keeps the sheet height fixed and the keys large (≥ 64 × 52 pt).
-7. **Primary button**: "Add £12.80". It is disabled until the amount is greater than 0 and a category is chosen.
+**CAP-01 Add expense screen (P0).** See mock-ups `02-quick-add.html` (screen), `03c-discard.html` (closing with unsaved input).
 
-Behaviour:
-- **Typing a payee that has history auto-selects its learned category and account**, so the common path is: ＋ → type amount → tap a suggested chip → Add. When the payee was auto-filled, tapping a category chip **is** the save action (setting: "Tap category to save", default on). This produces the 3-tap path.
-- Amount entry: max 2 decimal places, max £999,999.99; a leading "." becomes "0."; ⌫ long-press clears.
-- On save: the sheet closes, a toast reads "Added £12.80 · Coffee & snacks" with an **Undo** button (6 s), and the Home hero animates to its new value (count-down over 400 ms with an ease-out curve).
-- Swipe-down dismisses; if an amount has been entered, ask "Discard this entry?" first.
-- Accept: three taps log a coffee when the payee is known; the transaction appears in Activity and the hero updates without a page reload; Undo removes it completely (it is soft-deleted, then hard-deleted after 30 days).
+*Presentation.* Add expense is a **full-screen modal**, not a bottom sheet. It slides up over the current tab (280 ms spring) and is pre-mounted so it appears in under 100 ms. On desktop (≥1024 px) it is a centred 480 px modal with the same content.
 
-**CAP-01.1 Smart category suggestions (P0).** Rank the user's categories for the six chips by a score computed client-side from the last 180 days:
-```
-score = 0.45·freq_same_hour_band (±2h) + 0.25·freq_same_weekday
-      + 0.20·recency (exp decay, half-life 14 days) + 0.10·overall_freq
-```
-If the payee has a learned category, that category is pinned first. With fewer than 20 transactions recorded, fall back to the default order: Groceries, Eating out, Transport, Shopping, Home, Bills. Suggestions show the *sub-category* when the user has used it at least 3 times (for example "Coffee & snacks" rather than "Eating out").
+*Closing.*
+- A **Close (✕) button** sits top-left: 44 × 44 pt hit area, `aria-label="Close"`. `Esc` does the same on desktop, and so does the browser or Android back action.
+- If nothing has been entered yet, Close dismisses immediately.
+- If an amount, payee or note has been entered, Close shows an action sheet: "**Discard this expense?** £12.80 at Gail's Bakery hasn't been added yet." The options are **Discard** (destructive) and **Keep editing**.
+- There is **no swipe-to-dismiss**, so a stray gesture can't lose an entry. On desktop, clicking the backdrop does nothing.
+
+*Layout, top to bottom.*
+1. **Top bar:** Close (✕) on the left, the title "New expense" centred. The title changes to "New income" or "New transfer" with the segment.
+2. **Segmented control:** Expense · Income · Transfer. Expense is the default.
+3. **Amount:** large tabular figure with a `£` prefix and a blinking caret; it starts at `£0`.
+4. **Payee field:** placeholder "Where?", with autocomplete from `payees`. When the payee has history, it shows a "Remembered" tag.
+5. **"Your top categories":** a section label, with an **All categories ›** link on the right (44 pt tall).
+6. **Top-category grid:** 2 columns × 3 rows = **6 tiles** (CAP-01.1).
+7. **Meta row:** chips for the account, date ("Today"; tap for Yesterday or a date picker) and note.
+8. **Custom keypad:** 3 × 4 keys, `1–9 . 0 ⌫`, each at least 44 pt tall.
+9. **Primary button:** "Add £12.80". It is disabled until the amount is greater than 0 and a category is selected.
+
+*Tile anatomy.*
+- **The tile shows the category's lowest level.** Its first line is the sub-category name in Body Medium, 14 px. Its second line names the parent in 12 px tertiary text ("Coffee & snacks" / "Eating out").
+- If a transaction is assigned to a parent directly, the tile shows the parent name, with "General" as the caption.
+- A 18 px line icon sits on the left. Long names truncate with an ellipsis; tiles never wrap.
+- The selected tile is inverted (ink background, `on-ink` text) and has `aria-pressed="true"`.
+
+*Behaviour.*
+- **Tapping a tile selects it; it never saves.** Saving always happens with the Add button. There is no "tap category to save" shortcut, so nothing is saved by surprise.
+- When the payee has a learned category, that category is **pre-selected**. The fastest path is then ＋ → type the amount → Add.
+- When a category is chosen in **All categories** and it is not among the six tiles, it temporarily takes the **sixth slot**, selected, for this entry only.
+- On save, the screen closes and a toast reads "Added £12.80 · Coffee & snacks" with **Undo** (6 s). The Home hero then animates to its new value.
+- Amount rules: at most 2 decimal places, at most £999,999.99. A leading "." becomes "0.", and a long-press on ⌫ clears the amount.
+- **Income:** the grid shows the top 6 income categories. They are single-level, so there is no caption, and "All categories" lists all income categories.
+- **Transfer:** the grid and its label are replaced by **From** and **To** account pickers.
+
+*Acceptance criteria.*
+- ✕ is visible and works in every state.
+- Discarding a dirty entry requires the confirmation; closing an empty one doesn't.
+- Every tile shows a leaf-level name with its parent caption.
+- A known payee pre-selects its category, and Add saves with no extra tap.
+- Choosing "Pharmacy" from All categories shows a selected "Pharmacy / Health" tile in slot 6.
+
+**CAP-01.1 Top categories (P0).** Replaces the earlier time-of-day scoring formula.
+- **Ranking:** count expenses per `category_id` (leaf or parent, whichever the user actually assigned) over the **last 90 days**. Ties go to the most recently used. Archived categories are excluded.
+- **Stable order:** the ranking is recomputed **once a day** (on first open after 04:00 London time) and cached. It does not reshuffle while you're using the app, so tiles stay where your thumb expects them.
+- **Cold start (fewer than 20 expenses):** use Supermarket, Coffee & snacks, TfL & rail, Restaurants, Online & general, Takeaway & delivery. Fill any gaps from this list once some real categories rank.
+- **Payee-learned category:** if it's already among the six, just select it. If it isn't, it takes slot 6 for this entry. The order never shifts.
+- **Offline:** the ranking is computed client-side from cached transactions.
+
+**CAP-01.2 All categories picker (P0).** See mock-ups `03-category-picker.html` and `03b-category-search.html`.
+
+*Navigation.* Opened from "All categories ›", it **pushes** within the modal (slides in from the right). The top bar has **‹ Back** (returns with the selection unchanged), the title "Choose category", and **＋ New** on the right.
+
+*The whole hierarchy on one screen.*
+- Every parent appears as a section header: icon, name in 13 px caps, and a count.
+- **All of its sub-categories are listed directly beneath**, so nothing needs expanding or drilling into.
+- The last row of each section is "Other ‹parent›" (for example "Other eating out"). It assigns the **parent** category itself.
+- **One tap on any row selects that category and returns** to Add expense, with that tile selected.
+- Sections follow the user's `sort_order` from Settings → Categories, and sub-categories follow theirs.
+
+*Jump strip.*
+- Below the search field sits a sticky, horizontally scrolling row of parent chips.
+- Tapping a chip scrolls its section to the top.
+- The chip for the section in view is highlighted.
+
+*Current selection.* It shows a check and medium weight. On open, the list scrolls so that row is visible, and its parent's chip is highlighted.
+
+*Search.*
+- The field reads "Search all N categories" and matches **both levels**. Matching is case- and accent-insensitive and accepts a word prefix or any substring.
+- Results become a flat list: icon, the sub-category name with the matched characters in bold, and the parent beneath.
+- If the query matches a parent's name, that parent's sub-categories and its "Other ‹parent›" row are listed.
+- A final row reads **Create "‹query›"**. It opens New category (CAT-03) with the name pre-filled and a parent picker.
+- With no matches, only the Create row shows.
+
+*Creating.* Both ＋ New and Create open New category. After it's created, the new category is selected and the user returns straight to Add expense.
+
+*Accessibility.* Rows are real `<button>`s. The selected row has `aria-current="true"`, section headers are `<h2>`, and the jump strip is a `nav` with `aria-label="Jump to category group"`.
+
+*Acceptance criteria.*
+- Any sub-category can be selected with **two taps** from Add expense: All categories → row.
+- Typing "tax" shows Taxis (Transport) and Council tax (Home).
+- Back leaves the earlier selection unchanged.
+- The list works offline from the cached categories.
 
 **CAP-02 Income (P0).** Same sheet, **Income** segment. The chips show income categories (Salary, Bonus, Interest, Refund, Freelance, Gift, Other). The account defaults to the account that last received income. The button reads "Add income £…", and the amount renders in the positive colour.
 
 **CAP-03 Transfer (P0).** **Transfer** segment: **From** and **To** account pickers, no category. Paying a credit card bill = transfer from current account → credit card. Transfers never count as spend or income.
 - Accept: a £500 transfer from Monzo to Amex leaves available cash unchanged (both accounts are in the pool) and changes both account balances by £500.
 
-**CAP-04 Edit and delete (P0).** Tapping any transaction opens the same sheet pre-filled. Delete is at the bottom (destructive, with confirm). Swipe-left on a row reveals Delete; swipe-right reveals Duplicate. Every edit updates `updated_at`; all figures recompute.
+**CAP-04 Edit and delete (P0).** Tapping any transaction opens the same screen pre-filled, titled "Edit expense". Delete is at the bottom (destructive, with confirm). Swipe-left on a row reveals Delete; swipe-right reveals Duplicate. Every edit updates `updated_at`; all figures recompute.
 
 **CAP-05 Offline capture (P0).** Quick Add must work with no signal (for example on the Underground).
 - Writes go to an IndexedDB **outbox** (Dexie) with a client-generated `client_id` (UUID v7). They are optimistically shown in all views, marked with a small "waiting to sync" glyph.
@@ -231,7 +299,7 @@ If the payee has a learned category, that category is pinned first. With fewer t
 - The server upserts on `client_id` (unique), so retries are idempotent.
 - Accept: in airplane mode, log 3 expenses, kill the app, reopen it online, and exactly 3 rows exist in Postgres.
 
-**CAP-06 Natural-language entry (P1).** The payee field accepts free text such as `28.50 dishoom dinner amex yesterday`. A local parser runs first (regex for the amount, date words, and fuzzy match of account names and known payees). If confidence is below 0.8, call `/api/parse` (Claude Haiku, structured output; section 12.2) and pre-fill the sheet. **It never auto-saves**: the user always sees the filled form and taps Add.
+**CAP-06 Natural-language entry (P1).** The payee field accepts free text such as `28.50 dishoom dinner amex yesterday`. A local parser runs first (regex for the amount, date words, and fuzzy match of account names and known payees). If confidence is below 0.8, call `/api/parse` (Claude Haiku, structured output; section 12.2) and pre-fill the Add expense screen. **It never auto-saves**: the user always sees the filled form and taps Add.
 
 **CAP-07 Favourites (P1).** Pin up to 8 templates (payee + category + account + optional amount). Long-press ＋ opens a favourites grid; tapping a favourite with an amount saves instantly with Undo, and tapping one without an amount opens Quick Add pre-filled.
 
@@ -354,15 +422,89 @@ Period control at the top: **Month · Quarter · Year · Custom**, with arrows t
 | ID | Chart | What it answers | Spec |
 |---|---|---|---|
 | AN-01 | **Spending pace** (signature chart) | "Am I ahead of or behind last month?" | Cumulative spend by day this month (ink, solid, ends at today with a dot and label) vs last month (grey, full month). The gap is annotated. On Year view it becomes this year vs last year. |
-| AN-02 | **Where it went** | "What are the biggest categories?" | Horizontal bars, sorted by amount, top 8 plus "Everything else". Each row: icon, name, amount, share %, and a delta vs the 6-month average at the same point in the month (↑ 38% shown in caution colour if > +20% and > £30). Tap → sub-categories → transactions. |
+| AN-02 | **Where it went** | "What are the biggest categories, and the biggest sub-categories?" | Horizontal bars, sorted by amount, with a **Categories · Sub-categories** view switch (§6.7.1). Each row: icon, name, amount, and a marker for the usual amount by this point (the 6-period median at the same day offset). ↑ 38% is shown in caution colour if > +20% and > £30. Tap a category → Category detail (AN-07); tap a sub-category → Sub-category detail (AN-07b). |
 | AN-03 | **Cash flow** | "How did opening cash become available cash?" | A waterfall: Opening → +Income → −top 4 categories → −Other → (±Set aside) → Available. This directly visualises the CASH-01 equation. |
 | AN-04 | **12-month trend** | "Is my spending creeping up?" | Monthly spend bars for the last 12 months, the current month shown as actual plus a projected (hatched) section, a 12-month average reference line, and an income line overlay (toggle). |
 | AN-05 | **Daily rhythm** | "Which days do I spend on?" | A calendar heatmap for the selected month (sequential single-hue ramp, 5 steps); weekday averages beneath. |
 | AN-06 | **Top payees** | "Who do I pay most?" | A ranked list: payee, visits, total, average ticket. |
-| AN-07 | **Category deep dive** | Opened from any category | A 12-month bar chart for that category, average ticket, frequency, top payees, sub-category split, and transactions. |
+| AN-07 | **Category detail** | "Within Eating out, where did it go?" | Opened from any category row. Total vs usual, three stat tiles, a sub-category share bar and ranked list, a 6-month trend with sub-category filter chips, and top places. Full spec in §6.7.1. |
 | AN-08 | **Compare periods** (P0) | "Oct vs Sep" or "2026 vs 2025" | A side-by-side table by category with absolute and percentage deltas, sorted by the largest absolute change. |
 | AN-09 | **Savings rate** (P1) | "How much of my income do I keep?" | Monthly (income − spend) / income as a line, with a 3-month moving average. |
 | AN-10 | **Budget vs actual** (P1) | "Am I inside my budgets?" | For each budgeted category: a progress bar plus pace marker; over-budget shown in caution colour. |
+
+### 6.7.1 Sub-category analytics (P0)
+
+The goal is to make sub-categories (L2) as easy to analyse as categories (L1), without adding a new tab or a new kind of chart. There are two entry points:
+
+1. **A view switch inside "Where it went"** (AN-02), which answers "which sub-categories cost the most, across everything?"
+2. **A Category detail screen** (AN-07), which answers "within Eating out, where did it go?"
+
+Mock-ups: `05a-analytics-categories.html`, `05b-analytics-subcategories.html`, `05c-category-detail.html`. The full page is `05-analytics.html`, with the switch in place.
+
+**AN-02a View switch.**
+- The "Where it went" card gets a two-option segmented control, **Categories · Sub-categories**, directly under its subtitle. It defaults to Categories.
+- The last choice is remembered on the device (`localStorage`, key `an.groupBy`, wrapped in try/catch).
+- Switching changes only this card's list and its finding title. The period control, the other charts and the scroll position stay put.
+- The switch animates the list with a 200 ms cross-fade. There is no layout jump: the card keeps its height until the new list has rendered.
+
+**AN-02b Categories view.** Unchanged from AN-02, with these clarifications:
+- **Fixed-cost parents** are categories whose sub-categories are all `is_fixed` (for example, Home). They collapse into one quiet summary row ("Home · fixed costs"), so they don't flatten the bars of everything else.
+- Every row shows a chevron and opens **Category detail** (AN-07).
+- Bars scale to the largest flexible category or its "usual" marker, whichever is bigger.
+
+**AN-02c Sub-categories view.** A single flat ranking of **every sub-category across all parents**:
+- Each row has three lines:
+  - the icon, sub-category name, flag and amount;
+  - a 12 px caption naming the parent (for example "Eating out");
+  - a bar with the "usual by today" marker.
+- **Ranking:** by amount, descending. It excludes fixed sub-categories (`is_fixed = true`).
+- **Default length:** the top 8 rows. Below them, **Show all N sub-categories** expands the list inline (not on a new screen), and "Show fewer" collapses it again.
+- **Fixed costs:** all fixed sub-categories collapse into one summary row at the bottom: "Fixed costs · 6", listing the first three names and "… and 3 more", plus the total. Tapping it expands those rows in place.
+- **Spend assigned directly to a parent** appears as its own row named **"Other ‹parent›"** (for example "Other eating out"), the same wording as the category picker (CAP-01.2).
+- **Flags:** the same rule as AN-02 (above usual by more than 20% and more than £30), applied per sub-category.
+- **Finding title:** if any sub-category is flagged, the title names the one with the largest absolute overspend ("Restaurants are up 36% on your usual"). Otherwise it names the top sub-category and its share ("Supermarket is 24% of flexible spend").
+- **Rows are tappable** and open **Sub-category detail** (AN-07b).
+- **"Usual"** means the median of the six prior equivalent periods, measured at the same day offset. For Quarter and Year it uses prior quarters and prior years.
+
+**AN-07 Category detail** (one screen per L1 category; replaces the earlier "Category deep dive" row).
+- **Navigation:** pushed from Analytics, with the back label "Analytics". The period control in the header follows the Analytics period, and changing it here also changes it there.
+- **Header:** the category icon, then "‹Category› · ‹period›", then the total in 34 px tabular type. Beneath that, a one-line comparison with a status dot: caution colour if flagged, positive if more than 20% under usual, otherwise neutral. For example: "38% above your usual £226 by this point".
+- **Three stat tiles:** Transactions · Average per transaction · Share of all spend.
+- **Card "Split by sub-category":**
+  - The finding title, for example "Restaurants are almost half of it".
+  - A **100% share bar** in a single hue, with shades by rank. It shows at most 5 segments; anything smaller is grouped into the last one.
+  - A legend giving each segment's percentage.
+  - Then the sub-category rows (AN-02c style), with the caption "‹visits› visits · avg ‹£›" instead of the parent name.
+  - "Other ‹parent›" is included when it is non-zero.
+- **Card "Monthly trend":**
+  - The last 6 months as bars, the current month split into actual (in caution colour if the category is flagged, otherwise ink) and a hatched projected part.
+  - The projection is the actual so far plus the median of the prior 3 months' spend in this category over the remaining days.
+  - Value labels sit above the bars.
+  - Filter chips show **All** plus the top 3 sub-categories, then "More…", which opens a list of the rest. Selecting a chip redraws the bars for that sub-category only.
+  - The finding title compares the projection with the six-month range ("On course for your biggest month in six").
+- **Top places:** the top 3 payees in this category for the period, each with its sub-category and visit count. "All N" opens Activity filtered to this category and period.
+- **Empty state:** "No ‹Category› spending in ‹period›", with a link to the previous period.
+
+**AN-07b Sub-category detail.** Uses the AN-07 template with these differences:
+- The back label is the parent ("Eating out" when opened from Category detail, "Analytics" when opened from the Sub-categories view). The header caption reads "‹Sub-category› · ‹Parent›".
+- There is no split card.
+- The trend card has no chips.
+- Top places shows up to 5 payees.
+
+**Data.**
+- `spend_by_category` gains a level parameter: `spend_by_category(p_from, p_to, p_parent uuid default null, p_level text default 'parent')`.
+  - `'parent'` rolls sub-categories up to their L1 (the current behaviour).
+  - `'leaf'` returns every category exactly as assigned. Rows assigned directly to a parent are returned with `is_parent_direct = true`, and the client labels them "Other ‹parent›".
+- The returned columns gain `parent_id`, `parent_name`, `is_fixed`, `visits` (= `txn_count`) and `is_parent_direct`.
+- New function `category_monthly(p_category uuid, p_months int default 6, p_include_children boolean default true) returns table (month date, total_pence bigint)`.
+- Both are `security invoker`, so RLS applies.
+
+**Acceptance criteria.**
+- For any period, the sum of all sub-category rows (flexible, fixed and "Other ‹parent›") equals the L1 total for each parent and the overall spend. Add this as SQL invariant 6.
+- The view switch persists across app restarts. Switching changes only the "Where it went" card.
+- Any sub-category's detail is at most **two taps** from the Analytics tab: switch to Sub-categories, then tap the row.
+- With the seed data, the Sub-categories view shows Supermarket first, Restaurants flagged at ↑ 36%, and Fixed costs · 6 = £1,910.83.
+- Category detail for Eating out shows £312.60, 21 transactions, an average of £14.88, and a share bar summing to 100%.
 
 **AN-11 Export (P0).** Export CSV (filtered Activity) and full JSON backup from Settings. **AN-12 (P2):** a monthly PDF statement generated server-side.
 
@@ -450,13 +592,13 @@ switched on later in Settings → Reminders. See mock-up S11.
 |---|---|
 | MOB-01 | **Standalone PWA**: `display: standalone`, `theme_color` and `background_color` `#0C0D0C`, `apple-mobile-web-app-status-bar-style: black-translucent`, dark iOS splash screens, `apple-touch-icon` 180 px. Set `color-scheme: dark` on `:root` so form controls and scrollbars render dark. |
 | MOB-02 | **Safe areas**: respect `env(safe-area-inset-*)`; the tab bar sits above the home indicator; sheets extend under it. |
-| MOB-03 | **Bottom sheets** via **Vaul** (drag to dismiss, snap points, background scales to 0.94 with a rounded top, as in iOS). Quick Add, Category picker, filters, date picker and account picker are all sheets. |
+| MOB-03 | **Bottom sheets** via **Vaul** (drag to dismiss, snap points, background scales to 0.94 with a rounded top, as in iOS). Filters, date picker and account picker are sheets. **Add expense and Choose category are not sheets**: they are a full-screen modal with a Close button (CAP-01). |
 | MOB-04 | **Touch targets ≥ 44 × 44 pt**; keypad keys ≥ 64 × 52 pt. |
 | MOB-05 | **Gestures**: swipe rows (delete / duplicate), pull-to-refresh on Activity and Insights, long-press ＋ for favourites, horizontal swipe on Analytics period. |
 | MOB-06 | **Motion**: spring transitions (stiffness 400, damping 34); the hero figure animates numerically; respect `prefers-reduced-motion`. |
 | MOB-07 | **Haptics**: iOS Safari does not expose `navigator.vibrate`, so do not depend on it. Use it where supported (Android) and design so that nothing relies on it. |
 | MOB-08 | **Performance**: first load ≤ 1.8 s on 4G (LCP); repeat launches render cached data instantly (TanStack Query persisted to IndexedDB, plus the service-worker app shell); interaction latency ≤ 100 ms. |
-| MOB-09 | **Keyboard avoidance**: when a text field is focused in a sheet, the sheet resizes using `visualViewport`, so nothing hides behind the iOS keyboard. |
+| MOB-09 | **Keyboard avoidance**: when a text field is focused in a sheet or in Add expense, the layout resizes using `visualViewport`, so nothing hides behind the iOS keyboard. |
 | MOB-10 | **No horizontal scroll** anywhere at 375 px; layouts tested at 375, 390, 430 px. |
 | MOB-11 | **Dynamic type**: rem-based type scale; layout survives 130% text size. |
 
@@ -593,7 +735,6 @@ create table profiles (
   display_name     text,
   month_start_day  smallint not null default 1 check (month_start_day between 1 and 28),
   timezone         text not null default 'Europe/London',
-  tap_to_save      boolean not null default true,
   ai_enabled       boolean not null default true,
   ai_include_notes boolean not null default false,
   lock_after_min   smallint default 5,
@@ -799,9 +940,15 @@ returns table (
   closing_pence    bigint    -- must equal available_cash(p_to); assert in tests
 );
 
-create function spend_by_category(p_from date, p_to date, p_parent uuid default null)
-returns table (category_id uuid, name text, icon text, total_pence bigint, txn_count int,
+create function spend_by_category(p_from date, p_to date, p_parent uuid default null,
+                                  p_level text default 'parent')   -- 'parent' | 'leaf' (§6.7.1)
+returns table (category_id uuid, name text, icon text, parent_id uuid, parent_name text,
+               is_fixed boolean, is_parent_direct boolean, total_pence bigint, txn_count int,
                norm_pence bigint);    -- norm = median of prior 6 periods, same day offset
+
+create function category_monthly(p_category uuid, p_months int default 6,
+                                 p_include_children boolean default true)
+returns table (month date, total_pence bigint);
 
 create function daily_spend(p_from date, p_to date)
 returns table (day date, total_pence bigint, cumulative_pence bigint);
@@ -819,6 +966,7 @@ returns table (payee_id uuid, name text, visits int, total_pence bigint, avg_pen
 3. Transfers inside the pool change no `cash_flow` totals.
 4. Editing a transaction dated 3 months ago changes `available_cash(today)` by exactly the delta.
 5. With all accounts in the pool and no adjustments, `closing = opening + income − spend` exactly (the owner's formula).
+6. `Σ spend_by_category(f,t,p_level=>'leaf')` per parent equals that parent's `spend_by_category(f,t)` row, and the grand totals match (§6.7.1).
 
 ### 10.5 Seeding
 `create function seed_default_categories(p_user uuid)` inserts the section 6.4 taxonomy (with
@@ -996,8 +1144,8 @@ Work in this order. Commit at the end of each milestone, with all tests green, a
 
 ### M1: Accounts, categories, capture (2–3 days)
 - Accounts CRUD, first-run setup (AUTH-02).
-- Categories screen (CAT-03/04) and Category picker sheet.
-- Quick Add sheet (CAP-01 to CAP-04) with payee memory and smart suggestions; Undo toast.
+- Categories screen (CAT-03/04) and the Choose category screen (CAP-01.2).
+- Add expense screen (CAP-01 to CAP-04) with payee memory and top categories (CAP-01.1); Undo toast.
 - Offline outbox (CAP-05).
 - Activity list, search and filters (ACT-01 to ACT-03).
 - **Done when:** the CAP-01 and CAP-05 acceptance criteria pass in Playwright (mobile viewport 390 × 844).
@@ -1010,6 +1158,7 @@ Work in this order. Commit at the end of each milestone, with all tests green, a
 
 ### M3: Analytics (2–3 days)
 - AN-01 to AN-08 with visx, finding titles, drill-downs, empty and loading states; desktop layout S10; exports.
+- Sub-category analytics (§6.7.1): view switch, Category detail and Sub-category detail screens.
 - **Done when:** every chart renders against the seed data and matches the mock-ups; "View as table" exists for each.
 
 ### M4: AI insights (1–2 days)
@@ -1095,5 +1244,8 @@ Open for the owner:
 | Outside pool | Marcus savings £12,400.00 |
 | Categories MTD | Home £1,812.40 · Groceries £386.25 · Eating out £312.60 · Transport £214.80 · Shopping £178.90 · Bills £118.43 · Health £96.00 · Entertainment £74.97 · Family & giving £42.50 |
 | Projected close | ≈ £2,940 (before salary) |
+| Sub-categories MTD (seed) | Home: Rent & mortgage £1,600.00 (fixed), Council tax £142.00 (fixed), Energy £48.40 (fixed), Broadband & TV £22.00 (fixed) · Groceries: Supermarket £314.70, Specialist shops £48.90, Household supplies £22.65 · Eating out: Restaurants £142.50, Coffee & snacks £76.80, Takeaway & delivery £58.30, Work lunches £28.60, Drinks £6.40 · Transport: TfL & rail £142.60, Taxis £57.20, Parking & tolls £15.00 · Shopping: Online & general £98.40, Clothing & shoes £65.50, Homeware £15.00 · Bills: Mobile £36.00 (fixed), Insurance £62.43 (fixed), Bank fees & interest £20.00 · Health: Gym & fitness £75.00, Pharmacy £21.00 · Entertainment: Streaming & apps £41.97, Events & culture £33.00 · Family & giving: Gifts £42.50 |
+| Sub-category usual by day 18 (seed) | Supermarket £298.00 · Specialist shops £43.00 · Household supplies £20.00 · Restaurants £105.00 · Coffee & snacks £54.00 · Takeaway & delivery £43.00 · Work lunches £19.00 · Drinks £5.00 · TfL & rail £178.00 · Taxis £58.00 · Parking & tolls £15.00 · Online & general £90.00 · Clothing & shoes £94.00 · Homeware £20.00 · Bank fees & interest £19.57 · Gym & fitness £75.00 · Pharmacy £13.00 · Streaming & apps £38.97 · Events & culture £32.03 · Gifts £55.00 (fixed sub-categories: usual = this month) |
+| Eating out by month (seed) | May £218.40 · Jun £243.10 · Jul £331.20 · Aug £287.60 · Sep £264.10 · Oct £312.60 to date |
 
 Use these exact figures in `supabase/seed.sql` so that visual tests can compare against the mock-ups.

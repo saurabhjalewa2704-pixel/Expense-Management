@@ -78,7 +78,7 @@ language sql stable as $$
 $$;
 
 -- Top payees in a category (and its sub-categories), each with the category most of its money went to.
-create function top_places(p_from date, p_to date, p_limit int default 3, p_category uuid default null)
+create function top_places(p_from date, p_to date, p_limit int default 3, p_category uuid default null, p_include_children boolean default true)
 returns table (payee_id uuid, name text, category_id uuid, category_name text, visits int, total_pence bigint)
 language sql stable as $$
   with scoped as (
@@ -86,7 +86,7 @@ language sql stable as $$
       from transactions t
      where t.deleted_at is null and t.type = 'expense' and t.pot_id is null and t.payee_id is not null
        and t.occurred_on between p_from and p_to
-       and (p_category is null or t.category_id in (select c.id from categories c where c.id = p_category or c.parent_id = p_category))
+       and (p_category is null or t.category_id in (select c.id from categories c where c.id = p_category or (p_include_children and c.parent_id = p_category)))
   ),
   per_cat as (
     select payee_id, category_id, sum(amount_pence) as s,

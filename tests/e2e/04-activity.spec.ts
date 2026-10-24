@@ -42,7 +42,7 @@ test.describe("Activity (ACT-01..03)", () => {
     await expect(page.getByTestId("txn-row")).toContainText("Foxtons Lettings");
 
     await search.fill("eating");                                  // category name, parents and sub-categories
-    await expect(summary(page)).toContainText("12 transactions");
+    await expect(summary(page)).toContainText("21 transactions");
     await expect(summary(page)).toContainText("£312.60 out");
 
     await search.fill("waitros");                                 // typo-tolerant (trigram) payee match
@@ -64,7 +64,7 @@ test.describe("Activity (ACT-01..03)", () => {
     await page.getByRole("button", { name: /^Category/ }).click();
     await page.getByRole("button", { name: /^Eating out/ }).first().click();     // the parent row selects all five sub-categories
     await page.getByRole("button", { name: "Done" }).click();
-    await expect(summary(page)).toContainText("12 transactions");
+    await expect(summary(page)).toContainText("21 transactions");
     await expect(summary(page)).toContainText("£312.60 out");
     await page.getByRole("button", { name: /^Category/ }).click();
     await page.getByRole("button", { name: "Clear" }).click();

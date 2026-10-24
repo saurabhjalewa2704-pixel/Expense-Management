@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ISODate } from "@/lib/dates";
 import type {
   Account, AccountBalance, CashFlow, Category, CategorySpend, DailySpend, MonthPace, MonthlyTotal, Payee, PayeeTotal, Profile,
-  TxnRow, TxnTotals, Pot, PotCategory,
+  TxnRow, TxnTotals, Pot, PotCategory, TopPlace,
 } from "@/lib/types";
 import type { ActivityFilters } from "./keys";
 
@@ -75,8 +75,8 @@ export async function fetchTotals(db: SupabaseClient, f: ActivityFilters): Promi
   return rows[0]!;
 }
 
-export const fetchSpendByCategory = (db: SupabaseClient, from: ISODate, to: ISODate, parent: string | null, pool = false) =>
-  unwrap<CategorySpend[]>(db.rpc("spend_by_category", { p_from: from, p_to: to, p_parent: parent, p_pool_only: pool }));
+export const fetchSpendByCategory = (db: SupabaseClient, from: ISODate, to: ISODate, parent: string | null, pool = false, level: "parent" | "leaf" = "parent") =>
+  unwrap<CategorySpend[]>(db.rpc("spend_by_category", { p_from: from, p_to: to, p_parent: parent, p_pool_only: pool, p_level: level }));
 
 export const fetchDailySpend = (db: SupabaseClient, from: ISODate, to: ISODate, excludeFixed = false) =>
   unwrap<DailySpend[]>(db.rpc("daily_spend", { p_from: from, p_to: to, p_exclude_fixed: excludeFixed }));
@@ -87,8 +87,15 @@ export const fetchMonthlyTotals = (db: SupabaseClient, months: number) =>
 export const fetchTopPayees = (db: SupabaseClient, from: ISODate, to: ISODate, limit = 10, category: string | null = null) =>
   unwrap<PayeeTotal[]>(db.rpc("top_payees", { p_from: from, p_to: to, p_limit: limit, p_category: category }));
 
-export const fetchCategoryMonthly = (db: SupabaseClient, id: string, months: number) =>
-  unwrap<{ month: ISODate; total_pence: number; txn_count: number }[]>(db.rpc("category_monthly", { p_category: id, p_months: months }));
+export const fetchCategoryMonthly = (db: SupabaseClient, id: string, months: number, children = true) =>
+  unwrap<{ month: ISODate; total_pence: number; txn_count: number }[]>(db.rpc("category_monthly", { p_category: id, p_months: months, p_include_children: children }));
+
+export const fetchTopPlaces = (db: SupabaseClient, from: ISODate, to: ISODate, limit: number, category: string, children = true) =>
+  unwrap<TopPlace[]>(db.rpc("top_places", { p_from: from, p_to: to, p_limit: limit, p_category: category, p_include_children: children }));
+
+/** The median spend in the rest of the month (after `asOf`'s day) over the previous three months: the trend projection. */
+export const fetchCategoryRemaining = async (db: SupabaseClient, id: string, asOf: ISODate, children = true) =>
+  Number(await unwrap<number | string>(db.rpc("category_remaining", { p_category: id, p_as_of: asOf, p_include_children: children })));
 
 import type { HistoryRow } from "@/lib/suggest";
 import { addDays, todayLondon } from "@/lib/dates";

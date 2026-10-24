@@ -149,7 +149,16 @@ export interface CategorySpend {
   total_pence: number;
   txn_count: number;
   norm_pence: number | null;
+  /** Name of the parent when this is a sub-category; null for a top-level category. */
+  parent_name: string | null;
+  /** True for a fixed sub-category, or a parent whose sub-categories are all fixed. */
+  is_fixed: boolean;
+  /** Spend assigned straight to a parent (shown as "Other ‹parent›"); only set in the leaf view. */
+  is_parent_direct: boolean;
+  visits: number;
 }
+
+export interface TopPlace { payee_id: string; name: string; category_id: string; category_name: string | null; visits: number; total_pence: number }
 
 export interface DailySpend { day: ISODate; total_pence: number; cumulative_pence: number }
 export interface MonthlyTotal { month: ISODate; income_pence: number; spend_pence: number }
