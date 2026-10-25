@@ -9,7 +9,7 @@ import { supabaseBrowser } from "@/lib/supabase/client";
 import type { AccountBalance, TxnRow } from "@/lib/types";
 import {
   fetchAccounts, fetchAccountSeries, fetchActivityPage, fetchBalances, fetchCashFlow, fetchCashSeries, fetchCategories,
-  fetchCategoryMonthly, fetchCategoryRemaining, fetchTopPlaces, fetchDailySpend, fetchMonthlyTotals, fetchPace, fetchPayees, fetchProfile, fetchSpendByCategory,
+  fetchCategoryMonthly, fetchCategoryRemaining, fetchRecurringItems, fetchRecurringOccurrences, fetchItemOccurrences, fetchBankHolidays, fetchRecurringSuggestions, fetchTopPlaces, fetchDailySpend, fetchMonthlyTotals, fetchPace, fetchPayees, fetchProfile, fetchSpendByCategory,
   fetchAskTurns, fetchPotCategories, fetchPots, fetchTransactionCount, fetchWeekActivity, fetchInsightFeedback, fetchInsightRuns, fetchLastIncomeAccount, fetchSuggestHistory, fetchTopPayees, fetchTotals, PAGE_SIZE, type ActivityCursor,
 } from "./fetchers";
 import { qk, type ActivityFilters } from "./keys";
@@ -194,6 +194,12 @@ export const useInsightFeedback = () => useQuery({ queryKey: [...qk.insights, "f
 export const useWeekActivity = (from: ISODate, to: ISODate) => useQuery({ queryKey: ["week-activity", from, to] as const, queryFn: () => fetchWeekActivity(db(), from, to) });
 export const useTransactionCount = () => useQuery({ queryKey: ["txn-count"] as const, queryFn: () => fetchTransactionCount(db()), staleTime: 60_000 });
 
+export const useRecurringItems = () => useQuery({ queryKey: qk.recurringItems, queryFn: () => fetchRecurringItems(db()) });
+export const useRecurringOccurrences = (from: ISODate, to: ISODate) =>
+  useQuery({ queryKey: qk.recurringOccurrences(from, to), queryFn: () => fetchRecurringOccurrences(db(), from, to), placeholderData: keepPreviousData });
+export const useItemOccurrences = (id: string) => useQuery({ queryKey: qk.itemOccurrences(id), queryFn: () => fetchItemOccurrences(db(), id) });
+export const useBankHolidays = () => useQuery({ queryKey: qk.bankHolidays, queryFn: () => fetchBankHolidays(db()), staleTime: 24 * 3600_000 });
+export const useRecurringSuggestions = () => useQuery({ queryKey: qk.recurringSuggestions, queryFn: () => fetchRecurringSuggestions(db()) });
 export const usePots = () => useQuery({ queryKey: qk.pots, queryFn: () => fetchPots(db()) });
 export const usePotCategories = (id: string) => useQuery({ queryKey: qk.potCategories(id), queryFn: () => fetchPotCategories(db(), id) });
 

@@ -10,6 +10,7 @@ const NAV = [
   { href: "/activity", label: "Activity", Icon: UI.List, match: (p: string) => p.startsWith("/activity") },
   { href: "/analytics", label: "Analytics", Icon: UI.ChartNoAxesColumn, match: (p: string) => p.startsWith("/analytics") },
   { href: "/insights", label: "Insights", Icon: UI.Sparkles, match: (p: string) => p.startsWith("/insights") },
+  { href: "/bills", label: "Bills", Icon: UI.Repeat, match: (p: string) => p.startsWith("/bills") },
   { href: "/settings/accounts", label: "Accounts", Icon: UI.Landmark, match: (p: string) => p.startsWith("/settings/accounts") || p.startsWith("/accounts") },
   { href: "/settings/categories", label: "Categories", Icon: UI.Tags, match: (p: string) => p.startsWith("/settings/categories") },
   { href: "/settings", label: "Settings", Icon: UI.Settings, match: (p: string) => p === "/settings" || (p.startsWith("/settings/") && !p.startsWith("/settings/accounts") && !p.startsWith("/settings/categories")) },

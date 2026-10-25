@@ -5,7 +5,7 @@ import { useQuickAdd } from "@/components/capture/quick-add";
 import { UI } from "@/lib/icons";
 
 const TABS = [
-  { href: "/", label: "Home", Icon: UI.House, match: (p: string) => p === "/" || p.startsWith("/cash") || p.startsWith("/settings") || p.startsWith("/accounts") },
+  { href: "/", label: "Home", Icon: UI.House, match: (p: string) => p === "/" || p.startsWith("/cash") || p.startsWith("/settings") || p.startsWith("/accounts") || p.startsWith("/bills") },
   { href: "/activity", label: "Activity", Icon: UI.List, match: (p: string) => p.startsWith("/activity") },
   null,
   { href: "/analytics", label: "Analytics", Icon: UI.ChartNoAxesColumn, match: (p: string) => p.startsWith("/analytics") },

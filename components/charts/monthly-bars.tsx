@@ -2,12 +2,14 @@
 import { scaleLinear } from "@visx/scale";
 import { useRef, useState } from "react";
 import { formatMonthYear } from "@/lib/dates";
+import { formatGBP } from "@/lib/money";
 
 export interface MonthlyBar { month: string; spend: number; projectedExtra: number; isCurrent: boolean }
-const label = (p: number) => `£${Math.round(p / 100).toLocaleString("en-GB")}`;
+const whole = (p: number) => `£${Math.round(p / 100).toLocaleString("en-GB")}`;
 
 /** AN-07: the last six months as bars with the value above each; the current month is actual plus a hatched projected part. */
-export function MonthlyBars({ bars, flagged, height = 170, ariaLabel }: { bars: MonthlyBar[]; flagged: boolean; height?: number; ariaLabel: string }) {
+export function MonthlyBars({ bars, flagged, height = 170, ariaLabel, precise = false }: { bars: MonthlyBar[]; flagged: boolean; height?: number; ariaLabel: string; precise?: boolean }) {
+  const label = precise ? (p: number) => formatGBP(p) : whole;
   const [w, setW] = useState(320);
   const ro = useRef<ResizeObserver | null>(null);
   const setRef = (el: SVGSVGElement | null) => { ro.current?.disconnect(); if (el) { ro.current = new ResizeObserver(() => setW(Math.max(220, el.clientWidth))); ro.current.observe(el); setW(Math.max(220, el.clientWidth)); } };

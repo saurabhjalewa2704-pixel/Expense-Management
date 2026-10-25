@@ -31,6 +31,7 @@ export function ActivityScreen() {
   const [types, setTypes] = useState<string[]>([]);
   const [amount, setAmount] = useState<{ min?: number; max?: number }>({});
   const [pot, setPot] = useState<ActivityFilters["pot"]>((sp.get("pot") as ActivityFilters["pot"]) ?? undefined);
+  const [recurring, setRecurring] = useState(sp.get("recurring") === "1");
   const [sheet, setSheet] = useState<null | "period" | "accounts" | "category" | "type" | "amount" | "pot">(null);
 
   useEffect(() => { const t = setTimeout(() => setDebounced(input), 250); return () => clearTimeout(t); }, [input]);
@@ -39,10 +40,10 @@ export function ActivityScreen() {
     const s = parseSearch(debounced);
     return {
       q: s.text || undefined, amount: s.amount, min: s.min ?? amount.min, max: s.max ?? amount.max,
-      from: period.from, to: period.to, payeeId, pot,
+      from: period.from, to: period.to, payeeId, pot, recurring: recurring || undefined,
       accountIds: accountIds.length ? accountIds : undefined, categoryIds: categoryIds.length ? categoryIds : undefined, types: types.length ? types : undefined,
     };
-  }, [debounced, period, accountIds, categoryIds, types, amount, payeeId, pot]);
+  }, [debounced, period, accountIds, categoryIds, types, amount, payeeId, pot, recurring]);
 
   const activity = useActivity(filters);
   const totals = useTotals(filters);
@@ -82,6 +83,7 @@ export function ActivityScreen() {
         <button className={`chip plain ${categoryIds.length ? "sel" : ""}`} onClick={() => setSheet("category")}>Category{active(categoryIds.length)} <UI.ChevronDown size={14} strokeWidth={2} aria-hidden /></button>
         <button className={`chip plain ${types.length ? "sel" : ""}`} onClick={() => setSheet("type")}>Type{active(types.length)} <UI.ChevronDown size={14} strokeWidth={2} aria-hidden /></button>
         <button className={`chip plain ${pot ? "sel" : ""}`} onClick={() => setSheet("pot")}>One-off <UI.ChevronDown size={14} strokeWidth={2} aria-hidden /></button>
+        <button className={`chip plain ${recurring ? "sel" : ""}`} aria-pressed={recurring} data-testid="recurring-chip" onClick={() => setRecurring((v) => !v)}><UI.Repeat size={14} strokeWidth={1.75} aria-hidden />Recurring</button>
         <button className={`chip plain ${amount.min != null || amount.max != null ? "sel" : ""}`} onClick={() => setSheet("amount")}>Amount <UI.ChevronDown size={14} strokeWidth={2} aria-hidden /></button>
       </div>
 

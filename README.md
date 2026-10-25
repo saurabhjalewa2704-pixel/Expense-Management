@@ -39,14 +39,21 @@ Not built (P1, PRD §M5): natural-language entry, Shortcuts endpoint, recurring 
 | --- | --- | --- | --- |
 | Insight digests | `/api/cron/digest` | daily 07:00 UTC (in `vercel.json`) | Acts on Mondays (weekly) and the 1st (monthly), once London time is 07:00 or later. Idempotent. |
 | Housekeeping | `/api/cron/maintenance` | daily (in `vercel.json`) | Purges transactions deleted more than 30 days ago; also keeps a free Supabase project awake. |
+| Bills | `/api/cron/recurring` | daily 06:00 UTC (in `vercel.json`); hourly is better | Logs every bill due on or before today that has no record yet, from 06:00 London time. A later or repeated run is harmless (it catches up and never double-logs), so the daily Vercel job works; an hourly `pg_cron` job (below) makes logging happen at about 6am all year. Also refreshes bank holidays on the 1st of the month. |
 | Evening reminder | `/api/cron/nudge` | **every 15 minutes** | Vercel Hobby cannot do this. Use Vercel Pro, or Supabase `pg_cron` + `pg_net` below, or any scheduler that can send the bearer header. If you can only run it hourly, set `NUDGE_WINDOW_MIN=60`. |
 
-All three expect `Authorization: Bearer $CRON_SECRET`. Vercel sends it automatically for jobs in `vercel.json` when `CRON_SECRET` is set.
+All four expect `Authorization: Bearer $CRON_SECRET`. Vercel sends it automatically for jobs in `vercel.json` when `CRON_SECRET` is set.
 
 ```sql
 -- Supabase SQL editor (enable the pg_cron and pg_net extensions first)
 select cron.schedule('sterling-nudge', '*/15 * * * *', $$
   select net.http_get('https://YOUR-APP.vercel.app/api/cron/nudge',
+    headers := jsonb_build_object('Authorization', 'Bearer YOUR_CRON_SECRET'))
+$$);
+
+-- Bills, hourly (acts from 06:00 London; nothing happens before that, and re-runs are harmless)
+select cron.schedule('sterling-bills', '0 * * * *', $$
+  select net.http_get('https://YOUR-APP.vercel.app/api/cron/recurring',
     headers := jsonb_build_object('Authorization', 'Bearer YOUR_CRON_SECRET'))
 $$);
 ```

@@ -87,4 +87,13 @@ test.describe("desktop (WEB-01..03)", () => {
     await expect(page.getByLabel("Search categories")).toHaveCount(0);
     await expect(page.getByRole("radio", { name: /Restaurants/ })).toBeChecked();
   });
+
+  test("Bills is in the sidebar, and Home carries the Bills card", async ({ page }) => {
+    await startDemo(page);
+    await expect(page.getByTestId("bills-card")).toContainText("to come this month");
+    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Bills" }).click();
+    await expect(page).toHaveURL(/\/bills$/);
+    await expect(page.getByTestId("bills-calendar")).toBeVisible();
+    await expect(page.getByTestId("bills-coming").getByTestId("bill-row").first()).toBeVisible();
+  });
 });

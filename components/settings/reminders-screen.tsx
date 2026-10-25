@@ -87,10 +87,15 @@ export function RemindersScreen() {
         {WORDS[counted]} {counted === 1 ? "day" : "days"} logged.{marked.length > 0 && ` ${marked.map((m) => NAMES[m.i]).join(" and ")} ${marked.length > 1 ? "were" : "was"} marked “Nothing to log”, so ${marked.length > 1 ? "they count" : "it counts"} as a genuine no-spend day${marked.length > 1 ? "s" : ""}.`}
       </p>
 
+      <div className="eyebrow group-label">Bills</div>
+      <div className="list">
+        <div className="row"><div className="tile"><UI.Calendar size={18} strokeWidth={1.75} aria-hidden /></div><div className="row-main"><div className="row-t">Bills logged and due</div><div className="row-s">{on ? "A summary at 6am, estimates to confirm, and reminders" : "Turn the evening reminder on once to register this device"}</div></div>
+          <Switch label="Bills logged and due" checked={profile.data?.bills_notify ?? true} onChange={async (v) => { await updateProfile({ bills_notify: v }); await refresh(); }} /></div>
+      </div>
+
       <div className="eyebrow group-label">Coming in v1.1</div>
       <div className="list">
         <div className="row"><div className="tile"><UI.Sparkles size={18} strokeWidth={1.75} aria-hidden /></div><div className="row-main"><div className="row-t">Weekly insights ready</div><div className="row-s">Mondays at 07:00</div></div><Switch label="Weekly insights ready" checked={false} disabled onChange={() => {}} /></div>
-        <div className="row"><div className="tile"><UI.Calendar size={18} strokeWidth={1.75} aria-hidden /></div><div className="row-main"><div className="row-t">Bills due</div><div className="row-s">From recurring rules</div></div><Switch label="Bills due" checked={false} disabled onChange={() => {}} /></div>
       </div>
     </div>
   );

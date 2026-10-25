@@ -157,6 +157,17 @@ begin
   assert denied, 'users cannot call the engine';
   reset role;
 
+  -- the owner's catch-up: allowed on their own rule, refused on someone else's
+  perform set_config('request.jwt.claims', json_build_object('sub', ua, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  assert (select status from recurring_log_now(it2, '2026-12-10', '2026-12-10', '2027-01-10')) = 'pending', 'owner catch-up works (remind-mode rule: pending)';
+  reset role;
+  perform set_config('request.jwt.claims', json_build_object('sub', ub, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  denied := false; begin perform recurring_log_now(it2, '2027-01-10', '2027-01-10', '2027-02-10'); exception when others then denied := true; end;
+  assert denied, 'B cannot log A rules';
+  reset role;
+
   -- user B sees none of it and cannot resolve A's occurrences
   perform set_config('request.jwt.claims', json_build_object('sub', ub, 'role', 'authenticated')::text, true);
   set local role authenticated;

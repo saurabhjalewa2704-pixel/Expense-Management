@@ -8,6 +8,9 @@ import { useToast } from "@/components/ui/toast";
 import { dateChipLabel, todayLondon, type ISODate } from "@/lib/dates";
 import { CategoryIcon, UI } from "@/lib/icons";
 import { formatGBP, pressKey, toPence } from "@/lib/money";
+import { ordinal } from "@/lib/recurrence";
+import { fetchRecurringDuplicate } from "@/lib/queries/fetchers";
+import { supabaseBrowser } from "@/lib/supabase/client";
 import { discard, enqueue, flushIdle, getItem, newClientId, updatePending } from "@/lib/outbox";
 import { useAccounts, useCategoryTree, useLastIncomeAccount, useOutbox, usePayees, useProfile, useSuggestHistory } from "@/lib/queries/hooks";
 import { TxnInput } from "@/lib/schemas/transaction";
@@ -91,7 +94,8 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
   const [date, setDate] = useState<ISODate>(todayLondon());
   const [note, setNote] = useState("");
   const [picker, setPicker] = useState<null | "category" | "account" | "counter" | "date" | "note" | "pot">(null);
-  const [confirm, setConfirm] = useState<null | "discard" | "delete">(null);
+  const [confirm, setConfirm] = useState<null | "discard" | "delete" | "duplicate">(null);
+  const [dup, setDup] = useState<{ name: string; due_on: ISODate } | null>(null);
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
   const [nowMs, setNowMs] = useState(() => Date.now()); // taken when the sheet opens, so ranking is stable while it is open
@@ -211,7 +215,7 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
 
   const canSave = pence > 0 && !!effAccount && (mode === "transfer" ? !!effCounter && effCounter !== effAccount : !!categoryId || !!potId);
 
-  const save = async (categoryOverride?: string) => {
+  const save = async (categoryOverride?: string, skipDuplicateCheck = false) => {
     if (busy) return;
     const category = categoryOverride ?? categoryId;
     const input = buildInput(category);
@@ -234,6 +238,12 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
       await qc.invalidateQueries();
       close(); toast({ message: "Saved", duration: 2500 });
       return;
+    }
+
+    // REC-08: a bill for this payee is logged automatically around this date, so ask before adding the same payment by hand
+    if (!skipDuplicateCheck && mode === "expense" && matchedPayee && typeof navigator !== "undefined" && navigator.onLine) {
+      const hit = await fetchRecurringDuplicate(supabaseBrowser(), matchedPayee.id, date).catch(() => null);
+      if (hit) { setBusy(false); setDup({ name: hit.payee_name, due_on: hit.due_on }); setConfirm("duplicate"); return; }
     }
 
     await enqueue(input);
@@ -420,7 +430,20 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
         )}
       </div>
 
-      {confirm && (
+      {confirm === "duplicate" && dup && (
+        <div role="alertdialog" aria-label="Already logged automatically" style={{ position: "absolute", inset: 0, background: "var(--scrim)", borderRadius: "var(--r-sheet)", display: "grid", placeItems: "end center", padding: "var(--gutter)", zIndex: 5 }}>
+          <div className="card" style={{ width: "100%", background: "var(--surface-2)" }}>
+            <div className="headline" data-testid="dup-title">{dup.name} is logged automatically on the {ordinal(Number(dup.due_on.slice(8)))}.</div>
+            <p className="sub" style={{ marginTop: 4 }}>Add this as well?</p>
+            <div className="stack" style={{ marginTop: 14, gap: 8 }}>
+              <button className="btn" style={{ height: 48 }} onClick={() => { setConfirm(null); void save(undefined, true); }}>Add anyway</button>
+              <button className="btn secondary" style={{ height: 48 }} onClick={() => { setConfirm(null); setDup(null); }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirm && confirm !== "duplicate" && (
         <div role="alertdialog" aria-label={confirm === "discard" ? "Discard this entry?" : "Delete this transaction?"} style={{ position: "absolute", inset: 0, background: "var(--scrim)", borderRadius: "var(--r-sheet)", display: "grid", placeItems: "end center", padding: "var(--gutter)", zIndex: 5 }}>
           <div className="card" style={{ width: "100%", background: "var(--surface-2)" }}>
             <div className="headline">{confirm === "discard" ? "Discard this entry?" : "Delete this transaction?"}</div>

@@ -74,6 +74,13 @@ begin
                            and t.occurred_on > m::date + 17 and t.occurred_on < (m + interval '1 month')::date) as late
                     from generate_series('2026-04-01'::date, '2026-09-01', interval '1 month') m) x) = 182515, 'median late-month spend';
 
+  -- the demo bills (PRD §6.9): £34.97 of expenses still to come this month and a £500 transfer on the 26th; October's logged bills are real transactions
+  assert (select sum(amount_pence) from recurring_items where type = 'expense' and next_due_on between '2026-10-19' and '2026-10-31') = 3497, 'bills to come';
+  assert (select count(*) from recurring_items where type = 'transfer' and amount_pence = 50000 and next_due_on = '2026-10-26') = 1;
+  assert (select count(*) from recurring_occurrences o join transactions t on t.id = o.transaction_id where o.due_on between '2026-10-01' and '2026-10-18') = 9, 'nine logged bills in October';
+  assert (select count(*) from transactions where source = 'recurring' and occurred_on between '2026-10-01' and '2026-10-18') = 9;
+  assert (select txn_count from transaction_totals(p_from => '2026-10-01', p_to => '2026-10-18')) = 52, 'linking bills does not change the Appendix A transaction count';
+
   -- six months of history, and the invariant holds on it
   assert (select count(*) from monthly_totals(7) where spend_pence > 0) = 7;
   for n in 1..30 loop

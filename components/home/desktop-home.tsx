@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { CategoryBars } from "@/components/charts/category-bars";
+import { BillsCard } from "@/components/home/bills-card";
 import { PaceChart } from "@/components/charts/pace-chart";
 import { Figure } from "@/components/money";
 import { InsightCard } from "@/components/insights/insight-card";
@@ -109,6 +110,7 @@ export function DesktopHome() {
           )}
         </div>
 
+        <BillsCard />
         <div className="card chart-card" style={{ padding: "24px 28px" }}>
           <div className="row-between">
             <div>

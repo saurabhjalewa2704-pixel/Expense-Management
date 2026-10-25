@@ -110,7 +110,7 @@ $$;
 -- REC-04: log one occurrence, atomically and at most once (unique item + scheduled date). Called by the cron only (service role).
 -- Returns a row when it created the occurrence, nothing when it already existed or the rule is paused/ended.
 -- p_next is the following due date (null = the rule has no more), so next_due_on moves in the same transaction.
-create function recurring_log(p_item uuid, p_scheduled date, p_due date, p_next date)
+create function recurring_log_impl(p_item uuid, p_scheduled date, p_due date, p_next date)
 returns table (occurrence_id uuid, transaction_id uuid, status occur_status, amount_pence bigint)
 language plpgsql security definer set search_path = public, extensions as $$
 declare
@@ -149,8 +149,25 @@ begin
   update recurring_items set next_due_on = coalesce(p_next, next_due_on), ended_at = case when p_next is null then now() else ended_at end where id = it.id;
   return query select v_occ, v_txn, v_status, v_amount;
 end $$;
+revoke execute on function recurring_log_impl(uuid, date, date, date) from public, anon, authenticated;
+
+-- The cron's entry point (service role only) ...
+create function recurring_log(p_item uuid, p_scheduled date, p_due date, p_next date)
+returns table (occurrence_id uuid, transaction_id uuid, status occur_status, amount_pence bigint)
+language sql security definer set search_path = public, extensions as $$ select * from recurring_log_impl(p_item, p_scheduled, p_due, p_next) $$;
 revoke execute on function recurring_log(uuid, date, date, date) from public, anon, authenticated;
 grant execute on function recurring_log(uuid, date, date, date) to service_role;
+
+-- ... and the owner's, for the catch-up prompt ("Rent was due on the 1st. Log October's now?"): their own rules only.
+create function recurring_log_now(p_item uuid, p_scheduled date, p_due date, p_next date)
+returns table (occurrence_id uuid, transaction_id uuid, status occur_status, amount_pence bigint)
+language plpgsql security definer set search_path = public, extensions as $$
+begin
+  if not exists (select 1 from recurring_items where id = p_item and user_id = auth.uid()) then
+    raise exception 'Recurring payment not found' using errcode = 'no_data_found';
+  end if;
+  return query select * from recurring_log_impl(p_item, p_scheduled, p_due, p_next);
+end $$;
 
 -- The owner's answer to an occurrence: confirm an estimate ("Looks right"), log or skip a reminder.
 create function recurring_resolve(p_occurrence uuid, p_action text, p_amount bigint default null)
@@ -418,7 +435,7 @@ grant select, insert, update, delete on bank_holidays to service_role;
 grant execute on all functions in schema public to authenticated, service_role;
 revoke execute on all functions in schema public from anon, public;
 grant execute on all functions in schema public to authenticated, service_role;
-revoke execute on function recurring_log(uuid, date, date, date) from authenticated;
+revoke execute on function recurring_log(uuid, date, date, date), recurring_log_impl(uuid, date, date, date) from authenticated;
 
 -- REC-05: "Bills logged / due" can be switched off in Settings → Reminders (one switch for the three notifications)
 alter table profiles add column bills_notify boolean not null default true;
