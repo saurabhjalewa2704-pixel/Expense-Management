@@ -5,6 +5,7 @@ import { QuickAddProvider } from "@/components/capture/quick-add";
 import { ToastProvider } from "@/components/ui/toast";
 import { useProfile } from "@/lib/queries/hooks";
 import { SyncEngine } from "@/lib/sync";
+import { FailedEntries } from "./failed-entries";
 import { Shortcuts } from "./shortcuts";
 import { Sidebar } from "./sidebar";
 import { TabBar } from "./tab-bar";
@@ -17,6 +18,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <Suspense fallback={null}>
         <QuickAddProvider>
           <UpdateBanner />
+          <FailedEntries />
           <OnboardingGate />
           <SyncEngine />
           <Shortcuts />
