@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ISODate } from "@/lib/dates";
 import type {
   Account, AccountBalance, CashFlow, Category, CategorySpend, DailySpend, MonthPace, MonthlyTotal, Payee, PayeeTotal, Profile,
-  TxnRow, TxnTotals, Pot, PotCategory, TopPlace,
+  TxnRow, TxnTotals, Pot, PotCategory, TopPlace, RecurringItem, RecurringOccurrence, RecurringSuggestion,
 } from "@/lib/types";
 import type { ActivityFilters } from "./keys";
 
@@ -59,6 +59,7 @@ const filterArgs = (f: ActivityFilters) => ({
   p_payee: f.payeeId ?? null,
   p_pot_id: f.pot && f.pot !== "exclude" && f.pot !== "only" ? f.pot : null,
   p_pots: f.pot === "exclude" || f.pot === "only" ? f.pot : null,
+  p_recurring: f.recurring ? true : null,
 });
 
 export interface ActivityCursor { on: ISODate; created: string; id: string }
@@ -149,4 +150,29 @@ export interface AskTurn { id: string; question: string; answer: string; facts: 
 export async function fetchAskTurns(db: SupabaseClient): Promise<AskTurn[]> {
   const rows = await unwrap<AskTurn[]>(db.from("ask_turns").select("id,question,answer,facts,used_fallback,model,created_at").order("created_at", { ascending: false }).limit(30));
   return rows.reverse();
+}
+
+// ── Bills ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+export const fetchRecurringItems = (db: SupabaseClient) =>
+  unwrap<RecurringItem[]>(db.from("recurring_items").select("*").order("next_due_on").order("created_at"));
+
+export const fetchRecurringOccurrences = (db: SupabaseClient, from: ISODate, to: ISODate) =>
+  unwrap<RecurringOccurrence[]>(db.from("recurring_occurrences").select("id,item_id,due_on,scheduled_on,status,transaction_id,amount_pence").gte("due_on", from).lte("due_on", to).order("due_on"));
+
+export const fetchItemOccurrences = (db: SupabaseClient, itemId: string, limit = 60) =>
+  unwrap<RecurringOccurrence[]>(db.from("recurring_occurrences").select("id,item_id,due_on,scheduled_on,status,transaction_id,amount_pence").eq("item_id", itemId).order("due_on", { ascending: false }).limit(limit));
+
+export const fetchBankHolidays = async (db: SupabaseClient) =>
+  (await unwrap<{ day: ISODate }[]>(db.from("bank_holidays").select("day"))).map((h) => h.day);
+
+export const fetchRecurringSuggestions = (db: SupabaseClient) => unwrap<RecurringSuggestion[]>(db.rpc("recurring_suggestions"));
+
+/** REC-08: an automatic payment for this payee due or logged within three days of `on`. */
+export const fetchRecurringDuplicate = async (db: SupabaseClient, payeeId: string, on: ISODate) =>
+  (await unwrap<{ item_id: string; payee_name: string; due_on: ISODate }[]>(db.rpc("recurring_duplicate", { p_payee: payeeId, p_on: on })))[0] ?? null;
+
+/** One transaction as an Activity row (the Bills lists open it for editing). */
+export async function fetchTxnRow(db: SupabaseClient, id: string, on: ISODate): Promise<TxnRow | null> {
+  const rows = await unwrap<TxnRow[]>(db.rpc("list_transactions", { p_from: on, p_to: on, p_limit: 200 }));
+  return rows.find((r) => r.id === id) ?? null;
 }

@@ -2,7 +2,7 @@
 do $$
 declare
   ua uuid := gen_random_uuid(); ub uuid := gen_random_uuid();
-  acc uuid; cat uuid; run uuid; n int; t text; denied boolean;
+  acc uuid; cat uuid; run uuid; rec uuid; n int; t text; denied boolean;
 begin
   -- every public table has RLS switched on
   assert not exists (select 1 from pg_tables where schemaname = 'public' and not rowsecurity),
@@ -19,7 +19,10 @@ begin
   select id into cat from categories where name = 'Groceries' and parent_id is null;
   perform create_transaction(gen_random_uuid(), 'expense', 1250, acc, null, cat, 'Tesco', null, '{}', '2026-02-01');
   insert into budgets (category_id, amount_pence, starts_on) values (cat, 50000, '2026-02-01');
-  insert into recurring_rules (type, amount_pence, account_id, category_id, frequency, next_due_on) values ('expense', 5000, acc, cat, 'monthly', '2026-03-01');
+  insert into recurring_items (type, amount_pence, account_id, category_id, frequency, day_of_month, starts_on, next_due_on)
+    values ('expense', 5000, acc, cat, 'monthly', 1, '2026-03-01', '2026-03-01') returning id into rec;
+  insert into recurring_occurrences (item_id, due_on, scheduled_on, status, amount_pence) values (rec, '2026-03-01', '2026-03-01', 'skipped', 5000);
+  insert into recurring_dismissed (payee_id) select id from payees limit 1;
   insert into api_tokens (name, token_hash) values ('t', 'hash-a');
   insert into push_subscriptions (endpoint, p256dh, auth) values ('https://push.example/a', 'p', 'a');
   insert into no_spend_days (day) values ('2026-02-02');
@@ -37,7 +40,7 @@ begin
   -- user B sees nothing, anywhere
   perform set_config('request.jwt.claims', json_build_object('sub', ub, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  foreach t in array array['accounts','payees','transactions','recurring_rules','budgets','insight_runs',
+  foreach t in array array['accounts','payees','transactions','recurring_items','recurring_occurrences','recurring_dismissed','budgets','insight_runs',
                            'insight_feedback','api_tokens','push_subscriptions','no_spend_days','pots','ask_turns'] loop
     execute format('select count(*) from %I', t) into n;
     assert n = 0, 'B can read ' || t;

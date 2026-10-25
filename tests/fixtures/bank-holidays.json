@@ -1,0 +1,5 @@
+{ "england-and-wales": { "division": "england-and-wales", "events": [
+  { "title": "Christmas Day", "date": "2026-12-25", "notes": "", "bunting": true },
+  { "title": "Boxing Day", "date": "2026-12-28", "notes": "Substitute day", "bunting": true },
+  { "title": "New Year’s Day", "date": "2027-01-01", "notes": "", "bunting": true }
+] } }

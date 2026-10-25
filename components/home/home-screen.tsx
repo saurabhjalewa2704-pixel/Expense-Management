@@ -5,6 +5,7 @@ import { useQuickAdd } from "@/components/capture/quick-add";
 import { Figure } from "@/components/money";
 import { ReminderPrompt } from "@/components/home/reminder-prompt";
 import { PotsSection } from "@/components/home/pots-section";
+import { BillsCard } from "@/components/home/bills-card";
 import { InsightCard } from "@/components/insights/insight-card";
 import { formatLong, formatMonth, addMonths, monthStart } from "@/lib/dates";
 import { UI } from "@/lib/icons";
@@ -62,6 +63,7 @@ function MobileHome() {
 
       <div style={{ marginTop: 24 }} className="stack">
         <PaceCard today={today} pace={pace} />
+        <BillsCard />
         <InsightCard variant="home" />
         <ReminderPrompt />
       </div>

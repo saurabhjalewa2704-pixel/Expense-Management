@@ -14,6 +14,8 @@ export interface ActivityFilters {
   payeeId?: string;
   /** "exclude": usual spending only · "only": any pot · otherwise a pot id. */
   pot?: "exclude" | "only" | (string & {});
+  /** true: only transactions logged by a recurring payment (REC-09). */
+  recurring?: boolean;
 }
 
 export const qk = {
@@ -39,6 +41,12 @@ export const qk = {
   suggestHistory: ["suggest-history"] as const,
   lastIncomeAccount: ["last-income-account"] as const,
   pots: ["pots"] as const,
+  recurring: ["recurring"] as const,
+  recurringItems: ["recurring", "items"] as const,
+  recurringOccurrences: (from: ISODate, to: ISODate) => ["recurring", "occurrences", from, to] as const,
+  itemOccurrences: (id: string) => ["recurring", "item", id] as const,
+  bankHolidays: ["bank-holidays"] as const,
+  recurringSuggestions: ["recurring", "suggestions"] as const,
   ask: ["ask"] as const,
   potCategories: (id: string) => ["pot-categories", id] as const,
   insights: ["insights"] as const,

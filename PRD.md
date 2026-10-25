@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| Version | 1.3 (sub-category analytics: view switch and Category detail) |
+| Version | 1.4 (Bills: recurring payments auto-logged on their day, plus a bills calendar) |
 | Date | 18 October 2026 |
 | Owner | Saurabh (product owner and only user) |
 | Builder | Claude Code |
@@ -99,7 +99,7 @@ Priority key: **P0** = MVP (must ship), **P1** = v1.1 (next), **P2** = later or 
 | Activity | Grouped list, search, filters (category, account, type, date range, amount) | Bulk recategorise, tags | Saved filters |
 | Analytics | Pace chart, category breakdown with drill-down, cash-flow waterfall, 12-month trend, daily heatmap, top payees, period compare | Budget vs actual, savings rate | PDF monthly statement |
 | AI insights | Weekly and monthly digests (structured cards), on-demand refresh, feedback (helpful / dismiss) | "Ask Sterling" chat over your data; anomaly push alerts | Goal coaching |
-| Recurring | n/a | Recurring income and bills (auto-post or remind) and subscription detection | Calendar of upcoming bills |
+| Bills & recurring | Recurring payments by day of month, auto-logged at 06:00 on the due day; bills calendar; detection suggestions (§6.9) | n/a | n/a |
 | Platform | Installable PWA, dark-only UI, desktop layouts, email-code sign-in, **evening reminder notification** (NOT-01) | Face ID app lock (WebAuthn), other push notifications (NOT-02 to NOT-04), privacy blur | Capacitor iOS wrapper, widgets |
 | Data | Export CSV / JSON | Scheduled backup e-mail | n/a |
 
@@ -127,7 +127,7 @@ Priority key: **P0** = MVP (must ship), **P1** = v1.1 (next), **P2** = later or 
 - **＋** (centre, raised, ink-black disc): opens Quick Add as a bottom sheet from *any* tab. A long press opens Favourites (P1).
 - **Analytics**: charts and reports.
 - **Insights**: AI cards; "Ask Sterling" (P1) sits at the bottom of this tab.
-- **Settings** is reached from the avatar at the top right of Home. It holds Accounts, Categories, Recurring, Export, Security and About.
+- **Settings** is reached from the avatar at the top right of Home. It holds Accounts, Categories, Bills, Reminders, Export, Security and About.
 
 ### 5.2 Desktop navigation (≥1024 px)
 A left sidebar (Home, Activity, Analytics, Insights, Accounts, Categories, Settings) with a
@@ -155,6 +155,10 @@ max-width 1360 px. Quick Add opens as a centred modal (480 px) rather than a she
 | S10 | Desktop dashboard | `10-desktop.html` |
 | S11 | Evening reminder notification (lock screen, expanded with actions) | `11-reminder.html` |
 | S12 | Settings → Reminders (toggle, time, week view) | `12-reminder-settings.html` |
+| S13 | Bills: overview with month calendar | `13-bills.html` |
+| S14 | New / Edit recurring payment | `14-new-recurring.html` |
+| S15 | Bill detail (varying amount) | `15-bill-detail.html` |
+| S16 | Bills logged: morning notifications | `16-bill-notification.html` |
 
 ---
 
@@ -543,11 +547,191 @@ Each card has a title (≤ 70 chars), a body (≤ 220 chars), an optional `metri
 - Notes are **excluded** from what is sent to the model by default (Settings toggle "Include notes in AI analysis").
 - Show a small "Generated from your data" footnote, plus the generation date, on Insights.
 
-### 6.9 Recurring and budgets (P1)
+### 6.9 Bills and recurring payments (P0; promoted from v1.1)
 
-**REC-01 Recurring rules.** These cover salary, rent, subscriptions and standing orders. Fields: the template transaction, frequency (weekly, monthly, yearly; interval n; day-of-month or "last working day"), start date, optional end date, and mode **Auto-post** (creates the transaction on the due date at 06:00 via cron) or **Remind** (a push notification plus an Inbox item to confirm).
+**Owner's brief:** "A place where I can set up recurring payments and the day of the month they are charged. Each month, on that day, the transaction should be logged accordingly."
 
-**REC-02 Detection.** A nightly job finds candidates: the same payee, an amount within ±10%, an interval of 28–31 days (or 7, or 365) seen at least 3 times, and no existing rule. It surfaces "Looks like Netflix is monthly, £12.99. Track it?" in Insights.
+Mock-ups:
+- `13-bills.html`: Bills overview with calendar
+- `14-new-recurring.html`: New recurring payment
+- `15-bill-detail.html`: Bill detail
+- `16-bill-notification.html`: Morning notifications
+
+**Terms.** A *recurring payment* is a rule, for example "Netflix, £12.99, on the 27th of every month". An *occurrence* is one due date of that rule. On its due date, Sterling creates an ordinary transaction for the occurrence.
+
+In the UI the screen is called **Bills**, but a recurring payment can be an expense, an income (for example salary) or a transfer (for example a monthly move to savings). Only expenses count in the "bills" totals.
+
+**REC-01 Where it lives.**
+- **Home:** a slim **Bills card** below the pace card: "Bills · £34.97 to come this month · Next: Spotify, Thu 22 Oct". Tapping it opens Bills.
+  - The card is hidden until at least one recurring payment exists.
+  - Before that, it is replaced by a one-time prompt: "Set up your regular bills so they log themselves".
+- **Settings:** Settings → Bills also opens Bills.
+- **Desktop:** a "Bills" item in the sidebar.
+- **Mobile tab bar:** unchanged.
+
+**REC-02 Bills overview** (`13-bills.html`).
+- **Summary card:** "‹Month› bills · N payments", the total, and a two-part bar (logged vs to come) with both amounts and counts. Expenses only.
+- **Month calendar:**
+  - A 7-column grid, Monday first, with ‹ › to change month.
+  - Each day shows up to 3 dots: filled grey = logged, hollow = due, green = transfer or income. More than 3 shows as "+".
+  - Today is an inverted circle.
+  - Tapping a day highlights it and scrolls the list to that day's items.
+  - Future months show their projected occurrences, which is how you see the coming month's bills.
+- **"Coming up":** occurrences from tomorrow to month end, in date order. Each row shows:
+  - icon, payee, and a repeat glyph with "sub-category · account";
+  - amount and weekday date;
+  - an **EST** tag if the amount varies and is unconfirmed.
+- **"Logged this month":** occurrences up to and including today, newest last. Tapping a row opens the transaction (CAP-04). Tapping the payee name opens Bill detail.
+- **＋** opens New recurring payment (REC-03).
+- **Empty state:** "No bills yet. Add rent, subscriptions or anything that repeats", with an Add button. Below it, a list of **suggestions** from detection (REC-07), each with one tap to add.
+
+**REC-03 New / Edit recurring payment** (`14-new-recurring.html`).
+- **Presentation:** a full-screen modal, the same pattern as Add expense. ✕ at the top left, with the discard confirmation if there are changes; **Save** at the top right, enabled once the form is valid.
+- **Fields, in order:**
+  1. **Type:** Expense · Income · Transfer.
+  2. **Amount:** a large figure; tapping it opens the keypad sheet from CAP-01.
+  3. **Payee:** with autocomplete. For Transfer this row becomes **To account**.
+  4. **Category:** shows the leaf category. It opens Choose category (CAP-01.2). It is hidden for Transfer.
+  5. **Account:** the paying account (for Transfer, **From account**).
+  6. **Amount: Fixed · Varies.**
+  7. **Repeats:** Monthly (default) · Every 3 months · Yearly · Weekly.
+  8. **On day:**
+     - **Monthly and Every 3 months:** an inline 1–31 day grid plus **Last day**. It defaults to today's date.
+     - **Yearly:** a date picker (day and month).
+     - **Weekly:** a weekday picker.
+  9. **First payment:** auto-calculated as the next matching date on or after today. Editable; it must be today or later.
+  10. **Ends:** Never (default) · On a date · After N payments. "After N" shows "Payment 7 of 10" in lists.
+  11. **Weekends & bank holidays:** On the day (default) · Next working day. England & Wales bank holidays only.
+  12. **Log automatically:** a toggle, on by default. Off = remind me to confirm instead (REC-05).
+- **Plain-English summary** beneath the form, updated live, for example: "Sterling will log £12.99 to Netflix at 6am on the 27th of every month, starting Tue 27 Oct. In shorter months, days 29–31 move to the last day."
+- **Catch-up prompt:** if the chosen day has already passed this month and First payment is moved back into the current month, ask: "Rent was due on the 1st. Log October's now?" The options are *Log it now* and *Start next month*. Sterling never backfills more than the current month.
+- **Editing** applies to **future occurrences only**. Transactions already logged are never changed. To change a past one, edit that transaction.
+- **Validation:** amount > 0; account required; category required for expense and income; From ≠ To for transfers.
+
+**REC-04 Auto-logging engine (the core requirement).**
+- **Schedule:** a cron job runs hourly (`/api/cron/recurring`). It acts only when London local time is **06:00–06:59**, so British Summer Time changes are handled correctly.
+- **What it does:** for every active rule, it computes occurrences with `due_on ≤ today` that have no occurrence record yet. For each one, inside one database transaction, it:
+  - creates the transaction (`source = 'recurring'`, `recurring_id`, `occurred_on = due_on`) and the occurrence record (`status = 'logged'`, or `'estimate'` if the amount varies);
+  - updates `next_due_on`.
+- **Idempotent:** `unique (item_id, scheduled_on)` on occurrences, so a re-run or retry never double-logs.
+- **Catch-up:** if the job missed days (outage), the next run logs every missed occurrence with its original due date, then sends one summary notification.
+- **Short months:** a monthly day of 29, 30 or 31 falls on the **last day** of shorter months (31 → 30 Nov, 28/29 Feb). "Last day" always means the month's final day.
+- **Weekends & bank holidays:** with "Next working day", a due date on Saturday, Sunday or an England & Wales bank holiday moves forward to the next working day.
+  - Bank holidays come from `https://www.gov.uk/bank-holidays.json`, cached in a `bank_holidays` table and refreshed monthly by the same cron.
+  - If the fetch fails, the last cached list is used.
+- **Varies:** logs the **amount of the last confirmed occurrence** (or the rule's amount the first time) as an **estimate**.
+  - The transaction carries `is_estimate = true`, which shows an EST tag in Activity and Bills.
+  - Confirming or changing the amount clears the flag.
+- **Remind mode (Log automatically off):** creates an occurrence with `status = 'pending'` and **no transaction**. It appears at the top of Bills as "Due today, confirm?" with *Log £X* and *Skip* actions, and sends a notification.
+- **Paused rules** generate nothing. On resume, nothing is backfilled for the paused period.
+- **Ending:** after the end date or the Nth payment, the rule becomes inactive automatically and moves to an "Ended" section in Bills.
+- **Archived accounts or categories:** if the account or category on a rule has been archived, the occurrence is created as `pending`, with the message "Account no longer active, choose another", instead of failing silently.
+- **Offline phone:** irrelevant here, because logging happens on the server. The phone sees the new transactions on its next sync.
+
+**REC-05 Notifications.** These use the push setup from NOT-01, and each one can be switched off in Settings → Reminders.
+- **Morning summary** at the moment of logging: "2 bills logged today · £1,742.00", with a body listing the payees and amounts. Several occurrences on the same day go into one notification.
+- **Variable amount:** "Octopus Energy logged: £48.40 (estimate)", with actions **Looks right** (confirms the amount) and **Change amount** (opens the transaction).
+- **Remind mode:** "Netflix £12.99 is due today", with actions **Log it** and **Skip**.
+- These replace NOT-03.
+
+**REC-06 Bill detail** (`15-bill-detail.html`).
+- **Header:** icon, payee, and "sub-category · parent · account".
+- **Next payment card:**
+  - the amount (≈ prefix if it varies), the date and "logged at 6am", and the rule in words ("Monthly on the 5th");
+  - for varying amounts, a one-line explanation.
+- **Actions:**
+  - **Skip next:** marks that occurrence `skipped`. It can be undone until the due date.
+  - **Pause / Resume.**
+  - **Edit:** opens REC-03.
+- **History chart:** the last 6 occurrences as bars, with the finding title (for example "October was your highest in six months") and the average.
+- **History list:** each occurrence with its status (confirmed / estimate / skipped).
+- **Stop this recurring payment:** destructive, with a confirmation. It keeps every logged transaction and stops future ones; the rule moves to "Ended". Deleting a rule completely is only possible from the Ended section.
+
+**REC-07 Suggestions (detection).**
+- A nightly job looks for repeating payments: the same payee, amounts within ±10%, an interval of 28–31 days (or 7, 89–92 or 365 days), seen at least 3 times, with no existing rule.
+- Each suggestion is pre-filled: "Looks like Netflix is monthly, £12.99 on the 27th. Add to Bills?"
+- Suggestions appear in the Bills empty state, at the bottom of Bills, and as an Insights card.
+- Dismissed suggestions never return for that payee.
+
+**REC-08 Avoiding duplicates with manual entry.**
+- When the user logs an expense manually whose payee matches an active recurring payment that is due within ±3 days, Add expense shows: "Netflix is logged automatically on the 27th. Add this as well?" The options are *Add anyway* and *Cancel*.
+- When a rule is created for a payee that has already been logged manually this month on or after the chosen day, the catch-up prompt (REC-03) is not shown.
+
+**REC-09 Effects elsewhere.**
+- **Logged occurrences are normal transactions.** They appear in Activity with a small repeat glyph, count towards available cash on their date, and appear in all analytics.
+- **Month-end projection (CASH-06):** uses the remaining recurring occurrences of the month (expenses, income and transfers out of the pool) instead of guessing fixed costs. This makes the Insights "on track to close at" figure more accurate.
+- The **Activity filter** gets a "Recurring" option.
+
+**Data model.** This replaces `recurring_rules`.
+
+```sql
+create type recur_freq   as enum ('weekly','monthly','quarterly','yearly');
+create type occur_status as enum ('logged','estimate','confirmed','pending','skipped');
+
+create table recurring_items (
+  id                 uuid primary key default gen_random_uuid(),
+  user_id            uuid not null default auth.uid() references auth.users on delete cascade,
+  type               txn_type not null check (type in ('expense','income','transfer')),
+  amount_pence       bigint not null check (amount_pence > 0),
+  amount_varies      boolean not null default false,
+  account_id         uuid not null references accounts,
+  counter_account_id uuid references accounts,          -- transfers
+  category_id        uuid references categories,
+  payee_id           uuid references payees,
+  note               text,
+  frequency          recur_freq not null default 'monthly',
+  day_of_month       smallint check (day_of_month between 1 and 31),  -- monthly/quarterly
+  last_day           boolean not null default false,                   -- "Last day"
+  weekday            smallint check (weekday between 1 and 7),         -- weekly (ISO)
+  month_of_year      smallint check (month_of_year between 1 and 12),  -- yearly
+  working_day_rule   text not null default 'on_day' check (working_day_rule in ('on_day','next_working_day')),
+  starts_on          date not null,
+  ends_on            date,
+  max_occurrences    int,
+  auto_log           boolean not null default true,
+  paused_at          timestamptz,
+  ended_at           timestamptz,
+  next_due_on        date not null,                     -- maintained by the engine
+  created_at         timestamptz not null default now(),
+  check ( (type = 'transfer') = (counter_account_id is not null) ),
+  check ( (type in ('expense','income')) = (category_id is not null) )
+);
+
+create table recurring_occurrences (
+  id             uuid primary key default gen_random_uuid(),
+  user_id        uuid not null default auth.uid() references auth.users on delete cascade,
+  item_id        uuid not null references recurring_items on delete cascade,
+  due_on         date not null,                         -- after working-day adjustment
+  scheduled_on   date not null,                         -- before adjustment
+  status         occur_status not null,
+  transaction_id uuid references transactions on delete set null,
+  amount_pence   bigint not null,
+  created_at     timestamptz not null default now(),
+  unique (item_id, scheduled_on)
+);
+
+alter table transactions add column is_estimate boolean not null default false;
+-- transactions.recurring_id now references recurring_items(id)
+
+create table bank_holidays (day date primary key, title text not null);   -- England & Wales; read-only to users
+```
+
+- RLS uses the standard four policies on `recurring_items` and `recurring_occurrences`. `bank_holidays` is readable by any authenticated user and writable only by the service role.
+- Pure function `nextOccurrences(item, from, to): Date[]` in `/lib/recurrence.ts`. It is used by the cron, the calendar (future months) and the projection, so all three agree.
+
+**Acceptance criteria.**
+1. A rule "Netflix £12.99 monthly on the 27th" creates exactly one transaction dated 27 Oct at about 06:00 London time. Re-running the cron the same day creates none.
+2. A rule on the 31st logs on 30 Nov, 31 Dec and 28 Feb 2027.
+3. With "Next working day", a payment scheduled for Sun 1 Nov 2026 logs on Mon 2 Nov. One scheduled for 25 Dec 2026 logs on Tue 29 Dec, because 25 and 28 Dec are bank holidays and 26–27 Dec are a weekend.
+4. If the cron doesn't run for 3 days, the next run logs all the missed occurrences with their original dates and sends one summary notification.
+5. A "Varies" rule logs the last confirmed amount with an EST tag. "Looks right" clears it; "Change amount" updates the transaction and becomes the next estimate.
+6. Skip next, then the due date passes: no transaction is created and history shows "Skipped".
+7. Pausing in October and resuming in December creates nothing for November.
+8. Editing the amount on 20 Oct changes the 27 Oct occurrence but not the one logged on 27 Sep.
+9. Stopping a rule keeps its past transactions; Activity still shows them with the repeat glyph.
+10. Unit tests for `nextOccurrences` cover month-ends, leap years, quarterly, yearly on 29 Feb (→ 28 Feb in non-leap years), weekly, and the 29 Mar / 25 Oct 2026 clock changes.
+
+### 6.9a Budgets (P1)
 
 **BUD-01 Category budgets.** A monthly amount per parent category, with optional rollover of the unspent amount. Budget progress appears in AN-10 and on the category's deep dive, with a 90% warning in Insights.
 
@@ -581,7 +765,7 @@ switched on later in Settings → Reminders. See mock-up S11.
 - Accept: with a transaction logged today, no push is sent at 21:00; with none, exactly one push arrives; tapping it opens Quick Add; turning the toggle off stops all reminders from the next slot.
 
 **NOT-02 Weekly digest ready (P1).** Monday 07:00.
-**NOT-03 Recurring "Remind" items due (P1).**
+**NOT-03 Bills logged / due (P0).** See REC-05.
 **NOT-04 Anomaly alerts (P1).** As AI-05.
 
 ---
@@ -694,9 +878,9 @@ CLAUDE.md  DECISIONS.md  PRD.md
 |---|---|---|
 | Weekly digest | Mon 07:00 | `/api/cron/digest?scope=weekly` |
 | Monthly digest | 1st 07:00 | `/api/cron/digest?scope=monthly` |
-| Recurring post / remind (P1) | Daily 06:00 | `/api/cron/recurring` |
+| Bills: log due occurrences (P0, REC-04) | Hourly; acts 06:00–06:59 London, monthly bank-holiday refresh | `/api/cron/recurring` |
 | Evening reminder (P0, NOT-01) | Every 15 min (or hourly); the handler checks the user's London reminder time | `/api/cron/nudge` |
-| Recurring detection (P1) | Daily 03:00 | `/api/cron/recurring?detect=1` |
+| Bills: suggestions (P0, REC-07) | Daily 03:00 | `/api/cron/recurring?detect=1` |
 
 Vercel Cron schedules are in UTC. Either schedule hourly and check the London local time inside
 the handler (preferred, because it is correct across BST changes), or accept a one-hour drift.
@@ -820,23 +1004,7 @@ create index txn_user_cat    on transactions (user_id, category_id, occurred_on)
 create index txn_user_acct   on transactions (user_id, account_id, occurred_on) where deleted_at is null;
 create index txn_note_trgm   on transactions using gin (note gin_trgm_ops);
 
-create table recurring_rules (            -- P1
-  id                 uuid primary key default gen_random_uuid(),
-  user_id            uuid not null default auth.uid() references auth.users on delete cascade,
-  type               txn_type not null check (type in ('expense','income','transfer')),
-  amount_pence       bigint not null check (amount_pence > 0),
-  account_id         uuid not null references accounts,
-  counter_account_id uuid references accounts,
-  category_id        uuid references categories,
-  payee_id           uuid references payees,
-  frequency          text not null check (frequency in ('weekly','monthly','yearly')),
-  interval_n         smallint not null default 1,
-  day_rule           text,                       -- e.g. 'dom:25', 'last_working_day'
-  next_due_on        date not null,
-  end_on             date,
-  mode               text not null default 'remind' check (mode in ('auto','remind')),
-  active             boolean not null default true
-);
+-- recurring_items, recurring_occurrences, bank_holidays: see §6.9 (Bills)
 
 create table budgets (                    -- P1
   id           uuid primary key default gen_random_uuid(),
@@ -1169,8 +1337,12 @@ Work in this order. Commit at the end of each milestone, with all tests green, a
 - `push_subscriptions` table + RLS, VAPID keys, service-worker `push` / `notificationclick` handlers, in-context permission card, Settings → Reminders, `/api/cron/nudge`.
 - **Done when:** NOT-01 acceptance criteria pass on an installed iPhone PWA (test on a real device; the iOS simulator does not deliver Web Push).
 
+### M4c: Bills (2–3 days)
+- `/lib/recurrence.ts` (`nextOccurrences`) with full unit tests first; then the migration (§6.9 data model), cron engine, Bills overview + calendar, New/Edit form, Bill detail, notifications, detection, Home card.
+- **Done when:** all ten REC acceptance criteria pass, including the cron idempotency and catch-up tests.
+
 ### M5: v1.1 (P1 backlog)
-Natural-language entry, favourites, Shortcuts endpoint, recurring rules and detection, budgets,
+Natural-language entry, favourites, Shortcuts endpoint, budgets,
 other push notifications (NOT-02 to NOT-04), Face ID lock, privacy blur, Ask Sterling, month-end projection.
 
 **MVP = M0–M4b**, which covers all six mandatory capabilities plus the evening reminder:
@@ -1218,7 +1390,7 @@ other push notifications (NOT-02 to NOT-04), Face ID lock, privacy blur, Ask Ste
 | A1 | "Month" means the calendar month (1st to last day) for the owner's formula; pay-cycle months are P2. |
 | A2 | Savings accounts are **out** of available cash by default (a per-account toggle). With everything toggled in, the formula is exactly "opening + income − spend". |
 | A3 | Credit card spend reduces available cash at the moment of purchase; the card repayment is a transfer. |
-| A4 | Rent, bills and salary are logged manually until recurring rules (P1) exist. |
+| A4 | Rent, bills, subscriptions, salary and regular transfers are logged automatically by Bills (§6.9). Monthly rules use calendar days; days 29–31 fall back to the month's last day. |
 | A5 | Instrument Sans is the brand typeface on every platform (not SF Pro), so web and iPhone look identical. |
 | A6 | No receipt images in MVP, so no Storage bucket is needed until P2. |
 | A7 | The app is dark-only on every device (owner's decision, 18 Oct 2026). |

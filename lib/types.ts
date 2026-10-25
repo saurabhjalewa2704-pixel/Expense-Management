@@ -19,6 +19,7 @@ export interface Profile {
   reminder_enabled: boolean;
   reminder_time: string; // "21:00:00"
   reminder_prompted: boolean;
+  bills_notify: boolean;
   last_reminder_on: ISODate | null;
   onboarded_at: string | null;
 }
@@ -106,6 +107,9 @@ export interface TxnRow {
   created_at: string;
   pot_id: string | null;
   pot_name: string | null;
+  /** The recurring payment that logged this (REC-09), and whether its amount is still an estimate. Absent on older cached rows. */
+  recurring_id?: string | null;
+  is_estimate?: boolean;
   /** Set on rows that exist only in the offline outbox and have not reached the server yet. */
   pending?: boolean;
 }
@@ -168,3 +172,57 @@ export interface TxnTotals { txn_count: number; spend_pence: number; income_penc
 /** A one-off pot such as "Home purchase": real money, never part of usual spending. */
 export interface Pot { pot_id: string; name: string; target_pence: number | null; closed_at: string | null; spent_pence: number; received_pence: number; net_pence: number; txn_count: number; first_on: ISODate | null; last_on: ISODate | null }
 export interface PotCategory { category_id: string | null; name: string; icon: string; color: CategoryColor; total_pence: number; txn_count: number }
+
+// ── Bills (PRD §6.9) ───────────────────────────────────────────────────────────────────────────────────────────────
+export type RecurFreq = "weekly" | "monthly" | "quarterly" | "yearly";
+export type OccurStatus = "logged" | "estimate" | "confirmed" | "pending" | "skipped";
+
+export interface RecurringItem {
+  id: string;
+  type: "expense" | "income" | "transfer";
+  amount_pence: number;
+  amount_varies: boolean;
+  account_id: string;
+  counter_account_id: string | null;
+  category_id: string | null;
+  payee_id: string | null;
+  note: string | null;
+  frequency: RecurFreq;
+  day_of_month: number | null;
+  last_day: boolean;
+  weekday: number | null;
+  month_of_year: number | null;
+  working_day_rule: "on_day" | "next_working_day";
+  starts_on: ISODate;
+  ends_on: ISODate | null;
+  max_occurrences: number | null;
+  auto_log: boolean;
+  paused_at: string | null;
+  ended_at: string | null;
+  next_due_on: ISODate;
+  created_at: string;
+}
+
+export interface RecurringOccurrence {
+  id: string;
+  item_id: string;
+  due_on: ISODate;
+  scheduled_on: ISODate;
+  status: OccurStatus;
+  transaction_id: string | null;
+  amount_pence: number;
+}
+
+export interface RecurringSuggestion {
+  payee_id: string;
+  payee_name: string;
+  category_id: string;
+  account_id: string;
+  amount_pence: number;
+  frequency: RecurFreq;
+  day_of_month: number;
+  weekday: number;
+  month_of_year: number;
+  seen: number;
+  last_on: ISODate;
+}
