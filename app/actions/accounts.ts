@@ -2,7 +2,7 @@
 import { fail, friendlyDbError, ok, type ActionResult } from "@/lib/action";
 import { AccountInput } from "@/lib/schemas/account";
 import { supabaseServer } from "@/lib/supabase/server";
-import { todayLondon } from "@/lib/dates";
+import { isISODate, todayLondon } from "@/lib/dates";
 import type { Account, Transaction } from "@/lib/types";
 
 export async function upsertAccount(input: unknown): Promise<ActionResult<Account>> {
@@ -23,6 +23,18 @@ export async function upsertAccount(input: unknown): Promise<ActionResult<Accoun
     opening_balance_pence: v.opening_balance_pence, opening_date: v.opening_date ?? todayLondon(), sort_order: sort,
   }).select().single();
   return error ? fail(friendlyDbError(error)) : ok(data as Account);
+}
+
+/**
+ * An entry dated before an account's start date: the owner agreed to move the start back to that date. The opening balance keeps its
+ * number but now means "the balance at the start of the earlier date", so every later balance includes the entry.
+ */
+export async function moveAccountStart(ids: string[], date: string): Promise<ActionResult> {
+  if (!isISODate(date) || date > todayLondon()) return fail("Choose a date that is not in the future.");
+  if (ids.length === 0 || ids.length > 2) return fail("Nothing to move.");
+  const supabase = await supabaseServer();
+  const { error } = await supabase.from("accounts").update({ opening_date: date }).in("id", ids).gt("opening_date", date);
+  return error ? fail(friendlyDbError(error)) : ok(undefined);
 }
 
 /** ACC-03: archive; a non-zero balance needs `writeOff`, which records an adjustment first. */

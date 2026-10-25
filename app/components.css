@@ -321,3 +321,8 @@ td + td{padding-left:14px}
 .fullpage-in{max-width:560px;margin:0 auto;padding:max(12px,env(safe-area-inset-top)) var(--gutter) 40px}
 .fp-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:48px}
 .fp-title{font-size:var(--t-headline);font-weight:600}
+
+.failed-banner{position:fixed;top:0;left:0;right:0;z-index:59;display:flex;align-items:center;gap:10px;padding:calc(var(--safe-top) + 8px) 16px 10px;background:var(--surface-2);box-shadow:inset 0 -2px 0 var(--caution);font-size:var(--t-sub);color:var(--ink)}
+.failed-banner .msg{flex:1;min-width:0}
+.failed-banner .go{height:30px;padding:0 14px;border-radius:var(--r-pill);background:var(--ink);color:var(--on-ink);font-weight:600}
+.failed-banner .x{width:30px;height:30px;display:grid;place-items:center;color:var(--ink-2)}
