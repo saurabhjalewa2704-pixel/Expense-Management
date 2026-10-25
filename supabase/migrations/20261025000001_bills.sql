@@ -419,3 +419,6 @@ grant execute on all functions in schema public to authenticated, service_role;
 revoke execute on all functions in schema public from anon, public;
 grant execute on all functions in schema public to authenticated, service_role;
 revoke execute on function recurring_log(uuid, date, date, date) from authenticated;
+
+-- REC-05: "Bills logged / due" can be switched off in Settings → Reminders (one switch for the three notifications)
+alter table profiles add column bills_notify boolean not null default true;

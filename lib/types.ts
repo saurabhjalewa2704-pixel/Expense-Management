@@ -19,6 +19,7 @@ export interface Profile {
   reminder_enabled: boolean;
   reminder_time: string; // "21:00:00"
   reminder_prompted: boolean;
+  bills_notify: boolean;
   last_reminder_on: ISODate | null;
   onboarded_at: string | null;
 }

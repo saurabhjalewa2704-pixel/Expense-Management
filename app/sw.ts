@@ -24,19 +24,29 @@ const serwist = new Serwist({
 
 // NOT-01 evening reminder. The payload is {title, body, url}; the server sends it only when nothing was logged today.
 self.addEventListener("push", (event) => {
-  const d = (event.data?.json() ?? {}) as { title?: string; body?: string; url?: string };
+  const d = (event.data?.json() ?? {}) as { title?: string; body?: string; url?: string; tag?: string; actions?: { action: string; title: string }[]; data?: Record<string, unknown> };
+  const bill = !!d.tag;            // REC-05 bill notifications carry their own tag, actions and data
   event.waitUntil(self.registration.showNotification(d.title ?? "Sterling", {
     body: d.body ?? "Anything to log from today?",
     icon: "/icon-192.png",
     badge: "/icon-192.png",
-    tag: "evening-reminder",
-    data: { url: d.url ?? "/?add=1" },
-    actions: [{ action: "log", title: "Log now" }, { action: "nothing", title: "Nothing to log" }],
+    tag: d.tag ?? "evening-reminder",
+    data: { url: d.url ?? "/?add=1", bill, ...d.data },
+    actions: d.actions ?? (bill ? [] : [{ action: "log", title: "Log now" }, { action: "nothing", title: "Nothing to log" }]),
   } as NotificationOptions));
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
+  const n = event.notification.data as { bill?: boolean; occurrence?: string } | undefined;
+  if (n?.bill && n.occurrence && (event.action === "confirm" || event.action === "log" || event.action === "skip")) {
+    // REC-05: "Looks right", "Log it" and "Skip" are answered without opening the app
+    event.waitUntil(fetch("/api/recurring/action", {
+      method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ occurrence: n.occurrence, action: event.action }),
+    }).catch(() => undefined));
+    return;
+  }
   if (event.action === "nothing") {
     // a genuine zero-spend day: record the marker, no window needed
     event.waitUntil(fetch("/api/no-spend", { method: "POST", credentials: "same-origin" }).catch(() => undefined));

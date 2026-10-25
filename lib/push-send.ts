@@ -3,7 +3,13 @@ import { appendFileSync } from "node:fs";
 import webpush from "web-push";
 
 export interface PushTarget { endpoint: string; p256dh: string; auth: string }
-export interface PushPayload { title: string; body: string; url: string }
+export interface PushPayload {
+  title: string; body: string; url: string;
+  /** Replaces a notification with the same tag (default: the evening reminder's). */
+  tag?: string;
+  actions?: { action: string; title: string }[];
+  data?: Record<string, unknown>;
+}
 export type PushResult = { ok: true } | { ok: false; gone: boolean; status?: number };
 
 /**
@@ -21,7 +27,7 @@ export async function sendPush(t: PushTarget, payload: PushPayload): Promise<Pus
   if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY || !VAPID_SUBJECT) throw new Error("VAPID keys are not configured. See .env.example.");
   try {
     await webpush.sendNotification({ endpoint: t.endpoint, keys: { p256dh: t.p256dh, auth: t.auth } }, JSON.stringify(payload), {
-      vapidDetails: { subject: VAPID_SUBJECT, publicKey: VAPID_PUBLIC_KEY, privateKey: VAPID_PRIVATE_KEY }, TTL: 60 * 60 * 3, urgency: "normal", topic: "evening-reminder",
+      vapidDetails: { subject: VAPID_SUBJECT, publicKey: VAPID_PUBLIC_KEY, privateKey: VAPID_PRIVATE_KEY }, TTL: 60 * 60 * 3, urgency: "normal", ...(payload.tag ? {} : { topic: "evening-reminder" }),
     });
     return { ok: true };
   } catch (e) {

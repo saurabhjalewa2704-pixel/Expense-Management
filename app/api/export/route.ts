@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
   const stamp = new Date().toISOString().slice(0, 10);
 
   if (format === "json") {
-    const tables = ["profiles", "accounts", "categories", "payees", "pots", "transactions", "budgets", "recurring_rules", "no_spend_days"] as const;
+    const tables = ["profiles", "accounts", "categories", "payees", "pots", "transactions", "budgets", "recurring_items", "recurring_occurrences", "no_spend_days"] as const;
     const out: Record<string, unknown> = { exported_at: new Date().toISOString(), format: "sterling-backup-v1", money: "integer pence" };
     for (const t of tables) {
       const rows: unknown[] = [];

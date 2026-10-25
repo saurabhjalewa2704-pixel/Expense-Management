@@ -270,6 +270,47 @@ begin
     left join payees p on p.user_id = u and p.name = s.payee
    order by s.on_date, s.at_ts;
 
+  -- Bills (PRD §6.9): the regular payments in this data become recurring items whose past occurrences are the transactions
+  -- already there, plus four still to come this month (£34.97 of expenses and a £500 transfer to Marcus on the 26th).
+  create temp table seed_bill (payee text, cat text, acct uuid, amt bigint, varies boolean, dom int, nextdue date) on commit drop;
+  insert into seed_bill values
+    ('Foxtons Lettings',  'Rent & mortgage', monzo, 160000, false, 1, '2026-11-01'),
+    ('Camden Council',    'Council tax',     monzo,  14200, false, 7, '2026-11-07'),
+    ('PureGym',           'Gym & fitness',   monzo,   7500, false, 3, '2026-11-03'),
+    ('Octopus Energy',    'Energy',          monzo,   4840, true,  3, '2026-11-03'),
+    ('Three Mobile',      'Mobile',          hsbc,    3600, false, 4, '2026-11-04'),
+    ('Hyperoptic',        'Broadband & TV',  monzo,   2200, false, 5, '2026-11-05'),
+    ('Admiral Insurance', 'Insurance',       hsbc,    6243, false, 8, '2026-11-08'),
+    ('Netflix',           'Streaming & apps', amex,   1299, false, 2, '2026-11-02'),
+    ('Apple One',         'Streaming & apps', amex,   2898, false, 5, '2026-11-05'),
+    ('Spotify',           'Streaming & apps', amex,   1299, false, 22, '2026-10-22'),
+    ('Disney+',           'Streaming & apps', amex,    899, false, 24, '2026-10-24'),
+    ('YouTube Premium',   'Streaming & apps', amex,   1299, false, 27, '2026-10-27');
+
+  insert into payees (user_id, name, default_category_id)
+  select u, b.payee, (select id from categories where user_id = u and name = b.cat)
+    from seed_bill b where not exists (select 1 from payees p where p.user_id = u and p.name = b.payee);
+
+  insert into recurring_items (user_id, type, amount_pence, amount_varies, account_id, category_id, payee_id, frequency, day_of_month, starts_on, next_due_on)
+  select u, 'expense', b.amt, b.varies, b.acct, cat.id, p.id, 'monthly', b.dom,
+         coalesce((select min(t.occurred_on) from transactions t where t.payee_id = p.id), b.nextdue), b.nextdue
+    from seed_bill b
+    join categories cat on cat.user_id = u and cat.name = b.cat
+    join payees p on p.user_id = u and p.name = b.payee;
+
+  insert into recurring_items (user_id, type, amount_pence, account_id, counter_account_id, frequency, day_of_month, starts_on, next_due_on)
+  values (u, 'transfer', 50000, monzo, marcus, 'monthly', 26, '2026-10-26', '2026-10-26');
+
+  -- the earlier payments are the transactions already in the ledger
+  update transactions t set recurring_id = i.id, source = 'recurring'
+    from recurring_items i
+   where t.user_id = u and i.user_id = u and t.payee_id = i.payee_id and t.type = 'expense' and t.category_id = i.category_id and t.occurred_on < '2026-10-19'
+     and extract(day from t.occurred_on) = i.day_of_month;
+  insert into recurring_occurrences (user_id, item_id, due_on, scheduled_on, status, transaction_id, amount_pence)
+  select u, t.recurring_id, t.occurred_on, t.occurred_on, case when i.amount_varies then 'confirmed' else 'logged' end::occur_status, t.id, t.amount_pence
+    from transactions t join recurring_items i on i.id = t.recurring_id
+   where t.user_id = u and t.recurring_id is not null;
+
   -- opening balances are set so today's balances are exactly the mock-up figures
   update accounts a set opening_balance_pence = v.target - coalesce((select b.balance_pence from account_balances('2026-10-18') b where b.account_id = a.id), 0)
     from (values (monzo, 321408::bigint), (hsbc, 248620::bigint), (cash, 25000::bigint), (amex, -118473::bigint), (marcus, 1240000::bigint)) as v(id, target)
