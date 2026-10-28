@@ -5,6 +5,7 @@
 import Dexie, { liveQuery, type Table } from "dexie";
 import { v7 as uuidv7 } from "uuid";
 import { createTransaction } from "@/app/actions/transactions";
+import { recalcIfNewer } from "@/lib/fx-client";
 import type { TxnInput } from "@/lib/schemas/transaction";
 
 export interface OutboxItem {
@@ -19,6 +20,8 @@ export interface OutboxItem {
   payload: TxnInput;
   /** Optimistic balance flags (BAL-03) so offline balances match what the server will compute: the account side and the receiving side. */
   flags?: { a: boolean; b: boolean | null };
+  /** The account's card fee in basis points, kept so a foreign-currency entry can be recalculated when it syncs (TRIP-06). */
+  fee_bps?: number;
 }
 
 class SterlingDB extends Dexie {
@@ -34,8 +37,8 @@ const db = () => (instance ??= new SterlingDB());
 
 export const newClientId = () => uuidv7();
 
-export async function enqueue(payload: TxnInput, flags?: OutboxItem["flags"]): Promise<OutboxItem> {
-  const item: OutboxItem = { client_id: payload.client_id, created_at: Date.now(), status: "pending", attempts: 0, payload, flags };
+export async function enqueue(payload: TxnInput, flags?: OutboxItem["flags"], fee_bps?: number): Promise<OutboxItem> {
+  const item: OutboxItem = { client_id: payload.client_id, created_at: Date.now(), status: "pending", attempts: 0, payload, flags, fee_bps };
   await db().outbox.put(item);
   return item;
 }
@@ -83,7 +86,9 @@ async function doFlush(): Promise<FlushResult> {
   for (const row of rows) {
     let res;
     try {
-      res = await createTransaction(row.payload);
+      const payload = await recalcIfNewer(row.payload, row.fee_bps ?? 0);
+      if (payload !== row.payload) await db().outbox.update(row.client_id, { payload });
+      res = await createTransaction(payload);
     } catch {
       return { confirmed, blocked: true }; // offline: the request never reached the server
     }

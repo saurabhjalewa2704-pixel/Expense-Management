@@ -31,7 +31,7 @@ export function validateCards(cards: readonly Card[], facts: Facts): Validation 
     if (reasons.length) { dropped.push({ card, reasons }); continue; }
     seen.add(card.key);
     // a link to something that does not exist is removed, the card itself is fine
-    const link = card.link && (card.link.kind === "screen" ? ["/activity", "/analytics", "/cash", "/insights"].includes(card.link.id) : entityIds.has(card.link.id)) ? card.link : undefined;
+    const link = card.link && (card.link.kind === "screen" ? ["/activity", "/analytics", "/cash", "/insights"].includes(card.link.id) || (facts.scope === "trip" && card.link.id === `/trips/${facts.trip_id}`) : entityIds.has(card.link.id)) ? card.link : undefined;
     valid.push({ ...card, link });
   }
   return { valid, dropped };

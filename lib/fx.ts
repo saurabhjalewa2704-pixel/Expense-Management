@@ -88,3 +88,21 @@ export function gbpPerUnit(unitsPerGbp: number | string): string {
   if (x === 0n) throw new Error("Zero rate");
   return rateString(divHalfEven(pow10(RATE_SCALE) * pow10(RATE_SCALE), x));
 }
+
+/** The keypad for a foreign amount: decimals follow the currency's exponent (JPY none, KWD three) and the amount stays a safe integer of minor units. */
+export function pressKeyFx(current: string, key: string, currency: string): string {
+  const exp = exponentOf(currency);
+  if (key === "back") return current.slice(0, -1);
+  if (key === "clear") return "";
+  if (key === ".") {
+    if (exp === 0 || current.includes(".")) return current;
+    return current === "" ? "0." : `${current}.`;
+  }
+  if (!/^\d$/.test(key)) return current;
+  const [whole = "", frac] = current.split(".");
+  if (frac !== undefined) { if (frac.length >= exp) return current; }
+  else if (whole === "0") return key === "0" ? current : key;
+  const next = current + key;
+  const minor = parseMinor(next, currency);
+  return minor === null || minor > 99_999_999_999 ? current : next;
+}

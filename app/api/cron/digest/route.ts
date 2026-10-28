@@ -1,9 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { cronSecret } from "@/lib/env";
-import { londonParts } from "@/lib/dates";
+import { addDays, londonParts } from "@/lib/dates";
 import { periodFor } from "@/lib/ai/facts";
 import { runDigest, serverToday } from "@/lib/ai/server";
+import { ensureTripInsights, sendWrapUp } from "@/lib/ai/trip-server";
 import { supabaseService } from "@/lib/supabase/server";
+import type { Trip } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
@@ -40,5 +42,23 @@ export async function GET(req: NextRequest) {
       }
     }
   }
-  return NextResponse.json({ london: now, scopes, ran });
+
+  // TRIP-08: each morning, insights for the trip in progress, and the wrap-up (with its push) the day after one ends
+  const trips: { trip: string; reason?: string; wrapup?: string; error?: string }[] = [];
+  if (forced === "trip" || (!forced && now.hour >= 7)) {
+    const today = serverToday();
+    const { data: live } = await db.from("trips").select("*").lte("start_on", today).gte("end_on", addDays(today, -1));
+    for (const t of (live ?? []) as (Trip & { user_id: string })[]) {
+      try {
+        const { data: prof } = await db.from("profiles").select("ai_enabled").eq("id", t.user_id).single();
+        let reason = "ai off";
+        if (!prof || (prof as { ai_enabled: boolean }).ai_enabled !== false) reason = (await ensureTripInsights(db, t.user_id, t.id, { today })).reason;
+        trips.push({ trip: t.id, reason, wrapup: await sendWrapUp(db, t.user_id, t, today) });
+      } catch (e) {
+        console.error("[cron/digest] trip", e);
+        trips.push({ trip: t.id, error: String(e) });
+      }
+    }
+  }
+  return NextResponse.json({ london: now, scopes, ran, trips });
 }

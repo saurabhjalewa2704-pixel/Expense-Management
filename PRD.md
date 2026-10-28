@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| Version | 1.4 (Bills: recurring payments auto-logged on their day, plus a bills calendar) |
+| Version | 1.6 (balance anchors for past-dated entries; full edge-case register §18) |
 | Date | 18 October 2026 |
 | Owner | Saurabh (product owner and only user) |
 | Builder | Claude Code |
@@ -24,6 +24,7 @@
 4. **Money is integer pence, always.** No floats anywhere in storage, arithmetic or API payloads. Section 10.1 explains why.
 5. **Never store a derived balance.** Balances and available cash are computed from transactions by the SQL functions in section 10.4. Editing a transaction from March must correct every figure after March, and caching would break that.
 6. When something here is ambiguous, choose the option that makes **logging an expense faster** and note the choice in `DECISIONS.md`.
+7. **Check the edge-case register (§18) before finishing any milestone.** Every `EC-` row is a requirement and needs at least one test named after its ID.
 
 ---
 
@@ -100,6 +101,7 @@ Priority key: **P0** = MVP (must ship), **P1** = v1.1 (next), **P2** = later or 
 | Analytics | Pace chart, category breakdown with drill-down, cash-flow waterfall, 12-month trend, daily heatmap, top payees, period compare | Budget vs actual, savings rate | PDF monthly statement |
 | AI insights | Weekly and monthly digests (structured cards), on-demand refresh, feedback (helpful / dismiss) | "Ask Sterling" chat over your data; anomaly push alerts | Goal coaching |
 | Bills & recurring | Recurring payments by day of month, auto-logged at 06:00 on the due day; bills calendar; detection suggestions (§6.9) | n/a | n/a |
+| Trips | Trips with dates, stops and an optional budget; automatic tagging; earlier bookings; foreign-currency entry with conversion; trip overview, expenses, analytics and AI insights; "Exclude trips" in Analytics (§6.12) | Split trip costs with a companion | Shared trips |
 | Platform | Installable PWA, dark-only UI, desktop layouts, email-code sign-in, **evening reminder notification** (NOT-01) | Face ID app lock (WebAuthn), other push notifications (NOT-02 to NOT-04), privacy blur | Capacitor iOS wrapper, widgets |
 | Data | Export CSV / JSON | Scheduled backup e-mail | n/a |
 
@@ -159,6 +161,15 @@ max-width 1360 px. Quick Add opens as a centred modal (480 px) rather than a she
 | S14 | New / Edit recurring payment | `14-new-recurring.html` |
 | S15 | Bill detail (varying amount) | `15-bill-detail.html` |
 | S16 | Bills logged: morning notifications | `16-bill-notification.html` |
+| S17 | Home during a trip | `17-trip-home.html` |
+| S18 | Trips list | `18-trips.html` |
+| S19 | New / Edit trip | `19-new-trip.html` |
+| S20 | Trip overview | `20-trip-detail.html` |
+| S21 | Trip expenses | `21-trip-expenses.html` |
+| S22 | Add expense on a trip (foreign currency) | `22-trip-add-expense.html` |
+| S23 | Attach earlier bookings | `23-trip-bookings.html` |
+| S24 | Add a past expense (before tracking began) | `24-past-expense.html` |
+| S25 | Expense dated before a reconcile: question sheet | `25-reconciled-question.html` |
 
 ---
 
@@ -183,7 +194,7 @@ would never actually get signed in. Codes avoid this entirely.
 
 ### 6.2 Accounts
 
-**ACC-01 Create and edit an account (P0).** Fields: name (required, ≤40 chars), institution (optional free text), type (`current`, `savings`, `credit_card`, `cash`, `other`), current balance and as-of date (default today), and **"Counts towards available cash"** (default **on** for current, cash and credit card; **off** for savings). Credit card balances are entered as the amount owed and stored as a negative number.
+**ACC-01 Create and edit an account (P0).** Fields: name (required, ≤40 chars), institution (optional free text), type (`current`, `savings`, `credit_card`, `cash`, `other`), current balance and as-of date (default today), and **"Counts towards available cash"** (default **on** for current, cash and credit card; **off** for savings). Credit card balances are entered as the amount owed and stored as a negative number. The as-of date becomes the account's `opening_date`: the balance is taken **as at the moment it is entered**, so anything dated earlier is already reflected in it (§6.2a).
 - Accept: the balance after creation equals the entered balance exactly; credit card shows "−£1,184.73 owed".
 
 **ACC-02 Default account (P0).** One account is the default for Quick Add. After 3 consecutive manual changes to the same other account, the default switches to that account silently, and Settings shows which account is the default.
@@ -196,7 +207,101 @@ would never actually get signed in. Codes avoid this entirely.
 - *are* included in balances and available cash;
 - are *excluded* from spend and income analytics (they are corrections, not behaviour);
 - are listed in Activity with a distinct "Adjustment" label.
+- The reconcile date becomes the account's **balance anchor** (BAL-01). It is stored in `accounts.last_reconciled_on`. The adjustment row, created only when there is a difference, carries `is_reconcile = true`. A £0 difference still updates the anchor (EC-A10).
 - Accept: after reconciling, the account balance equals the typed balance to the penny.
+
+### 6.2a Balance anchors and past-dated entries (P0)
+
+**Owner's rule (28 Oct 2026).** You can record an expense from before you started using Sterling, such as a flight booked in July for a trip next March. It must **not** change cash in hand, because the opening balance already reflects it.
+
+**The general principle:** a transaction changes a balance only if it happened *after* the moment that balance was last set by the user. It doesn't matter whether it's logged in the future or the past.
+
+Mock-ups: `24-past-expense.html` (an expense before tracking began) and `25-reconciled-question.html` (an expense dated before a reconcile).
+
+**BAL-01 Balance anchor.**
+- Every account has a **balance anchor date**: the date on which the user last told Sterling the true balance.
+- `anchor_on = max(accounts.opening_date, latest reconcile date for that account)`.
+- `opening_date` is the "as of" date entered with the opening balance (ACC-01). A reconcile (ACC-05) sets a new anchor.
+- **Tracking start** = the earliest `opening_date` across non-archived accounts. It is stored as `profiles.tracking_started_on` and maintained by a trigger.
+
+**BAL-02 What counts in a balance.** Each transaction has `counts_in_balance` (plus `counter_counts_in_balance` for the receiving side of a transfer).
+- **Only rows with the flag true** are used by `account_balances`, `available_cash` and `cash_flow`.
+- **Analytics ignore the flag**, as do trips, category totals, budgets and AI facts. A July flight is real July spending even though it doesn't move today's cash.
+- **Adjustments** always count in the balance.
+
+**BAL-03 Setting the flag automatically** (when the transaction is created, or when its date, account or type changes):
+
+| Transaction date vs the account's anchor | Flag | User sees |
+|---|---|---|
+| **Before `opening_date`** (before Sterling knew this account) | `false`, no question | Inline note in Add expense: "Before you started tracking (18 Oct). Your opening balances already include this, so it won't change available cash. It still counts in July's spending." (`24-past-expense.html`) |
+| **On `opening_date`** | `true` | Add expense shows a small toggle, "Already included in my opening balance" (off by default). The opening balance is taken as at the moment it was entered, so earlier same-day spending is ambiguous. |
+| **After `opening_date` but before or on the latest reconcile date** | Ask (`25-reconciled-question.html`) | "Was this already in your Monzo balance?" **Yes, it had already left my account** → `false` (default). **No, it was still pending** → `true`. |
+| **After the anchor** | `true` | Nothing extra. |
+
+- `balance_flag_source` records `'auto'` or `'manual'`.
+- **Recalculating:** if the date, account or anchor later changes, auto flags are recomputed. Manual answers are kept, unless the transaction moves to a different account, in which case the question is asked again for that account.
+
+**BAL-04 Transfers.** Each side is judged against its own account's anchor.
+- Example: a transfer from Monzo (anchor 18 Oct) to Amex (anchor 1 Nov), dated 25 Oct. The Monzo side counts; the Amex side is asked about.
+- Pre-tracking transfers on both sides are fully neutral.
+- Transfers never affect analytics.
+
+**BAL-05 Display.**
+- Rows with `counts_in_balance = false` show a small "Not in balance" caption under the amount in Activity, trip lists and account detail. They are never hidden.
+- The transaction editor shows a row "Affects balance: No · before tracking began" (or "· already in reconciled balance"), with a switch to override (sets `balance_flag_source = 'manual'`).
+
+**BAL-06 Effects on available cash and its equation.**
+- `cash_flow` counts only balance-affecting rows. The hero's "Out" can therefore differ from the month's Analytics spend.
+- When the month contains non-balance spending, the Available cash screen (S7) shows a footnote: "£176.20 of July spending was paid before you started tracking. It's in Analytics, not in this figure."
+- The available-cash scrubber (CASH-03) and the "as at" date picker **stop at tracking start**, with the message "Sterling started tracking on 18 Oct". There are no balances before that date.
+
+**BAL-07 Effects on analytics and insights.**
+- **Months before tracking start are partial.** They contain only what you chose to back-fill. Analytics shows them with a "Partial: before tracking" label, and they are **excluded from norms**, pace comparisons and AI anomaly baselines (the same treatment as trip spending in TRIP-09).
+- **The month containing tracking start** counts towards norms only from its tracking-start day onwards.
+- **Pace (CASH-05):** if the comparison month is partial, the pace bar shows "Not enough history yet" instead of a misleading comparison.
+
+**BAL-08 Interaction with other features.**
+- **Bills (§6.9):**
+  - A recurring payment whose first occurrence falls before an account's `opening_date` (for example, rent due on the 1st when you start on the 18th) is logged with `counts_in_balance = false` and the caption "Already in your opening balance".
+  - The catch-up prompt (REC-03) says this explicitly: "Rent was due on 1 Oct, before you started tracking. Log it for your records? It won't change your balance."
+  - The cron never creates occurrences before `starts_on`.
+- **Trips (§6.12):**
+  - Past bookings can be added to a trip from the trip's **Add to ‹trip›** button, which opens Add expense with the trip chip **locked on** and any date allowed (TRIP-04a).
+  - The earlier-bookings scan looks back **12 months** (TRIP-05).
+  - FX for a past date uses that date's historical rate (Frankfurter provides history).
+- **Refunds of pre-tracking purchases** are income received after tracking began. They count in the balance, and can be linked to the trip or category of the original.
+- **Reconcile with past-dated items:** reconciling after back-filling never "double-corrects", because non-balance rows are excluded from the balance that the reconcile compares against.
+- **Changing an account's opening date or balance** recomputes every auto flag for that account and shows how many changed ("3 earlier expenses now count in this balance").
+
+**Data model additions.**
+```sql
+alter table transactions
+  add column counts_in_balance         boolean not null default true,
+  add column counter_counts_in_balance boolean,                       -- transfers only
+  add column balance_flag_source       text not null default 'auto' check (balance_flag_source in ('auto','manual')),
+  add constraint counter_flag_for_transfers check ((type = 'transfer') = (counter_counts_in_balance is not null));
+
+alter table profiles add column tracking_started_on date;             -- maintained by trigger on accounts
+
+alter table accounts add column last_reconciled_on date;            -- set by every reconcile, even with no difference
+
+create view account_anchors as
+  select id as account_id, greatest(opening_date, coalesce(last_reconciled_on, opening_date)) as anchor_on
+  from accounts;
+```
+
+- The flag is set by a **BEFORE INSERT/UPDATE trigger** (`set_balance_flags()`) that applies BAL-03 and BAL-04 for `'auto'` rows. Clients may send `balance_flag_source = 'manual'` with an explicit value (the answer to the reconcile question).
+- Every reconcile sets `accounts.last_reconciled_on`. The adjustment row (only when there is a difference) also carries `is_reconcile = true`, for display.
+
+**Acceptance criteria.**
+1. With tracking start 18 Oct 2026, adding "United £176.20, 14 Jul 2026" changes no account balance and no available cash at any date. It does appear in July spend by category, in USA's total, and in Activity with "Not in balance".
+2. Adding a £42.80 Monzo expense dated 30 Oct, after a reconcile on 1 Nov, asks the question. "Yes" leaves the Monzo balance unchanged; "No" reduces it by £42.80.
+3. An expense dated 20 Oct (after opening, no later reconcile) reduces available cash immediately.
+4. Changing a past-dated expense's date to after the anchor flips an auto flag to true and changes the balance. A manual flag is kept.
+5. The available-cash scrubber cannot go before tracking start.
+6. July 2026 is labelled "Partial: before tracking" in Analytics and is excluded from norms. Norms for November use only data from 18 Oct onwards.
+7. Rent due on 1 Oct, logged through the Bills catch-up, has `counts_in_balance = false`. Rent due on 1 Nov has `true`.
+8. Invariants 7–9 (§10.4) pass.
 
 ### 6.3 Capture: the most important feature
 
@@ -371,6 +476,8 @@ Opening cash   = Σ pool balances at 00:00 on day 1 of the month (Europe/London)
 = Available cash
 ```
 
+Every line above counts **only balance-affecting transactions** (`counts_in_balance`, §6.2a). Expenses dated before an account's opening date or last reconcile are still real spending for Analytics and Trips, but they never move the balance, because the user-entered balance already includes them.
+
 When every account is in the pool and there are no adjustments, the last two lines are zero and
 this **reduces exactly to the owner's formula**. The extra lines exist only so the number never
 silently disagrees with reality. They are hidden in the UI when zero.
@@ -389,7 +496,7 @@ Why this handles the awkward cases correctly:
 (`£7,862.40 opening + £140.00 in − £3,236.85 out`), and the month pace (CASH-05). Tapping the hero opens S7.
 - Accept: the figure equals `available_cash(now())` from SQL to the penny, it updates within 300 ms of any local change (optimistically) and reconciles against the server on sync.
 
-**CASH-03 As-at any point in time (P0).** S7 has a date scrubber: drag along the month's available-cash line, or pick any past date, to see the figure **as at that moment**, with that month's equation. It is computed server-side via `cash_flow(from, to)`; it is never cached.
+**CASH-03 As-at any point in time (P0).** S7 has a date scrubber: drag along the month's available-cash line, or pick any past date, to see the figure **as at that moment**, with that month's equation. It is computed server-side via `cash_flow(from, to)`; it is never cached. The scrubber and date picker stop at **tracking start** (BAL-06).
 
 **CASH-04 Per-account contribution (P0).** S7 lists the pool accounts and their balances (these sum to the hero), then "Not in available cash" (savings and similar) in a separate group.
 
@@ -604,7 +711,7 @@ In the UI the screen is called **Bills**, but a recurring payment can be an expe
   11. **Weekends & bank holidays:** On the day (default) · Next working day. England & Wales bank holidays only.
   12. **Log automatically:** a toggle, on by default. Off = remind me to confirm instead (REC-05).
 - **Plain-English summary** beneath the form, updated live, for example: "Sterling will log £12.99 to Netflix at 6am on the 27th of every month, starting Tue 27 Oct. In shorter months, days 29–31 move to the last day."
-- **Catch-up prompt:** if the chosen day has already passed this month and First payment is moved back into the current month, ask: "Rent was due on the 1st. Log October's now?" The options are *Log it now* and *Start next month*. Sterling never backfills more than the current month.
+- **Catch-up prompt:** if the chosen day has already passed this month and First payment is moved back into the current month, ask: "Rent was due on the 1st. Log October's now?" The options are *Log it now* and *Start next month*. Sterling never backfills more than the current month. If that earlier due date is before the account's opening date, the prompt says so ("…before you started tracking. Log it for your records? It won't change your balance.") and the occurrence is logged with `counts_in_balance = false` (BAL-08).
 - **Editing** applies to **future occurrences only**. Transactions already logged are never changed. To change a past one, edit that transaction.
 - **Validation:** amount > 0; account required; category required for expense and income; From ≠ To for transfers.
 
@@ -768,6 +875,247 @@ switched on later in Settings → Reminders. See mock-up S11.
 **NOT-03 Bills logged / due (P0).** See REC-05.
 **NOT-04 Anomaly alerts (P1).** As AI-05.
 
+### 6.12 Trips (P0)
+
+**Owner's brief.** Create a trip with a start and end date and add expenses against it. Those expenses still count in the monthly figures, but each trip also has its own expense list, analytics and insights.
+
+**Decisions confirmed with the owner (28 Oct 2026):**
+
+| Topic | Decision |
+|---|---|
+| Tagging | **Automatic:** during a trip's dates, new expenses are tagged to it, and any single expense can be untagged. |
+| Pre-trip costs | **Any date:** flights and hotels booked earlier can belong to the trip. The trip shows "Booked before" and "On the trip" separately. |
+| Currency | **Enter in local currency:** Sterling converts to £ at that day's rate and stores both amounts. The £ figure stays editable so it can match the statement. |
+| Budget | **Optional trip budget,** with an optional per-category breakdown. |
+
+Mock-ups:
+- `17-trip-home.html`: Home during a trip
+- `18-trips.html`: Trips list
+- `19-new-trip.html`: New trip
+- `20-trip-detail.html`: Trip overview: budget, analytics, insights
+- `21-trip-expenses.html`: Trip expenses
+- `22-trip-add-expense.html`: Add expense on a trip, in dollars
+- `23-trip-bookings.html`: Attach earlier bookings
+
+The sample scenario is "USA", Sat 6 – Sat 20 Mar 2027, viewed on Fri 12 Mar (day 7 of 15), with a £5,000 budget. All the figures are in Appendix A.
+
+**TRIP-01 Where it lives.**
+- **Home trip card.** It sits between the hero and the pace card.
+  - **During a trip** (`17-trip-home.html`): "On a trip · day 7 of 15", the trip name, the current stop, the daily allowance left, and spent vs budget.
+  - **Up to 14 days before a trip starts:** "USA in 9 days", with "Add bookings" if none are attached.
+  - **For 7 days after a trip ends:** "USA wrap-up ready".
+  - At any other time the card is hidden. Tapping it opens the trip.
+- **Settings → Trips** opens the Trips list (`18-trips.html`).
+- **Desktop:** a "Trips" item in the sidebar.
+- **Activity:** a **Trip** filter.
+- **Analytics:** an "Exclude trips" switch (TRIP-09).
+
+**TRIP-02 Trips list** (`18-trips.html`).
+- **The current trip (or next upcoming) as a hero card:**
+  - a status label (Now · day N of M / In N days);
+  - the name, the stops and the dates;
+  - a **timeline**: one segment per day, past days filled, a "now" marker, and stop names under their spans;
+  - spent vs budget with a two-part bar (booked before / on the trip);
+  - a currency chip.
+- **Past trips:** a list of name, place · nights · month, and total. Sorted newest first.
+- **＋** opens New trip.
+- **Empty state:** "Plan a trip to keep its spending in one place", with a New trip button.
+
+**TRIP-03 New / Edit trip** (`19-new-trip.html`). A full-screen modal with ✕ and **Create** (Save when editing). Fields:
+1. **Name** (required, at most 30 characters).
+2. **Where:** a country picker with search. It sets the default local currency.
+3. **Local currency:** defaults from the country; any ISO 4217 currency can be chosen. If the currency is GBP, conversion is switched off for the trip.
+4. **Dates:** a range calendar. Tap the start date, then the end date; the range is highlighted and the length shown ("15 days"). End must be on or after start. **Trips may not overlap**: show an inline error naming the clashing trip.
+5. **Stops (optional):** name + date range, each inside the trip dates, not overlapping, at most 8. They drive "by stop" analytics, and the stop name appears on expense day headers. Any day not covered by a stop belongs to "Other".
+6. **Budget (optional):** a £ amount. **Budget by category (optional):** £ amounts per parent category. The overall budget must be at least their sum; if it's left empty, it defaults to the sum.
+7. **Add expenses automatically:** a toggle, on by default (TRIP-04).
+
+A note explains that after creation Sterling will look for earlier bookings (TRIP-05).
+
+**Editing dates.**
+- Existing tags never change silently. If new dates leave tagged expenses outside the range, ask: "4 expenses are now outside the trip dates. *Keep them on the trip* / *Remove them*". Expenses with `trip_origin = 'booking'` are always kept.
+- If new dates cover untagged expenses, offer: "Add 6 expenses from 21–22 Mar?"
+
+**Deleting a trip** asks for confirmation. Its expenses stay as normal transactions; only the trip link is removed.
+
+**TRIP-04 Automatic tagging.**
+- **What gets tagged:** an **expense** whose `occurred_on` falls within an active trip's dates, when that trip's auto-add is on. `trip_id` is set when the expense is created, with `trip_origin = 'auto'`. This applies to manual entry, natural-language entry, Shortcuts capture and favourites.
+- **What is never auto-tagged:**
+  - **Bills** (logged by §6.9 recurring payments), so your rent never lands on a trip;
+  - **transfers**;
+  - **income.** Refunds can be tagged manually and then reduce the trip's spending.
+- **Add expense shows a trip chip** (`22-trip-add-expense.html`): a green "USA ✕" chip with a pin icon, first in the meta row.
+  - Tapping ✕ untags this expense only (`trip_id = null`).
+  - Tapping the chip itself opens a picker: the trips around this date, plus "None".
+  - **TRIP-04a Chip and dates.**
+    - An **auto-tagged** chip follows the date: moving the date outside the trip removes it, and moving it back restores it.
+    - A chip the user **set manually**, or one preset because Add expense was opened from the trip's **Add to ‹trip›** button, is **locked on**: any date is allowed, including months before the trip and before tracking began.
+    - Dates before the trip start get `trip_origin = 'booking'`; others get `'manual'`.
+    - Past-dated entries follow the balance rules in §6.2a (`24-past-expense.html`).
+- **During a trip, the "top categories" tiles** (CAP-01.1) are ranked by **this trip's** usage. On the first day, they use the travel defaults: Restaurants, Coffee & snacks, Taxis, Events & culture, Other transport, Clothing & shoes. The label reads "Top on this trip".
+- **Editing any existing transaction** shows the same trip chip. This is how a single expense is moved on or off a trip.
+
+**TRIP-05 Bookings made before the trip.**
+- **Sheet** (`23-trip-bookings.html`): "These travel expenses from the last 12 months look like they belong to USA".
+- **When it appears:** right after the trip is created, and again (as a Home card prompt) 14 days before the start if nothing has been attached yet.
+- **Candidates:** untagged expenses dated in the **12 months** before the start date (flights are often booked very early), in the categories Travel › Flights, Hotels, Visas & insurance (and any category the user marks as "Travel-like" in Settings). Expenses already linked to another trip are excluded.
+- **Pre-selection:** candidates are pre-checked when the payee or note mentions the destination, a stop or an airport code. Otherwise they appear unchecked, like the easyJet LGW–EDI flight in the mock.
+- Selected items get `trip_origin = 'booking'`.
+- **They stay in the months they were paid** for monthly figures. This is explained in the sheet and on the trip (TRIP-09).
+- **Also available:** "Add an existing expense" at the end of the trip's Expenses tab opens a searchable picker of all untagged expenses.
+
+**TRIP-06 Foreign currency.**
+- **On a trip with a non-GBP currency, Add expense opens in that currency**, for example "$48.60".
+  - Beneath it, a live conversion line: "≈ £38.39 · 1 USD = 0.7900 GBP".
+  - A **currency chip** switches between the trip currency and £ for this expense. Use £ when the statement amount is already known.
+  - The Add button shows both: "Add $48.60 · £38.39".
+- **Storage:** `amount_pence` (GBP) remains the single source of truth for every total in the app. The transaction also stores:
+  - `original_amount_minor` and `original_currency` (ISO 4217; minor units follow the currency's exponent, so JPY has 0 decimals);
+  - `fx_rate` (`numeric(18,8)`, GBP per 1 unit);
+  - `fx_rate_on` (date);
+  - `fx_source` (`'auto'` | `'manual'`).
+- **Conversion:** `amount_pence = round_half_even(original_amount_minor × fx_rate × 100 / 10^exponent)`. This is computed in `/lib/fx.ts` using integer and decimal arithmetic only (decimal.js), never floats.
+- **Rates:**
+  - Daily reference rates come from the **Frankfurter API** (ECB rates, no key), fetched once a day by cron for the currencies of active and upcoming trips, and cached in `fx_rates (on, currency, gbp_per_unit)`.
+  - Weekends and holidays use the latest earlier rate. The client caches the trip currency's last 30 days for offline use.
+- **Card fees (optional):** an account field `fx_fee_bps` (for example 299 = 2.99%; 0 by default) is added on top of the rate. This makes the £ closer to what the card actually charges.
+- **Offline:** entries use the latest cached rate and are marked `fx_source = 'auto'` with `fx_rate_on` set to the cached date. On sync, if a newer rate for the expense's date is available and the £ amount hasn't been edited manually, the £ amount is recalculated silently.
+- **Correcting to the statement:** in the transaction editor, tapping the £ figure lets the user overwrite it (`fx_source = 'manual'`). The effective rate is then derived and shown ("effective 0.8012").
+- **Display:**
+  - Trip lists show £ as the main figure and the original amount underneath in tertiary text ("£38.39 / $48.60").
+  - Activity shows the original amount only on foreign-currency rows.
+  - All analytics use £.
+
+**TRIP-07 Trip overview** (`20-trip-detail.html`). The header has a back button ("Trips") and an edit icon; the status label shows "Day 7 of 15 · New York"; then the name, stops and dates; then a two-tab switch, **Overview · Expenses (N)**.
+- **Budget card:**
+  - the timeline (TRIP-02) and spent vs budget, with the two-part bar and legend (Booked before £ / On the trip £);
+  - an **allowance line** during the trip: "You can spend £159.83 a day for the next 9 days and stay on budget", where allowance = (budget − spent) ÷ days remaining including today;
+  - before the trip it reads "£X planned per day once you arrive"; after it, "Finished £X under budget" or "£X over budget".
+  - With no budget, the card shows the total, the on-trip daily average, and the split.
+- **Daily spending chart:**
+  - one bar per trip day, on-trip spending only (bookings excluded); future days are drawn as empty outlines;
+  - bars are shaded by stop; a dashed **planned daily** line = (budget − booked before) ÷ trip days;
+  - the finding title names the biggest day and its largest expense ("Thursday was your biggest day: Hamilton");
+  - tapping a bar shows that day's expenses.
+- **By stop:**
+  - a row per stop with its total, days so far and £ a day, and a bar scaled to the largest stop;
+  - future stops say "Upcoming";
+  - the finding title names the priciest stop per day;
+  - hidden when no stops are defined.
+- **Where it went:**
+  - the same component as Analytics AN-02, with the Categories · Sub-categories switch (default **Sub-categories** for trips, because trips are small);
+  - each row's caption is "parent · % of trip"; top 7, then "Show all N" inline;
+  - covers the whole trip, including bookings;
+  - if category budgets exist, each row shows a budget marker and turns caution-coloured when over.
+- **Insights:** 2–4 cards from the §12 pipeline, scoped to the trip (TRIP-08).
+- **Footer explainer:** "Also in your monthly spending. £1,101.31 counts in March; £2,460.20 of bookings counted in December to February, when you paid."
+
+**TRIP-08 Trip insights.** These use the same compute-then-narrate pipeline and grounding validator (§12.2–12.4), with a `trip` scope.
+- **Facts payload:**
+  - totals (booked / on-trip / by day / by stop / by category);
+  - budget, plan per day, actual per day, allowance, and the projection (spent + actual-per-day × days left);
+  - the biggest expenses;
+  - the FX average;
+  - comparisons with past trips (per day, by category).
+- **Card types:**
+  - `trip_pace`: on budget / at risk, with the projected finish;
+  - `trip_mix`: largest share, for example food;
+  - `trip_stop`: comparison between stops;
+  - `trip_compare`: "Your priciest trip per day since Goa";
+  - `trip_big`: a single large expense;
+  - `trip_fx`: card fees paid, when `fx_fee_bps > 0`.
+- **When generated:** each morning at 07:00 local time during the trip, after any trip edit (debounced 10 min), and as a **wrap-up** the day after the trip ends.
+- **Wrap-up:** a push notification "USA wrap-up ready", plus a summary at the top of the trip: total, per day, vs budget, top 3 categories, best and priciest day, and comparison with past trips.
+- Copy must use only facts from the payload. For example, "With no hotel to pay for, Chicago came to £107.52 a day" is allowed because the absence of hotel spend in Chicago is a computed fact.
+
+**TRIP-09 Monthly figures and analytics.**
+- **Trip expenses are ordinary transactions.** They count in available cash, monthly spending, Activity and all monthly analytics, in the month they were paid. Nothing is double-counted: a trip is a *view* over transactions, not a separate ledger.
+- **Norms exclude trip expenses.** The "usual by now" medians (AN-02, AN-02c and the AI facts) are computed **without** trip-tagged transactions. Then a trip doesn't inflate future "usual" values, and normal months aren't flagged as low by comparison.
+- **"Exclude trips" switch** in Analytics, next to the period control, off by default. When on, every Analytics chart for the period removes trip-tagged transactions, and the page shows a quiet banner: "Excluding USA (£1,101.31)".
+- **Monthly AI insights mention the trip as context**, for example "March includes £1,101 of trip spending", rather than flagging trip categories as anomalies.
+
+**TRIP-10 Trip expenses tab** (`21-trip-expenses.html`).
+- **Search** within the trip.
+- **Summary line:** count · total · total in local currency · average rate.
+- **On-trip expenses grouped by day,** newest first. Each day header shows "‹Weekday date› · ‹stop› · £day total".
+- **A final "Booked before the trip" group,** sorted by date.
+- Rows follow the Activity style, plus the original amount under the £ figure. Swipe left on a row: **Remove from trip** (not delete), as well as the normal Delete.
+- **"Add an existing expense"** at the end of the list.
+
+**Data model.**
+
+```sql
+create table trips (
+  id              uuid primary key default gen_random_uuid(),
+  user_id         uuid not null default auth.uid() references auth.users on delete cascade,
+  name            text not null check (char_length(name) between 1 and 30),
+  country_code    char(2),
+  currency        char(3) not null default 'GBP',
+  start_on        date not null,
+  end_on          date not null check (end_on >= start_on),
+  budget_pence    bigint check (budget_pence > 0),
+  auto_tag        boolean not null default true,
+  created_at      timestamptz not null default now(),
+  exclude constraint trips_no_overlap using gist (user_id with =, daterange(start_on, end_on, '[]') with &&)
+);   -- needs: create extension btree_gist;
+
+create table trip_stops (
+  id       uuid primary key default gen_random_uuid(),
+  user_id  uuid not null default auth.uid() references auth.users on delete cascade,
+  trip_id  uuid not null references trips on delete cascade,
+  name     text not null,
+  start_on date not null,
+  end_on   date not null,
+  sort     smallint not null default 0
+);   -- trigger: within trip dates, no overlap between stops of one trip
+
+create table trip_category_budgets (
+  trip_id      uuid not null references trips on delete cascade,
+  user_id      uuid not null default auth.uid() references auth.users on delete cascade,
+  category_id  uuid not null references categories,     -- parent categories only
+  amount_pence bigint not null check (amount_pence > 0),
+  primary key (trip_id, category_id)
+);
+
+alter table transactions
+  add column trip_id               uuid references trips on delete set null,
+  add column trip_origin           text check (trip_origin in ('auto','manual','booking')),
+  add column original_amount_minor bigint,
+  add column original_currency     char(3),
+  add column fx_rate               numeric(18,8),
+  add column fx_rate_on            date,
+  add column fx_source             text check (fx_source in ('auto','manual')),
+  add constraint fx_all_or_none check (
+    (original_currency is null) = (original_amount_minor is null) and
+    (original_currency is null) = (fx_rate is null));
+create index txn_trip on transactions (user_id, trip_id, occurred_on) where trip_id is not null and deleted_at is null;
+
+alter table accounts add column fx_fee_bps int not null default 0 check (fx_fee_bps between 0 and 1000);
+
+create table fx_rates (on_date date, currency char(3), gbp_per_unit numeric(18,8) not null,
+                       primary key (on_date, currency));   -- readable by authenticated users; written by cron only
+```
+
+- RLS: the standard four policies on `trips`, `trip_stops` and `trip_category_budgets`.
+- **New SQL functions** (security invoker):
+  - `trip_summary(p_trip)`: booked, on-trip, spent, budget, days, day N, plan per day, actual per day, allowance and projection.
+  - `trip_by_day(p_trip)`
+  - `trip_by_stop(p_trip)`
+  - `trip_by_category(p_trip, p_level)`, reusing the `spend_by_category` logic.
+- **Existing functions:** `spend_by_category`, `daily_spend` and `monthly_totals` gain `p_exclude_trips boolean default false`. The norm calculation always excludes trip-tagged rows.
+
+**Acceptance criteria.**
+1. With the USA trip active, a new £ or $ expense dated 12 Mar is tagged automatically. Untagging via the chip saves it with no trip. A bill logged on 12 Mar is never tagged.
+2. A $48.60 entry with a cached rate of 0.7900 stores £38.39, `original_amount_minor = 4860` and `original_currency = 'USD'`. Editing £ to £39.10 sets `fx_source = 'manual'` and shows an effective rate of 0.8045.
+3. Attaching the 5 bookings makes "Booked before" £2,460.20. December–February monthly totals are unchanged, and March includes only the £1,101.31 spent on the trip.
+4. On 12 Mar, the overview shows spent £3,561.51 of £5,000, £1,438.49 left and £159.83 a day for 9 days. The daily chart has 7 filled bars and 8 empty ones; the planned line is at £169.32.
+5. By stop: Chicago £322.57 (3 days), New York £778.74 (4 days so far), Miami Upcoming.
+6. Creating a trip that overlaps USA is rejected with a message naming USA.
+7. With "Exclude trips" on, March analytics drop exactly £1,101.31. Category norms for April are the same with or without the trip.
+8. Every trip insight passes the grounding validator. The wrap-up arrives the day after the end date.
+9. Deleting the trip leaves all 24 transactions intact, with `trip_id = null`.
+10. Offline, a $ expense uses the last cached rate. After reconnecting, it's recalculated with the day's rate unless £ was edited.
+
 ---
 
 ## 7. Mobile UX requirements
@@ -881,6 +1229,8 @@ CLAUDE.md  DECISIONS.md  PRD.md
 | Bills: log due occurrences (P0, REC-04) | Hourly; acts 06:00–06:59 London, monthly bank-holiday refresh | `/api/cron/recurring` |
 | Evening reminder (P0, NOT-01) | Every 15 min (or hourly); the handler checks the user's London reminder time | `/api/cron/nudge` |
 | Bills: suggestions (P0, REC-07) | Daily 03:00 | `/api/cron/recurring?detect=1` |
+| FX rates for trip currencies (P0, TRIP-06) | Daily 05:00 London | `/api/cron/fx` |
+| Trip insights + wrap-up (P0, TRIP-08) | Daily 07:00 London during and the day after a trip | `/api/cron/digest?scope=trip` |
 
 Vercel Cron schedules are in UTC. Either schedule hourly and check the London local time inside
 the handler (preferred, because it is correct across BST changes), or accept a one-hour drift.
@@ -984,7 +1334,7 @@ create table transactions (
   payee_id           uuid references payees on delete set null,
   note               text check (char_length(note) <= 280),
   tags               text[] not null default '{}',
-  occurred_on        date not null,                       -- London local date, drives all reporting
+  occurred_on        date not null,                       -- local date where it happened (EC-D1), drives all reporting
   occurred_at        timestamptz,                         -- optional precise time (suggestions)
   source             txn_source not null default 'app',
   recurring_id       uuid,
@@ -1067,6 +1417,19 @@ create table no_spend_days (              -- "Nothing to log" from the reminder
 );
 ```
 
+### 10.2a Later schema additions (one place to check)
+
+These are in addition to §10.2 and the feature sections (§6.2a, §6.9, §6.12):
+
+```sql
+alter table transactions add column occurred_tz text;                              -- IANA zone where it happened (EC-D1)
+alter table transactions add column is_reconcile boolean not null default false;   -- marks reconcile adjustments (display)
+alter table trip_stops   add column currency char(3);                              -- per-stop default currency (EC-T7)
+create table category_redirects (                                                   -- merged categories (EC-C4)
+  user_id uuid not null default auth.uid() references auth.users on delete cascade,
+  from_id uuid primary key, to_id uuid not null references categories, merged_at timestamptz not null default now());
+```
+
 ### 10.3 Row-level security
 Enable RLS on **every** table. Use the same four policies everywhere (generate them in the migration):
 
@@ -1086,6 +1449,8 @@ a second user cannot read any row (section 16).
 All functions are `language sql stable security invoker` (RLS applies) and take London dates.
 
 ```sql
+-- Only rows with counts_in_balance = true (and counter_counts_in_balance for the receiving
+-- side of a transfer) affect balances (§6.2a). Analytics functions ignore these flags.
 -- Signed effect of one transaction on one account
 --   expense: −amount on account_id
 --   income:  +amount on account_id
@@ -1135,6 +1500,9 @@ returns table (payee_id uuid, name text, visits int, total_pence bigint, avg_pen
 4. Editing a transaction dated 3 months ago changes `available_cash(today)` by exactly the delta.
 5. With all accounts in the pool and no adjustments, `closing = opening + income − spend` exactly (the owner's formula).
 6. `Σ spend_by_category(f,t,p_level=>'leaf')` per parent equals that parent's `spend_by_category(f,t)` row, and the grand totals match (§6.7.1).
+7. Inserting a transaction with `counts_in_balance = false` changes no `account_balances` or `available_cash` value at any date, and changes `spend_by_category` for its period by exactly its amount.
+8. For every account, `account_balances(anchor_on)` equals the balance the user entered at that anchor (opening or reconcile), however many past-dated rows are added later.
+9. Invariants 1 and 2 still hold with mixed flags. `Σ spend_by_category(f,t)` minus `cash_flow(f,t).spend` equals the sum of non-balance pool expenses in `[f,t]`.
 
 ### 10.5 Seeding
 `create function seed_default_categories(p_user uuid)` inserts the section 6.4 taxonomy (with
@@ -1321,7 +1689,7 @@ Work in this order. Commit at the end of each milestone, with all tests green, a
 ### M2: Available cash (1–2 days)
 - SQL functions in section 10.4 with invariant tests.
 - Home hero, equation, pace (CASH-02, CASH-05); S7 detail with scrubber (CASH-03, CASH-04).
-- Reconcile (ACC-05).
+- Reconcile (ACC-05) and balance anchors (§6.2a): the `set_balance_flags()` trigger, the reconcile question sheet, and invariants 7–9.
 - **Done when:** all five invariants pass; the hero matches the SQL to the penny after random edits.
 
 ### M3: Analytics (2–3 days)
@@ -1340,6 +1708,11 @@ Work in this order. Commit at the end of each milestone, with all tests green, a
 ### M4c: Bills (2–3 days)
 - `/lib/recurrence.ts` (`nextOccurrences`) with full unit tests first; then the migration (§6.9 data model), cron engine, Bills overview + calendar, New/Edit form, Bill detail, notifications, detection, Home card.
 - **Done when:** all ten REC acceptance criteria pass, including the cron idempotency and catch-up tests.
+
+### M4d: Trips (3–4 days)
+- `/lib/fx.ts` with unit tests (rounding, currency exponents, fees) and `/lib/tripMath.ts` (allowance, plan, projection) first.
+- Migration (§6.12 data model, `btree_gist`), FX cron, auto-tagging in every capture path, the trip chip in Add expense and the transaction editor, Trips list, New/Edit trip, Trip overview and Expenses, the earlier-bookings sheet, trip insights and wrap-up, the Home trip card, "Exclude trips" in Analytics, and norm exclusion.
+- **Done when:** all ten TRIP acceptance criteria pass against the Appendix A trip seed.
 
 ### M5: v1.1 (P1 backlog)
 Natural-language entry, favourites, Shortcuts endpoint, budgets,
@@ -1360,7 +1733,7 @@ other push notifications (NOT-02 to NOT-04), Face ID lock, privacy blur, Ask Ste
 ```
 - Money is integer pence (bigint). Never use floats. Use /lib/money.ts.
 - Never store derived balances; use SQL functions in supabase/migrations.
-- All dates: Europe/London. occurred_on is a London-local date.
+- Month boundaries and crons: Europe/London. occurred_on = local date where it happened (EC-D1).
 - Visual truth = design/mockups/*.html and design/tokens.css. Don't introduce new colours or radii.
 - Mobile first: build and test at 390×844 before desktop.
 - Every new table: RLS policies + a SQL test proving cross-user isolation.
@@ -1378,6 +1751,7 @@ other push notifications (NOT-02 to NOT-04), Face ID lock, privacy blur, Ask Ste
 | Suggestions | Vitest | Ranking with fixed fixtures; payee-pinned behaviour; cold-start fallback |
 | SQL | pgTAP / Supabase test | Invariants 1–5 (section 10.4); RLS isolation with two users; category depth trigger; merge |
 | AI | Vitest | Grounding validator (accepts exact, rejects invented, rejects altered rounding); schema parse; fallback path |
+| Edge cases | Vitest / SQL / Playwright, as fits | Every row in §18, one test per ID (`EC-A1 …`) |
 | E2E | Playwright (iPhone 14 profile + desktop) | 3-tap capture; offline outbox; edit and undo; reconcile; create category; analytics drill-down; screenshot comparison against the dark mock-ups |
 | Visual | Playwright screenshots vs mock-ups | Home, Quick Add, Analytics at 390 px; Desktop at 1440 px |
 
@@ -1395,11 +1769,148 @@ other push notifications (NOT-02 to NOT-04), Face ID lock, privacy blur, Ask Ste
 | A6 | No receipt images in MVP, so no Storage bucket is needed until P2. |
 | A7 | The app is dark-only on every device (owner's decision, 18 Oct 2026). |
 | A8 | The evening reminder is in the MVP (owner's decision, 18 Oct 2026). It needs the app installed to the iPhone Home Screen. |
+| A9 | An opening balance or reconciled balance is true **as at the moment it was entered**. Anything dated earlier is already inside it and never moves it again (owner's rule, 28 Oct 2026; §6.2a). |
 
 Open for the owner:
 1. Do you want **pay-cycle months** (for example from payday to payday) promoted to MVP? It changes the "opening cash" date.
 2. Should **savings transfers** show as "Set aside" in the equation (current design), or should savings simply be in the pool?
 
+
+## 18. Edge-case register
+
+This is the single checklist of awkward situations and how Sterling must behave in each. Every row is a requirement. Where a row points to a section, that section has the detail; where it says "new", this register is the spec.
+
+**For Claude Code:** turn each row into at least one automated test (unit, SQL or Playwright), named after the row's ID, for example `test('EC-A1 pre-tracking expense is balance-neutral')`. Add any new edge case you discover here in the same format.
+
+### 18.1 Money and amounts
+
+| ID | Situation | Expected behaviour | Ref |
+|---|---|---|---|
+| EC-M1 | Amount typed as "0", ".", "12.", "1,234.5", or with more than 2 decimals | Keypad: leading "." becomes "0."; a third decimal digit is ignored; Add stays disabled at £0. Pasted text: commas are stripped and the value is parsed with `toPence`; invalid input shows "Enter an amount". | CAP-01, `/lib/money.ts` |
+| EC-M2 | Amount over £999,999.99 | Further digits are ignored, with a short shake on the amount. | CAP-01 |
+| EC-M3 | Negative amounts | Never typed. Money coming back is **income** (refund); corrections are adjustments. | §10.1 |
+| EC-M4 | Rounding (FX, card fees, splits) | Half-even to the penny using decimal arithmetic; never floats. Split remainders (P2) go to the largest part. | TRIP-06 |
+| EC-M5 | Available cash below zero (card debt larger than cash) | The hero shows −£ with a real minus sign, and the label changes to "Overdrawn by". The colour stays ink; a caution dot sits beside it. | CASH-02 (new) |
+| EC-M6 | Very large figures (£1,000,000+) | The hero figure shrinks to fit one line (min 44 px); it never wraps or truncates. | §14 (new) |
+| EC-M7 | Credit card in credit (overpaid) | Balance shown as "£x in credit" and counted as positive cash. | ACC-01 (new) |
+
+### 18.2 Dates and time
+
+| ID | Situation | Expected behaviour | Ref |
+|---|---|---|---|
+| EC-D1 | Logging abroad, for example 20:00 in New York (01:00 London next day) | `occurred_on` defaults to the **device's local date**, which is the day you experienced. `occurred_tz` stores the IANA zone. Reporting uses `occurred_on`; month and cron boundaries use Europe/London. | (new) |
+| EC-D2 | British Summer Time changes (29 Mar, 25 Oct 2026; 28 Mar, 31 Oct 2027) | Cron jobs check London local time on every hourly run, so jobs never run twice or get skipped. The reminder fires at 21:00 local time. | REC-04, NOT-01 |
+| EC-D3 | Days 29–31, 29 Feb, last day of month | Moved to the month's last day; yearly 29 Feb → 28 Feb in non-leap years. | REC-04 |
+| EC-D4 | Back-dating into a month whose insights were already generated | Totals recalculate immediately. Insight cards for that period are marked stale and regenerated on the next run. | §12 (new) |
+| EC-D5 | Future-dated expense (for example, paying a deposit next week) | Allowed up to 12 months ahead. It doesn't affect balances until its date and appears in Activity under "Scheduled". The Bills calendar shows it as due. | (new) |
+| EC-D6 | Device clock wrong | Server time is authoritative for `created_at`, crons and "today". `occurred_on` is whatever the user picked. | (new) |
+| EC-D7 | Expense dated before tracking began | Doesn't affect balances; counts in analytics. Its month is marked partial. | BAL-03, BAL-07 |
+
+### 18.3 Accounts and balances
+
+| ID | Situation | Expected behaviour | Ref |
+|---|---|---|---|
+| EC-A1 | Expense dated before the account's opening date (for example, a July flight) | `counts_in_balance = false` automatically, with an inline note. Still counts in July spend and in the trip. | BAL-03 |
+| EC-A2 | Expense dated on or before the account's latest reconcile | Ask "Was this already in your ‹account› balance?" Default Yes = not in balance. | BAL-03 |
+| EC-A3 | Expense dated on the opening date itself | Counts in the balance, with a toggle "Already included in my opening balance". | BAL-03 |
+| EC-A4 | Transfer where each side has a different anchor | Each side is judged against its own account. | BAL-04 |
+| EC-A5 | Account moved in or out of the cash pool | Applies to all dates: history is recomputed with current membership. S7 notes "Pool changed on ‹date›". | CASH-01 (new) |
+| EC-A6 | Changing an account's opening balance or opening date | Recompute auto balance flags and show how many changed; manual flags are kept. | BAL-08 |
+| EC-A7 | Deleting an account that has transactions | Not allowed; offer Archive. Accounts with no transactions can be deleted. | ACC-03 |
+| EC-A8 | Archived account referenced by a bill, a favourite or the default account | Bill occurrences go to `pending` ("choose another account"). Favourites are hidden. The default switches to the most-used active account. | REC-04 (new for the others) |
+| EC-A9 | Reconcile after back-filling past items | Non-balance rows are excluded from the balance being compared, so there is no double correction. | BAL-08 |
+| EC-A10 | Reconciling to the same balance (no difference) | No adjustment is created, but `last_reconciled_on` is updated, so the anchor moves. | ACC-05 (new) |
+
+### 18.4 Capture, editing and sync
+
+| ID | Situation | Expected behaviour | Ref |
+|---|---|---|---|
+| EC-C1 | Double tap on Add, or a network retry | `client_id` makes the write idempotent, and the button is disabled while saving. Exactly one row is created. | CAP-05 |
+| EC-C2 | Offline for days, app killed | The outbox survives in IndexedDB. A persistent "3 waiting to sync" badge shows until flushed. | CAP-05 |
+| EC-C3 | Same transaction edited on two devices | Last write wins by `updated_at`. The losing device shows "Updated on another device" and refreshes. | (new) |
+| EC-C4 | Outbox item uses a category that was merged or archived meanwhile | Archived categories still accept writes (history matters). Merged categories redirect through `category_redirects (from_id, to_id)`. | CAT-04 (new) |
+| EC-C5 | Session expires while offline | Queued writes are kept. After the user signs in again they are flushed under the same `client_id`s. | (new) |
+| EC-C6 | Undo after the write has synced | A soft delete is sent; Undo restores it. Purged after 30 days. | CAP-01 |
+| EC-C7 | Payee variants ("Gail's", "GAILS LTD") | Matched on `name_norm` and trigram similarity of at least 0.6; the user can merge payees in Settings. | §10.2 |
+| EC-C8 | Transaction type changed (expense → income) | The category resets (income and expense categories are separate). The trip tag is removed, because income is never auto-tagged. Balance flags are recomputed. | CAP-04 (new) |
+| EC-C9 | Closing Add expense with unsaved input | "Discard this expense?" sheet; closes immediately if nothing was entered. | CAP-01 |
+| EC-C10 | Manual expense for a payee that Bills logs within ±3 days | Ask before adding a probable duplicate. | REC-08 |
+| EC-C11 | iOS clears the app's local storage (Safari may evict website data) | The app re-hydrates from the server. Only unsynced outbox items are at risk; flush them aggressively (on focus and on every successful network call). | MOB-08 (new) |
+
+### 18.5 Categories
+
+| ID | Situation | Expected behaviour | Ref |
+|---|---|---|---|
+| EC-K1 | Deleting a category with transactions | Not allowed; offer "Merge into…". | CAT-04 |
+| EC-K2 | Merging a parent that has sub-categories | Its sub-categories move under the target parent. A name clash asks to "Combine" or "Keep both" (renamed "‹name› (2)"). | CAT-04 (new) |
+| EC-K3 | Archived category among the top tiles | Hidden immediately; the next-ranked category fills the slot. | CAP-01.1 (new) |
+| EC-K4 | Sibling names differing only by case ("coffee" vs "Coffee") | Rejected as duplicates (case-insensitive unique). | CAT-03 (new) |
+| EC-K5 | Parent with no sub-categories | The picker shows the parent as a single row; tiles show it with the caption "General". | CAP-01.2 |
+| EC-K6 | Spend assigned to a parent directly | Shown as "Other ‹parent›" in sub-category views. | §6.7.1 |
+
+### 18.6 Bills (recurring payments)
+
+| ID | Situation | Expected behaviour | Ref |
+|---|---|---|---|
+| EC-B1 | Cron runs twice, or misses days | `unique (item_id, scheduled_on)`; catch-up logs each missed occurrence on its original date and sends one summary. | REC-04 |
+| EC-B2 | Due on a weekend or bank holiday | "On the day" (default) or "Next working day" (England & Wales, gov.uk feed; cached fallback). | REC-04 |
+| EC-B3 | Amount varies | Logs the last confirmed amount as an estimate (EST); confirm or change from the notification. | REC-04 |
+| EC-B4 | Pause, then resume | No back-fill for the paused period. | REC-04 |
+| EC-B5 | Skip next | That occurrence is `skipped`; can be undone until the due date. | REC-06 |
+| EC-B6 | Edit amount or day mid-cycle | Affects future occurrences only; logged ones never change. | REC-03 |
+| EC-B7 | First due date is before tracking began | Logged as "Already in your opening balance" (`counts_in_balance = false`). | BAL-08 |
+| EC-B8 | Recurring transfer to savings | Logged as a transfer; shown as "Set aside" in the cash equation; excluded from bill totals. | REC-02 |
+| EC-B9 | Bill dated during a trip | Never auto-tagged to the trip. | TRIP-04 |
+| EC-B10 | Stop, then delete | Stop keeps history; full delete only from "Ended", and transactions are kept with the link removed. | REC-06 |
+
+### 18.7 Trips and foreign currency
+
+| ID | Situation | Expected behaviour | Ref |
+|---|---|---|---|
+| EC-T1 | Overlapping trips | Blocked by an exclusion constraint, with a message naming the clashing trip. | TRIP-03 |
+| EC-T2 | Trip dates edited so tagged expenses fall outside | Ask: keep or remove. Bookings are always kept. | TRIP-03 |
+| EC-T3 | Booking made before tracking began (for example July) | Add from the trip; balance-neutral; counts in the trip and in July spend. | BAL-08, TRIP-04a |
+| EC-T4 | Date changed to outside the trip on an *auto-tagged* expense | The chip is removed automatically. If the chip was set manually, or the expense was opened from "Add to ‹trip›", it stays (`trip_origin = 'manual'` or `'booking'`). | TRIP-04a |
+| EC-T5 | Bills, transfers and income during a trip | Never auto-tagged; refunds can be tagged manually and reduce the trip total. | TRIP-04 |
+| EC-T6 | Domestic trip (GBP) | No conversion UI; the currency chip is hidden. | TRIP-03 |
+| EC-T7 | Several countries on one trip (US + Canada) | The trip currency is only the default; the currency chip can pick any currency for each expense. Stops may set their own default currency. | TRIP-06 (new) |
+| EC-T8 | Zero- or three-decimal currencies (JPY, KWD) | Minor units follow the ISO 4217 exponent; the keypad hides "." for JPY. | TRIP-06 |
+| EC-T9 | No exchange rate available (API down, unsupported currency) | Use the last cached rate. If there is none, ask for the £ amount, or a rate ("1 XXX = ? GBP"), before saving. | TRIP-06 (new) |
+| EC-T10 | Past-dated foreign expense | Uses the historical rate for that date. | BAL-08 |
+| EC-T11 | £ corrected to match the statement | `fx_source = 'manual'`; never recalculated; effective rate shown. | TRIP-06 |
+| EC-T12 | Trip spans a month end | Each expense counts in its own month; the trip total is unaffected. | TRIP-09 |
+| EC-T13 | Over budget | The bar turns caution; the allowance line reads "£x over budget"; the insight card switches to "at risk". | TRIP-07 |
+| EC-T14 | No budget | The budget card shows the total, the on-trip daily average and the split, with no allowance. | TRIP-07 |
+| EC-T15 | Days not covered by any stop | Grouped as "Other" in By stop. | TRIP-03 |
+| EC-T16 | One-day trip, or trip longer than 60 days | One day: the daily chart is hidden. Over 60 days: the daily chart becomes weekly bars. | TRIP-07 (new) |
+| EC-T17 | Trip deleted | Transactions are kept, with `trip_id = null`. | TRIP-03 |
+| EC-T18 | Refund larger than a category's trip spend | The category shows net £0 with "net refund £x"; the trip total is reduced. | (new) |
+
+### 18.8 Analytics and AI insights
+
+| ID | Situation | Expected behaviour | Ref |
+|---|---|---|---|
+| EC-N1 | Months before tracking began (back-filled) | Labelled "Partial: before tracking"; excluded from norms, pace and AI baselines. | BAL-07 |
+| EC-N2 | Fewer than 3 prior complete periods | "Usual" markers and ↑ flags are hidden; the subtitle reads "Not enough history yet". | AN-02 (new) |
+| EC-N3 | Trip spending | Excluded from norms; an "Exclude trips" switch is available. | TRIP-09 |
+| EC-N4 | Empty period or category | An empty state with a link to the previous period; never a zero-height chart. | §6.7 |
+| EC-N5 | Net-negative category (refunds) | The bar is clamped at 0 with a "net refund" label. | (new) |
+| EC-N6 | AI monthly token cap reached, or the API is down | Template cards from facts; a quiet "AI summary paused" note. | §12.6 |
+| EC-N7 | AI output fails grounding | The card is dropped; one retry; then template fallback. | §12.4 |
+| EC-N8 | Fewer than 10 transactions in total | Insights hidden: "Log a few more days and insights will appear." | (new) |
+
+### 18.9 Notifications, PWA and security
+
+| ID | Situation | Expected behaviour | Ref |
+|---|---|---|---|
+| EC-P1 | App not installed to the Home Screen (iOS) | Push options are disabled, with an "Install Sterling to get reminders" card. | NOT-01 |
+| EC-P2 | Notification permission denied | The toggle shows "Off in iPhone Settings" with steps; Sterling doesn't ask again. | NOT-01 (new) |
+| EC-P3 | Push endpoint expired (404/410) | Subscription deleted; re-subscribe on next launch if permission is still granted. | NOT-01 |
+| EC-P4 | Several devices subscribed | Send to all. The evening reminder checks "logged today" once, server-side. | NOT-01 |
+| EC-P5 | Bills and the reminder on the same evening | The reminder treats auto-logged bills as **not** user activity, so it still nudges if nothing was logged manually. | NOT-01 (new) |
+| EC-P6 | Shortcuts API token revoked or leaked | Revoking takes effect immediately (401); tokens are stored hashed; per-token rate limit of 60 per hour. | CAP-08 |
+| EC-P7 | Second user tries to sign in | Blocked by `ALLOWED_EMAIL`; RLS proves isolation in tests. | AUTH-01 |
+| EC-P8 | "Delete all data" | Cascades every user table, including push subscriptions, trips, bills, FX overrides and AI runs; signs out everywhere. | SET-05 |
 
 ---
 
@@ -1421,3 +1932,16 @@ Open for the owner:
 | Eating out by month (seed) | May £218.40 · Jun £243.10 · Jul £331.20 · Aug £287.60 · Sep £264.10 · Oct £312.60 to date |
 
 Use these exact figures in `supabase/seed.sql` so that visual tests can compare against the mock-ups.
+
+### Appendix A.2: Trip seed ("USA", used by the Trips mock-ups and TRIP acceptance criteria)
+
+| Item | Value |
+|---|---|
+| Trip | USA · United States · USD · Sat 6 – Sat 20 Mar 2027 (15 days) · budget £5,000 · auto-add on |
+| Stops | Chicago 6–8 Mar · New York 9–15 Mar · Miami 16–20 Mar |
+| "Today" for the mock-ups | Fri 12 Mar 2027 (day 7) · tracking start 18 Oct 2026 |
+| FX rate (fixed for seed) | 1 USD = 0.7900 GBP; `fx_fee_bps = 0` |
+| Booked before (GBP) | 2026-07-14 United (Flights) £176.20 **not in balance (before tracking)**; 2026-12-02 British Airways (Flights) £1,184.60; 2026-12-09 Aviva Travel (Visas & insurance) £38.90; 2027-01-14 The Hoxton Williamsburg (Hotels) £642.00; 2027-02-03 Kimpton Angler's (Hotels) £418.50 |
+| On the trip (USD → GBP) | 2027-03-06 Uber (Taxis) $58.40 → £46.14; 2027-03-06 Au Cheval (Restaurants) $96.20 → £76.00; 2027-03-07 Art Institute of Chicago (Events & culture) $64.00 → £50.56; 2027-03-07 Lou Malnati's (Restaurants) $72.30 → £57.12; 2027-03-07 CTA Ventra (Other transport) $20.00 → £15.80; 2027-03-08 Gift for hosts (Gifts) $85.00 → £67.15; 2027-03-08 Intelligentsia (Coffee & snacks) $12.40 → £9.80; 2027-03-09 Uber (Taxis) $46.80 → £36.97; 2027-03-09 O'Hare Terminal 1 (Coffee & snacks) $24.50 → £19.36; 2027-03-09 Uber (Taxis) $68.90 → £54.43; 2027-03-10 Joe's Pizza (Restaurants) $18.00 → £14.22; 2027-03-10 MoMA (Events & culture) $60.00 → £47.40; 2027-03-10 OMNY (Other transport) $34.00 → £26.86; 2027-03-10 Carbone (Restaurants) $210.00 → £165.90; 2027-03-11 Russ & Daughters (Restaurants) $58.75 → £46.41; 2027-03-11 Uniqlo Fifth Avenue (Clothing & shoes) $142.60 → £112.65; 2027-03-11 Hamilton · Broadway (Events & culture) $289.00 → £228.31; 2027-03-12 Blue Bottle (Coffee & snacks) $11.80 → £9.32; 2027-03-12 Ess-a-Bagel (Restaurants) $21.40 → £16.91 |
+| Totals | Booked £2,460.20 · on trip £1,101.31 ($1,394.05) · spent £3,561.51 · left £1,438.49 · plan £169.32/day · actual £157.33/day · allowance £159.83/day · projected £4,820.15 |
+| Past trips (list only) | Lisbon Jun 2026 £1,240.80 · Edinburgh Aug 2025 £684.20 · Goa Dec 2024 £2,315.60 |

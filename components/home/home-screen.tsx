@@ -6,6 +6,7 @@ import { Figure } from "@/components/money";
 import { ReminderPrompt } from "@/components/home/reminder-prompt";
 import { PotsSection } from "@/components/home/pots-section";
 import { BillsCard } from "@/components/home/bills-card";
+import { TripCard } from "@/components/home/trip-card";
 import { InsightCard } from "@/components/insights/insight-card";
 import { formatLong, formatMonth, addMonths, monthStart } from "@/lib/dates";
 import { UI } from "@/lib/icons";
@@ -62,6 +63,7 @@ function MobileHome() {
       </section>
 
       <div style={{ marginTop: 24 }} className="stack">
+        <TripCard />
         <PaceCard today={today} pace={pace} trackingStart={profile?.tracking_started_on} />
         <BillsCard />
         <InsightCard variant="home" />

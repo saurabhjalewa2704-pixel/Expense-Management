@@ -27,6 +27,13 @@ begin
   assert r.total_pence = 0 and r.days_elapsed = 0, 'AC5 Miami is upcoming';
   assert (select count(*) from trip_by_stop(usa, '2027-03-12') where name = 'Other') = 0, 'EC-T15 every day is covered here, so no Other row';
 
+  -- the Trip filter in Activity: every transaction on the trip, in lists and in totals (TRIP-01)
+  select * into r from transaction_totals(p_trip => usa::text);
+  assert r.txn_count = 24 and r.spend_pence = 356151, 'TRIP-01 the Trip filter totals match the trip: ' || r::text;
+  assert (select txn_count from transaction_totals(p_trip => 'any')) = (select count(*) from transactions where deleted_at is null and trip_id is not null), 'TRIP-01 any trip';
+  assert (select txn_count from transaction_totals(p_trip => 'none')) = (select count(*) from transactions where deleted_at is null and trip_id is null), 'TRIP-01 not on a trip';
+  assert (select count(*) from list_transactions(p_trip => usa::text, p_limit => 200)) = 24, 'TRIP-01 the list agrees with the totals';
+
   -- where it went: Flights £1,360.80 and Hotels £1,060.50 lead (the mock-up's 68% of the trip)
   select * into r from trip_by_category(usa, 'leaf') limit 1;
   assert r.name = 'Flights' and r.total_pence = 17620 + 118460 and r.parent_name = 'Travel', 'TRIP-07 flights first: ' || r::text;

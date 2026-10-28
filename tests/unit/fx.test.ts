@@ -57,3 +57,21 @@ describe("foreign currency (TRIP-06, EC-M4, EC-T8)", () => {
     expect(currencySymbol("USD")).toBe("$");
   });
 });
+
+import { pressKeyFx } from "@/lib/fx";
+describe("keypad for a foreign amount (EC-T8)", () => {
+  it("JPY takes no decimal point", () => {
+    expect(pressKeyFx("12", ".", "JPY")).toBe("12");
+    expect(pressKeyFx("1200000", "5", "JPY")).toBe("12000005");
+  });
+  it("USD stops at two decimals, KWD at three", () => {
+    expect(pressKeyFx("48.6", "0", "USD")).toBe("48.60");
+    expect(pressKeyFx("48.60", "1", "USD")).toBe("48.60");
+    expect(pressKeyFx("1.234", "5", "KWD")).toBe("1.234");
+    expect(pressKeyFx("1.23", "4", "KWD")).toBe("1.234");
+  });
+  it("a leading point becomes 0. and no leading zeros", () => {
+    expect(pressKeyFx("", ".", "USD")).toBe("0.");
+    expect(pressKeyFx("0", "7", "USD")).toBe("7");
+  });
+});

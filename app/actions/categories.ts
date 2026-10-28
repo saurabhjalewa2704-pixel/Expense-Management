@@ -40,6 +40,13 @@ export async function archiveCategory(id: string, archived = true): Promise<Acti
   return error ? fail(friendlyDbError(error)) : ok(undefined);
 }
 
+/** TRIP-05: mark a category as "Travel-like" so its expenses are offered as earlier bookings for a trip. */
+export async function setTravelLike(id: string, value: boolean): Promise<ActionResult> {
+  const supabase = await supabaseServer();
+  const { error } = await supabase.from("categories").update({ travel_like: value }).eq("id", id);
+  return error ? fail(friendlyDbError(error)) : ok(undefined);
+}
+
 /** Delete is only for categories with no transactions; otherwise the UI offers Merge into… */
 export async function deleteCategory(id: string): Promise<ActionResult> {
   const supabase = await supabaseServer();

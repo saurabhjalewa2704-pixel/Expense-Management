@@ -42,9 +42,9 @@ begin
     -- booked before (GBP)
     ('2026-07-14', 'United', 'Flights', 17620, null, 'booking', 'ORD–LGA'),
     ('2026-12-02', 'British Airways', 'Flights', 118460, null, 'booking', 'LHR–ORD, MIA–LHR'),
-    ('2026-12-09', 'Aviva Travel', 'Visas & insurance', 3890, null, 'booking', null),
-    ('2027-01-14', 'The Hoxton Williamsburg', 'Hotels', 64200, null, 'booking', null),
-    ('2027-02-03', 'Kimpton Angler''s', 'Hotels', 41850, null, 'booking', null),
+    ('2026-12-09', 'Aviva Travel', 'Visas & insurance', 3890, null, 'booking', 'Annual multi-trip'),
+    ('2027-01-14', 'The Hoxton Williamsburg', 'Hotels', 64200, null, 'booking', 'New York · 7 nights'),
+    ('2027-02-03', 'Kimpton Angler''s', 'Hotels', 41850, null, 'booking', 'Miami · 4 nights'),
     -- on the trip (USD → GBP at 0.7900)
     ('2027-03-06', 'Uber', 'Taxis', 4614, 5840, 'auto', null),
     ('2027-03-06', 'Au Cheval', 'Restaurants', 7600, 9620, 'auto', null),

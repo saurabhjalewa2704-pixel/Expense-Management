@@ -11,7 +11,10 @@ import { qk } from "@/lib/queries/keys";
 import { useInsightFeedback, useInsightRuns } from "@/lib/queries/hooks";
 import { formatGBP } from "@/lib/money";
 
-const TAG: Record<CardT["type"], string> = { pace: "Pace", anomaly: "Unusual", trend: "Trend", subscription: "Subscriptions", new_payee: "New payee", win: "Going well", suggestion: "Suggestion" };
+const TAG: Record<CardT["type"], string> = {
+  pace: "Pace", anomaly: "Unusual", trend: "Trend", subscription: "Subscriptions", new_payee: "New payee", win: "Going well", suggestion: "Suggestion",
+  trip_pace: "Trip pace", trip_mix: "Where it's going", trip_stop: "By stop", trip_compare: "Past trips", trip_big: "Biggest expense", trip_fx: "Card fees",
+};
 
 function href(card: CardT): string | null {
   const l = card.link;

@@ -44,6 +44,7 @@ export function SettingsScreen() {
         <Row href="/settings/accounts" Icon={UI.Landmark} title="Accounts" sub={`${accounts.length} account${accounts.length === 1 ? "" : "s"}${accounts.find((a) => a.is_default) ? ` · default ${accounts.find((a) => a.is_default)!.name}` : ""}`} />
         <Row href="/settings/categories" Icon={UI.Tags} title="Categories" sub={`${categories.length} categories`} />
         <Row href="/bills" Icon={UI.Repeat} title="Bills" sub="Rent, subscriptions and anything that repeats, logged for you" />
+        <Row href="/trips" Icon={UI.Plane} title="Trips" sub="Budgets, foreign currency and insights for each trip" />
         <Row href="/pots" Icon={UI.PiggyBank} title="One-off pots" sub="Big one-time costs, kept out of monthly spend" />
       </div>
 

@@ -12,6 +12,7 @@ const Patch = z.object({
   reminder_time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
   reminder_prompted: z.boolean(),
   bills_notify: z.boolean(),
+  trip_notify: z.boolean(),
   lock_after_min: z.number().int().min(0).max(60).nullable(),
 }).partial();
 

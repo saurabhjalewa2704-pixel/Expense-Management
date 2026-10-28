@@ -93,6 +93,12 @@ export function RemindersScreen() {
           <Switch label="Bills logged and due" checked={profile.data?.bills_notify ?? true} onChange={async (v) => { await updateProfile({ bills_notify: v }); await refresh(); }} /></div>
       </div>
 
+      <div className="eyebrow group-label">Trips</div>
+      <div className="list">
+        <div className="row"><div className="tile"><UI.Plane size={18} strokeWidth={1.75} aria-hidden /></div><div className="row-main"><div className="row-t">Trip wrap-up ready</div><div className="row-s">{on ? "The morning after a trip ends" : "Turn the evening reminder on once to register this device"}</div></div>
+          <Switch label="Trip wrap-up ready" checked={profile.data?.trip_notify ?? true} onChange={async (v) => { await updateProfile({ trip_notify: v }); await refresh(); }} /></div>
+      </div>
+
       <div className="eyebrow group-label">Coming in v1.1</div>
       <div className="list">
         <div className="row"><div className="tile"><UI.Sparkles size={18} strokeWidth={1.75} aria-hidden /></div><div className="row-main"><div className="row-t">Weekly insights ready</div><div className="row-s">Mondays at 07:00</div></div><Switch label="Weekly insights ready" checked={false} disabled onChange={() => {}} /></div>

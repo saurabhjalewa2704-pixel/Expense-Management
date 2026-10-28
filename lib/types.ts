@@ -20,6 +20,8 @@ export interface Profile {
   reminder_time: string; // "21:00:00"
   reminder_prompted: boolean;
   bills_notify: boolean;
+  /** "‹trip› wrap-up ready" (TRIP-08). */
+  trip_notify?: boolean;
   /** The earliest opening date of a live account; months before it are "Partial: before tracking" (BAL-07). */
   tracking_started_on?: ISODate | null;
   last_reminder_on: ISODate | null;
@@ -53,6 +55,8 @@ export interface Category {
   color: CategoryColor;
   sort_order: number;
   is_fixed: boolean;
+  /** TRIP-05: spending in it is offered as an earlier booking for a trip. */
+  travel_like?: boolean;
   archived_at: string | null;
 }
 

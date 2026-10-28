@@ -3,7 +3,7 @@ import { diffDays, addDays, type ISODate } from "@/lib/dates";
 import type { Pence } from "@/lib/money";
 
 /** Integer division rounded half-up (n may be negative). */
-const roundDiv = (n: number, d: number): number => (d === 0 ? 0 : Math.sign(n) * Math.floor((Math.abs(n) * 2 + d) / (2 * d)));
+export const roundDiv = (n: number, d: number): number => (d === 0 ? 0 : Math.sign(n) * Math.floor((Math.abs(n) * 2 + d) / (2 * d)));
 
 export interface TripDates { start_on: ISODate; end_on: ISODate }
 export const tripLength = (t: TripDates): number => diffDays(t.end_on, t.start_on) + 1;

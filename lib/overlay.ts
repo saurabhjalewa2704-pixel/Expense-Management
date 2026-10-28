@@ -78,6 +78,9 @@ export function pendingRow(item: OutboxItem, accounts: readonly Account[], categ
     occurred_on: p.occurred_on, occurred_at: p.occurred_at ?? null, source: p.source ?? "app", needs_review: false,
     created_at: new Date(item.created_at).toISOString(), pot_id: p.pot_id ?? null, pot_name: pots.find((x) => x.pot_id === p.pot_id)?.name ?? null, pending: true,
     counts_in_balance: item.flags?.a ?? true, counter_counts_in_balance: p.type === "transfer" ? item.flags?.b ?? true : null,
+    trip_id: p.trip_id ?? null, trip_origin: p.trip_id ? p.trip_origin ?? null : null,
+    original_amount_minor: p.original_amount_minor ?? null, original_currency: p.original_currency ?? null,
+    fx_rate: p.fx_rate != null ? Number(p.fx_rate) : null, fx_rate_on: p.fx_rate_on ?? null, fx_source: p.fx_source ?? null,
   };
 }
 

@@ -469,7 +469,6 @@ language sql stable as $$
        and (p_pot_id is null or t.pot_id = p_pot_id)
        and (p_pots is null or (p_pots = 'only' and t.pot_id is not null) or (p_pots = 'exclude' and t.pot_id is null))
        and (p_recurring is null or (t.recurring_id is not null) = p_recurring)
-     and (p_trip is null or (p_trip = 'any' and t.trip_id is not null) or (p_trip = 'none' and t.trip_id is null) or t.trip_id::text = p_trip)
        and (p_trip is null or (p_trip = 'any' and t.trip_id is not null) or (p_trip = 'none' and t.trip_id is null) or t.trip_id::text = p_trip)
        and (p_q is null or p_q = '' or
             p.name ilike '%' || p_q || '%' or t.note ilike '%' || p_q || '%'
@@ -522,6 +521,7 @@ language sql stable as $$
      and (p_pot_id is null or t.pot_id = p_pot_id)
      and (p_pots is null or (p_pots = 'only' and t.pot_id is not null) or (p_pots = 'exclude' and t.pot_id is null))
      and (p_recurring is null or (t.recurring_id is not null) = p_recurring)
+     and (p_trip is null or (p_trip = 'any' and t.trip_id is not null) or (p_trip = 'none' and t.trip_id is null) or t.trip_id::text = p_trip)
      and (p_q is null or p_q = '' or
           p.name ilike '%' || p_q || '%' or t.note ilike '%' || p_q || '%'
           or c.name ilike '%' || p_q || '%' or pc.name ilike '%' || p_q || '%'

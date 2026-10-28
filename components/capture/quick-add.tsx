@@ -11,25 +11,50 @@ import { BalanceFlagBlock } from "./balance-flag-block";
 import { CategoryIcon, UI } from "@/lib/icons";
 import { formatGBP, pressKey, toPence } from "@/lib/money";
 import { ordinal } from "@/lib/recurrence";
+import { cachedRate, fetchRate, warmRates } from "@/lib/fx-client";
+import { convertToPence, currencySymbol, effectiveRate, exponentOf, formatMinor, parseMinor, pressKeyFx, rateLabel } from "@/lib/fx";
 import { fetchRecurringDuplicate } from "@/lib/queries/fetchers";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { discard, enqueue, flushIdle, getItem, newClientId, updatePending } from "@/lib/outbox";
-import { useAccounts, useCategoryTree, useLastIncomeAccount, useOutbox, usePayees, useProfile, useSuggestHistory } from "@/lib/queries/hooks";
+import { useAccounts, useCategoryTree, useLastIncomeAccount, useOutbox, usePayees, useProfile, useSuggestHistory, useTripStops, useTrips, useTripTxns } from "@/lib/queries/hooks";
 import { TxnInput } from "@/lib/schemas/transaction";
 import { suggestCategories, type HistoryRow, type Suggestion } from "@/lib/suggest";
 import { requestSync } from "@/lib/sync";
-import type { Account, Payee, TxnRow } from "@/lib/types";
+import type { Account, Payee, Trip, TripStop, TxnRow } from "@/lib/types";
 import { useKeyboardInset } from "@/lib/use-keyboard-inset";
 import { useIsDesktop } from "@/lib/use-media";
 import { AccountPicker, DateSheet, NoteSheet } from "./pickers";
 import { PotPicker } from "./pot-picker";
 import { usePots } from "@/lib/queries/hooks";
 import { CategoryPicker } from "./category-picker";
+import { CurrencySheet, PoundsSheet, TripPicker } from "./trip-fx";
 
 type Mode = "expense" | "income" | "transfer";
 /** The IANA zone this device is in, stored with the entry (EC-D1). */
 const deviceZone = (): string | undefined => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return undefined; } };
-export interface QuickAddOptions { mode?: Mode; edit?: TxnRow; date?: ISODate }
+/** `trip`: opened from a trip's "Add to ‹trip›" button, with the trip chip locked on and any date allowed (TRIP-04a). */
+export interface QuickAddOptions { mode?: Mode; edit?: TxnRow; date?: ISODate; trip?: string }
+
+/** TRIP-04: the categories offered first on a trip when there is no history yet. */
+const TRAVEL_DEFAULTS = ["Restaurants", "Coffee & snacks", "Taxis", "Events & culture", "Other transport", "Clothing & shoes"];
+
+/** The reference rate for a foreign expense: the cache straight away (so offline works), then the live rate (TRIP-06, EC-T9). */
+function useFxRate(currency: string | null, date: ISODate, today: ISODate) {
+  const [st, setSt] = useState<{ rate: string | null; on: ISODate | null; status: "idle" | "loading" | "live" | "cached" | "none" }>({ rate: null, on: null, status: "idle" });
+  useEffect(() => {
+    if (!currency) { setSt({ rate: null, on: null, status: "idle" }); return; }
+    const cached = cachedRate(currency, date);
+    setSt(cached ? { rate: cached.rate, on: cached.on, status: "cached" } : { rate: null, on: null, status: "loading" });
+    const ac = new AbortController();
+    void fetchRate(currency, date, ac.signal).then((r) => {
+      if (ac.signal.aborted) return;
+      setSt(r ? { rate: r.rate, on: r.on, status: "live" } : cached ? { rate: cached.rate, on: cached.on, status: "cached" } : { rate: null, on: null, status: "none" });
+    });
+    return () => ac.abort();
+  }, [currency, date]);
+  useEffect(() => { if (currency) void warmRates(currency, today); }, [currency, today]);
+  return st;
+}
 
 const Ctx = createContext<{ open: (o?: QuickAddOptions) => void; isOpen: boolean }>({ open: () => {}, isOpen: false });
 export const useQuickAdd = () => useContext(Ctx);
@@ -63,7 +88,23 @@ export function QuickAddProvider({ children }: { children: ReactNode }) {
 const NO_ACCOUNTS: Account[] = [];
 const NO_PAYEES: Payee[] = [];
 const NO_HISTORY: HistoryRow[] = [];
+const NO_TRIPS: Trip[] = [];
+const NO_STOPS: TripStop[] = [];
 const MODES: { id: Mode; label: string }[] = [{ id: "expense", label: "Expense" }, { id: "income", label: "Income" }, { id: "transfer", label: "Transfer" }];
+
+/** 4860 USD -> "48.6"; 1200 JPY -> "1200". */
+function minorToText(minor: number, currency: string): string {
+  const e = exponentOf(currency);
+  if (e === 0) return String(minor);
+  const s = String(minor).padStart(e + 1, "0");
+  return `${s.slice(0, -e)}.${s.slice(-e)}`.replace(/\.0+$/, "");
+}
+
+/** Where the date starts when Add expense is opened from a trip: today while it runs or is coming up, else its last day. */
+function defaultDateFor(tripId: string | undefined, trips: readonly Trip[]): ISODate {
+  const today = todayLondon(), t = tripId ? trips.find((x) => x.id === tripId) : undefined;
+  return t && today > t.end_on ? t.end_on : today;
+}
 
 function groupWhole(s: string) {
   const [whole = "", frac] = s.split(".");
@@ -83,6 +124,8 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
   const history = useSuggestHistory().data ?? NO_HISTORY;
   const lastIncomeAccount = useLastIncomeAccount().data ?? null;
   const outbox = useOutbox();
+  const trips = useTrips().data ?? NO_TRIPS;
+  const allStops = useTripStops().data ?? NO_STOPS;
 
   const editing = options.edit;
   const [mode, setMode] = useState<Mode>("expense");
@@ -97,7 +140,13 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
   const [counterId, setCounterId] = useState<string | null>(null);
   const [date, setDate] = useState<ISODate>(todayLondon());
   const [note, setNote] = useState("");
-  const [picker, setPicker] = useState<null | "category" | "account" | "counter" | "date" | "note" | "pot">(null);
+  const [picker, setPicker] = useState<null | "category" | "account" | "counter" | "date" | "note" | "pot" | "trip" | "currency" | "pounds">(null);
+  const [tripPick, setTripPick] = useState<{ id: string | null } | null>(null);   // the owner's own choice of trip (null id = None); null = automatic
+  const [cur, setCur] = useState("GBP");
+  const [curTouched, setCurTouched] = useState(false);
+  const [pounds, setPounds] = useState<string | null>(null);                    // £ typed to match the statement (fx_source = manual)
+  const [manualRate, setManualRate] = useState("");                             // EC-T9: no rate available
+  const [fxDirty, setFxDirty] = useState(false);                                // an edited foreign row keeps its stored £ until something changes
   const [confirm, setConfirm] = useState<null | "discard" | "delete" | "duplicate">(null);
   const [flagAnswer, setFlagAnswer] = useState<boolean | null>(null);       // the owner's explicit answer about the balance (BAL-03); null = let the database decide
   const [dup, setDup] = useState<{ name: string; due_on: ISODate } | null>(null);
@@ -114,14 +163,16 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
   useEffect(() => {
     if (!open) return;
     setError(undefined); setConfirm(null); setPicker(null); setBusy(false); setNowMs(Date.now()); setFlagAnswer(null);
+    setTripPick(null); setCur("GBP"); setCurTouched(false); setPounds(null); setManualRate(""); setFxDirty(false);
     if (editing) {
       setMode(editing.type === "adjustment" ? "expense" : (editing.type as Mode));
-      setAmount(`${Math.trunc(editing.amount_pence / 100)}.${String(editing.amount_pence % 100).padStart(2, "0")}`.replace(/\.00$/, ""));
+      setAmount(editing.original_amount_minor && editing.original_currency ? minorToText(editing.original_amount_minor, editing.original_currency)
+        : `${Math.trunc(editing.amount_pence / 100)}.${String(editing.amount_pence % 100).padStart(2, "0")}`.replace(/\.00$/, ""));
       setPayee(editing.payee_name ?? ""); setCategoryId(editing.category_id); setAccountId(editing.account_id);
       setCounterId(editing.counter_account_id); setPotId(editing.pot_id ?? null); setDate(editing.occurred_on); setNote(editing.note ?? ""); setAutoFilled(false); setAccountManual(false);
     } else {
       setMode(options.mode ?? "expense"); setAmount(""); setPayee(""); setCategoryId(null); setAccountId(null); setCounterId(null); setPotId(null);
-      setDate(options.date ?? todayLondon()); setNote(""); setAutoFilled(false); setAccountManual(false);
+      setDate(options.date ?? defaultDateFor(options.trip, trips)); setNote(""); setAutoFilled(false); setAccountManual(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, session]);
@@ -134,12 +185,38 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
   const pots = usePots().data ?? [];
   const potName = pots.find((x) => x.pot_id === potId)?.name ?? "Pot";
   const kind = mode === "income" ? "income" : "expense";
-  const pence = toPence(amount) ?? 0;
   const account = accountById(effAccount);
   // BAL-03: does this entry move the account's balance? The owner's answer wins; an unchanged edit keeps what the row already says.
   const sameAsSaved = !!editing && editing.account_id === effAccount && editing.occurred_on === date;
   const effCounts = flagAnswer ?? (sameAsSaved ? editing?.counts_in_balance ?? true : account ? defaultCounts(account, date) : true);
   const counter = accountById(effCounter);
+
+  // ---- TRIP-04: which trip this belongs to (the chip), and TRIP-06: in which currency it is entered ----
+  const inTrip = (t: Trip, d: ISODate) => t.start_on <= d && d <= t.end_on;
+  const typeKept = !editing || editing.type === mode;                                   // EC-C8: changing the type drops the tag
+  const lockedTrip = options.trip ? trips.find((t) => t.id === options.trip)
+    : editing?.trip_id && editing.trip_origin !== "auto" && typeKept ? trips.find((t) => t.id === editing.trip_id) : undefined;
+  const autoTrip = mode !== "expense" || potId || !typeKept ? undefined
+    : editing ? (editing.trip_id && editing.trip_origin === "auto" ? trips.find((t) => t.id === editing.trip_id && inTrip(t, date)) : undefined)
+    : trips.find((t) => t.auto_tag && inTrip(t, date));
+  const selTrip: Trip | undefined = mode === "transfer" ? undefined : tripPick ? trips.find((t) => t.id === tripPick.id) : lockedTrip ?? autoTrip;
+  const tripOrigin: "auto" | "manual" | "booking" = selTrip && (tripPick?.id || lockedTrip) ? (date < selTrip.start_on ? "booking" : "manual") : "auto";
+  const stopHere = selTrip ? allStops.find((x) => x.trip_id === selTrip.id && x.start_on <= date && date <= x.end_on) : undefined;
+  const tripCur = selTrip && selTrip.currency !== "GBP" ? (stopHere?.currency ?? selTrip.currency) : null;     // EC-T6: a domestic trip has no conversion
+  const effCur = mode === "transfer" ? "GBP" : curTouched ? cur : editing ? editing.original_currency ?? "GBP" : tripCur ?? "GBP";
+  const foreign = effCur !== "GBP";
+  const fx = useFxRate(open && foreign ? effCur : null, date, todayLondon());
+  const feeBps = account?.fx_fee_bps ?? 0;
+  const minor = foreign ? parseMinor(amount, effCur) : null;
+  const savedFx = !!editing && !fxDirty && !!editing.original_currency;                  // an untouched foreign row keeps its stored figures
+  const rateNow = savedFx ? (editing!.fx_rate != null ? String(editing!.fx_rate) : null) : /^\d+(\.\d+)?$/.test(manualRate) && Number(manualRate) > 0 ? manualRate : fx.rate;
+  const poundsPence = pounds !== null ? toPence(pounds) : null;
+  const fxPence = foreign && minor ? (poundsPence ?? (rateNow ? convertToPence(minor, effCur, rateNow, feeBps) : null)) : null;
+  const pence = foreign ? (savedFx ? editing!.amount_pence : fxPence ?? 0) : toPence(amount) ?? 0;
+  const manualFx = foreign && (poundsPence !== null || (savedFx && editing!.fx_source === "manual"));
+  const needsRate = foreign && !!minor && fxPence === null && !savedFx;                 // EC-T9: no cached rate: ask for the £ or a rate
+  const tripTxns = useTripTxns(open ? selTrip?.id : undefined).data;
+  const sym = foreign ? currencySymbol(effCur) : "£";
 
   const matchedPayee = useMemo<Payee | undefined>(() => {
     const n = payee.trim().toLowerCase().replace(/\s+/g, " ");
@@ -166,10 +243,24 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
     });
   }, [mode, tree, history, categories, matchedPayee, outbox, nowMs]);
 
+  // TRIP-04: on a trip the cards are ranked by this trip's own usage, starting from the travel defaults
+  const tripChips = useMemo<Suggestion[] | null>(() => {
+    if (!selTrip || mode !== "expense") return null;
+    const counts = new Map<string, number>();
+    for (const t of tripTxns ?? []) if (t.type === "expense" && t.category_id) counts.set(t.category_id, (counts.get(t.category_id) ?? 0) + 1);
+    const ranked = [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([id]) => id);
+    const defaults = TRAVEL_DEFAULTS.map((n) => categories.find((c) => c.name === n && !c.archived_at && c.kind === "expense")?.id).filter((x): x is string => !!x);
+    return [...new Set([...ranked, ...defaults])].slice(0, 6).flatMap((id): Suggestion[] => {
+      const c = tree.byId.get(id);
+      return c && !c.archived_at ? [{ categoryId: id, label: c.name, parentLabel: c.parent_id ? tree.byId.get(c.parent_id)?.name : undefined }] : [];
+    });
+  }, [selTrip, mode, tripTxns, categories, tree]);
+  const baseChips = tripChips ?? chips;
+
   // a category picked from the full list leads the cards, with its parent beside it
   const picked = categoryId ? tree.byId.get(categoryId) : undefined;
-  const chipList: Suggestion[] = picked && !chips.some((c) => c.categoryId === picked.id)
-    ? [{ categoryId: picked.id, label: picked.name, parentLabel: picked.parent_id ? tree.byId.get(picked.parent_id)?.name : undefined }, ...chips.slice(0, 5)] : chips;
+  const chipList: Suggestion[] = picked && !baseChips.some((c) => c.categoryId === picked.id)
+    ? [{ categoryId: picked.id, label: picked.name, parentLabel: picked.parent_id ? tree.byId.get(picked.parent_id)?.name : undefined }, ...baseChips.slice(0, 5)] : baseChips;
 
   const dirty = !editing && (amount !== "" || payee !== "" || note !== "");
 
@@ -186,7 +277,7 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
   };
 
   // ---- behaviour ----
-  const press = (k: string) => { setError(undefined); setAmount((a) => pressKey(a, k)); };
+  const press = (k: string) => { setError(undefined); setFxDirty(true); setPounds(null); setAmount((a) => (foreign ? pressKeyFx(a, k, effCur) : pressKey(a, k))); };
   const chooseAccount = (id: string) => { setAccountId(id); setAccountManual(true); };
 
   const applyPayee = (p: Payee) => {
@@ -211,6 +302,14 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
     } else setAutoFilled(false);
   };
 
+  const fxFields = (): Partial<TxnInput> => {
+    if (!foreign || !minor || (!savedFx && fxPence === null)) return { original_amount_minor: null, original_currency: null, fx_rate: null, fx_rate_on: null, fx_source: null };
+    const typedRate = poundsPence !== null ? effectiveRate(poundsPence, minor, effCur) : manualRate && rateNow === manualRate ? manualRate : null;
+    return {
+      original_amount_minor: minor, original_currency: effCur, fx_rate: typedRate ?? rateNow, fx_rate_on: typedRate ? date : fx.on ?? date,
+      fx_source: typedRate || manualFx ? "manual" : "auto",
+    };
+  };
   const buildInput = (category: string | null): TxnInput => ({
     client_id: editing?.client_id ?? newClientId(),
     type: mode, amount_pence: pence, account_id: effAccount ?? "",
@@ -221,9 +320,13 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
     account_manual: accountManual, source: "app",
     pot_id: mode === "transfer" ? null : potId,
     counts_in_balance: flagAnswer, occurred_tz: !editing ? deviceZone() : undefined,
+    trip_id: mode === "transfer" ? null : selTrip?.id ?? null, trip_origin: selTrip ? tripOrigin : null,
+    trip_untag: !editing && !selTrip && tripPick?.id === null ? true : undefined,
+    trip_set: editing ? mode !== "transfer" : undefined,
+    ...(mode === "transfer" || (editing && !fxDirty) ? { fx_set: editing ? false : undefined } : { ...fxFields(), fx_set: editing ? true : undefined }),
   });
 
-  const canSave = pence > 0 && !!effAccount && (mode === "transfer" ? !!effCounter && effCounter !== effAccount : !!categoryId || !!potId);
+  const canSave = pence > 0 && !needsRate && !!effAccount && (mode === "transfer" ? !!effCounter && effCounter !== effAccount : !!categoryId || !!potId);
 
   const save = async (categoryOverride?: string, skipDuplicateCheck = false) => {
     if (busy) return;
@@ -256,7 +359,7 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
       if (hit) { setBusy(false); setDup({ name: hit.payee_name, due_on: hit.due_on }); setConfirm("duplicate"); return; }
     }
 
-    await enqueue(input, pendingFlags(mode, date, account, mode === "transfer" ? counter : undefined, { a: flagAnswer }));
+    await enqueue(input, pendingFlags(mode, date, account, mode === "transfer" ? counter : undefined, { a: flagAnswer }), feeBps);
     close();
     const catName = category ? tree.byId.get(category)?.name : undefined;
     const message = mode === "transfer"
@@ -326,7 +429,9 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
 
   const typing = payeeFocused && mode !== "transfer";
   const display = groupWhole(amount || "0");
-  const buttonLabel = editing ? "Save changes" : mode === "transfer" ? `Transfer ${formatGBP(pence)}` : `Add ${mode === "income" ? "income " : ""}${formatGBP(pence)}`;
+  const buttonLabel = editing ? "Save changes" : mode === "transfer" ? `Transfer ${formatGBP(pence)}`
+    : foreign && minor ? `Add ${formatMinor(minor, effCur)}${pence > 0 ? ` · ${formatGBP(pence)}` : ""}`
+    : `Add ${mode === "income" ? "income " : ""}${formatGBP(pence)}${lockedTrip && !editing ? ` to ${lockedTrip.name}` : ""}`;
 
   return (
     <Sheet
@@ -349,10 +454,28 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
         </div>
 
         <div className={`amount num`} aria-label={`Amount ${formatGBP(pence)}`} style={mode === "income" ? { color: "var(--positive)" } : undefined}>
-          <span className="cur">£</span>
+          <span className="cur">{sym}</span>
           <span className="whole" style={amount === "" ? { color: "var(--ink-3)" } : undefined} data-testid="amount">{display}</span>
           <span className="caret" aria-hidden />
         </div>
+        {mode !== "transfer" && (tripCur || foreign) && (
+          <div className="ae-fx" data-testid="fx-line" style={{ marginBottom: 8, flexWrap: "wrap" }}>
+            <button className="cur-chip" onClick={() => setPicker("currency")} aria-label={`Currency ${foreign ? effCur : "pounds"}. Tap to change`} data-testid="currency-chip">{foreign ? effCur : "£ GBP"}<UI.ChevronDown size={14} strokeWidth={2} aria-hidden /></button>
+            {foreign && minor !== null && minor > 0 && (fxPence !== null || savedFx) && (
+              <span data-testid="fx-conversion">≈ <button className="link num" style={{ color: "var(--ink)", fontWeight: 600 }} onClick={() => setPicker("pounds")} aria-label={`About ${formatGBP(pence)}. Tap to enter the amount in pounds`} data-testid="fx-pounds">{formatGBP(pence)}</button>
+                {" · "}{manualFx ? `effective ${effectiveRate(pence, minor, effCur)}` : `1 ${effCur} = ${rateLabel(rateNow ?? "0")} GBP`}
+                {!manualFx && fx.status === "cached" && !savedFx ? " (saved rate)" : ""}{feeBps > 0 && !manualFx ? ` + ${(feeBps / 100).toFixed(2)}% card fee` : ""}</span>
+            )}
+            {foreign && fx.status === "loading" && !rateNow && !savedFx && <span>Getting the rate…</span>}
+            {needsRate && fx.status !== "loading" && (
+              <span role="group" aria-label="No exchange rate available" data-testid="fx-missing" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
+                <span>No rate available. 1 {effCur} =</span>
+                <input aria-label="Exchange rate in pounds" inputMode="decimal" placeholder="0.79" value={manualRate} onChange={(e) => { setManualRate(e.target.value); setFxDirty(true); }} style={{ width: 70, textAlign: "center", background: "var(--surface)", borderRadius: 8, border: 0, color: "var(--ink)", height: 30 }} data-testid="fx-manual-rate" />
+                <span>GBP, or <button className="link" style={{ color: "var(--ink)", fontWeight: 600 }} onClick={() => { setPounds(""); setPicker("pounds"); }}>enter the £ amount</button></span>
+              </span>
+            )}
+          </div>
+        )}
 
         {mode !== "transfer" ? (
           <>
@@ -375,7 +498,7 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
               </div>
             )}
             <div className="cat-head">
-              <span className="eyebrow">{potId ? "Category (optional)" : mode === "income" ? "Income type" : "Your top categories"}</span>
+              <span className="eyebrow">{potId ? "Category (optional)" : mode === "income" ? "Income type" : selTrip ? "Top on this trip" : "Your top categories"}</span>
               <button className="link" onClick={() => setPicker("category")} aria-label="More categories">All categories <UI.ChevronRight size={14} strokeWidth={2} aria-hidden /></button>
             </div>
             <div className="qcards" role="radiogroup" aria-label="Category">
@@ -402,6 +525,14 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
         {!typing && (
           <>
             <div className="meta">
+              {mode !== "transfer" && (selTrip ? (
+                <span className="trip-chip" data-testid="trip-chip" data-origin={tripOrigin}>
+                  <button onClick={() => setPicker("trip")} style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "inherit", font: "inherit" }} aria-label={`Trip ${selTrip.name}. Tap to change`}><UI.MapPin size={15} strokeWidth={2} aria-hidden />{selTrip.name}</button>
+                  <button className="x" onClick={() => setTripPick({ id: null })} aria-label={`Remove from ${selTrip.name}`} data-testid="trip-chip-x"><UI.X size={11} strokeWidth={2.5} aria-hidden /></button>
+                </span>
+              ) : trips.length > 0 ? (
+                <button className="chip" onClick={() => setPicker("trip")} aria-label="Add to a trip" data-testid="trip-add-chip" style={{ padding: "0 11px" }}><UI.MapPin size={16} strokeWidth={1.75} aria-hidden /></button>
+              ) : null)}
               {mode !== "transfer" && (
                 <button className="chip" onClick={() => setPicker("account")} aria-label={`Account ${account?.name ?? ""}`}>
                   <UI.CreditCard size={16} strokeWidth={1.75} aria-hidden />{account?.name ?? "Account"}
@@ -421,7 +552,7 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
             </div>
 
             {mode !== "transfer" && (
-              <BalanceFlagBlock account={account} accountName={account?.name ?? "account"} date={date} counts={effCounts} editing={!!editing} trackingStart={profile?.tracking_started_on}
+              <BalanceFlagBlock account={account} accountName={account?.name ?? "account"} date={date} counts={effCounts} editing={!!editing} trackingStart={profile?.tracking_started_on} tripName={selTrip?.name}
                 onAnswer={setFlagAnswer} />
             )}
 
@@ -429,7 +560,8 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
 
             <div className="keypad num" role="group" aria-label="Amount keypad">
               {["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0"].map((k) => (
-                <button key={k} className="key" aria-label={k === "." ? "Decimal point" : k} {...keyHandlers(k)}>{k}</button>
+                k === "." && foreign && exponentOf(effCur) === 0 ? <span key={k} aria-hidden />                  // EC-T8: yen have no decimal point
+                  : <button key={k} className="key" aria-label={k === "." ? "Decimal point" : k} {...keyHandlers(k)}>{k}</button>
               ))}
               <button className="key fn" aria-label="Delete" onPointerDown={backDown} onPointerUp={backUp} onPointerLeave={() => { if (backTimer.current) { clearTimeout(backTimer.current); backTimer.current = undefined; } }} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); press("back"); } }}>
                 <UI.Delete size={24} strokeWidth={1.75} />
@@ -479,7 +611,12 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
         excludeId={mode === "transfer" ? effCounter : undefined} onSelect={chooseAccount} />
       <AccountPicker open={picker === "counter"} onOpenChange={(o) => setPicker(o ? "counter" : null)} title="To" selectedId={effCounter} excludeId={effAccount} onSelect={(id) => setCounterId(id)} />
       <PotPicker open={picker === "pot"} onOpenChange={(o) => setPicker(o ? "pot" : null)} selectedId={potId} onSelect={setPotId} />
-      <DateSheet open={picker === "date"} onOpenChange={(o) => setPicker(o ? "date" : null)} value={date} min={(account as Account | undefined)?.opening_date} onChange={setDate} />
+      <DateSheet open={picker === "date"} onOpenChange={(o) => setPicker(o ? "date" : null)} value={date} min={lockedTrip || selTrip ? undefined : (account as Account | undefined)?.opening_date} onChange={(d) => { setDate(d); setFxDirty(true); }} />
+      <TripPicker open={picker === "trip"} onOpenChange={(o) => setPicker(o ? "trip" : null)} trips={trips} date={date} selectedId={selTrip?.id ?? null} onSelect={(id) => setTripPick({ id })} />
+      <CurrencySheet open={picker === "currency"} onOpenChange={(o) => setPicker(o ? "currency" : null)} value={effCur}
+        suggested={[...new Set([tripCur, selTrip?.currency, ...allStops.filter((x) => x.trip_id === selTrip?.id).map((x) => x.currency)].filter((c): c is string => !!c && c !== "GBP"))]}
+        onSelect={(c) => { setCur(c); setCurTouched(true); setFxDirty(true); setPounds(null); }} />
+      <PoundsSheet open={picker === "pounds"} onOpenChange={(o) => setPicker(o ? "pounds" : null)} value={pounds ?? ""} placeholder={pence ? `${Math.trunc(pence / 100)}.${String(pence % 100).padStart(2, "0")}` : "0.00"} onChange={(v) => { setPounds(v); setFxDirty(true); }} onClear={() => setPounds(null)} />
       <NoteSheet open={picker === "note"} onOpenChange={(o) => setPicker(o ? "note" : null)} value={note} onChange={setNote} />
     </Sheet>
   );

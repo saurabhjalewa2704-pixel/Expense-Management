@@ -1,10 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Sheet } from "@/components/ui/sheet";
-import { addDays, formatMonthYear, monthEnd, monthStart, addMonths, yearStart, type ISODate } from "@/lib/dates";
+import { addDays, formatMonthYear, formatShort, monthEnd, monthStart, addMonths, yearStart, type ISODate } from "@/lib/dates";
 import { UI } from "@/lib/icons";
 import { toPence } from "@/lib/money";
-import { useAccounts, useCategoryTree, usePots } from "@/lib/queries/hooks";
+import { useAccounts, useCategoryTree, usePots, useTrips } from "@/lib/queries/hooks";
 import type { ActivityFilters } from "@/lib/queries/keys";
 
 export type PeriodKey = "this-month" | "last-month" | "90-days" | "this-year" | "all" | "custom";
@@ -169,6 +169,30 @@ export function PotFilterSheet({ open, onOpenChange, value, onChange }: { open: 
         <div className="subs" style={{ marginTop: 0 }}>
           {options.map((o) => (
             <button key={String(o.id)} className="row" style={{ width: "100%", textAlign: "left" }} onClick={() => { onChange(o.id); onOpenChange(false); }} aria-pressed={value === o.id}>
+              <div className="row-main"><div className="row-t">{o.label}</div>{o.sub && <div className="row-s">{o.sub}</div>}</div>
+              <span className={`radio ${value === o.id ? "on" : ""}`}>{value === o.id && <UI.Check size={14} strokeWidth={2.5} />}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </Sheet>
+  );
+}
+
+/** TRIP filter (TRIP-01): any trip, not on a trip, or one trip. */
+export function TripFilterSheet({ open, onOpenChange, value, onChange }: { open: boolean; onOpenChange: (o: boolean) => void; value: string | undefined; onChange: (v: string | undefined) => void }) {
+  const trips = useTrips().data ?? [];
+  const options: { id: string | undefined; label: string; sub?: string }[] = [
+    { id: undefined, label: "Everything" }, { id: "any", label: "On any trip" }, { id: "none", label: "Not on a trip" },
+    ...trips.map((t) => ({ id: t.id, label: t.name, sub: `${formatShort(t.start_on)} – ${formatShort(t.end_on)}` })),
+  ];
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange} title="Filter by trip">
+      <div className="vaul-body">
+        <div className="sheet-head"><button className="txt" onClick={() => onChange(undefined)}>Clear</button><span className="t">Trip</span><button className="txt" style={{ color: "var(--ink)", fontWeight: 600 }} onClick={() => onOpenChange(false)}>Done</button></div>
+        <div className="subs" style={{ marginTop: 0 }}>
+          {options.map((o) => (
+            <button key={String(o.id)} className="row" style={{ width: "100%", textAlign: "left" }} onClick={() => { onChange(o.id); onOpenChange(false); }} aria-pressed={value === o.id} data-testid="trip-filter-option">
               <div className="row-main"><div className="row-t">{o.label}</div>{o.sub && <div className="row-s">{o.sub}</div>}</div>
               <span className={`radio ${value === o.id ? "on" : ""}`}>{value === o.id && <UI.Check size={14} strokeWidth={2.5} />}</span>
             </button>

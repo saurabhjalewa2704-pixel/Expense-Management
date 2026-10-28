@@ -3,6 +3,7 @@ import { useQuickAdd } from "@/components/capture/quick-add";
 import { addDays, formatShort, londonTime, todayLondon, type ISODate } from "@/lib/dates";
 import { rowSubtitle, rowTitle } from "@/lib/categories";
 import { CategoryIcon, UI } from "@/lib/icons";
+import { formatMinor } from "@/lib/fx";
 import { formatGBP } from "@/lib/money";
 import type { TxnRow } from "@/lib/types";
 
@@ -40,6 +41,7 @@ export function TxnItem({ row, subtitle }: { row: TxnRow; subtitle?: string }) {
       </div>
       <div className={`amt ${amt.positive ? "pos" : ""} ${amt.muted ? "muted" : ""}`}>
         {amt.text}
+        {row.original_currency && row.original_amount_minor && <small className="usd" data-testid="original-amount">{formatMinor(row.original_amount_minor, row.original_currency)}</small>}
         {notInBalance(row) && <small data-testid="not-in-balance" style={{ display: "block", color: "var(--ink-3)", fontWeight: 400 }}>Not in balance</small>}
         {row.pending && (
           <small aria-label="Waiting to sync" title="Waiting to sync" style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 4 }}>

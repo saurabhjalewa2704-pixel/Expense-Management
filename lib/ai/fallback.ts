@@ -92,3 +92,90 @@ export function fallbackCards(facts: Facts): Card[] {
   }
   return cards.slice(0, 6).map((c, i) => ({ ...c, rank: i + 1 }));
 }
+
+/** Template cards for a trip (TRIP-08), straight from its facts, so the card is grounded by construction. Two to four, most useful first. */
+export function fallbackTripCards(facts: Facts): Card[] {
+  const by = new Map(facts.facts.map((f) => [f.key, f]));
+  const get = (k: string): Fact | undefined => by.get(k);
+  const name = get("trip_name")?.display ?? "the trip";
+  const phase = get("trip_phase")?.display;
+  const link = facts.trip_id ? { kind: "screen" as const, id: `/trips/${facts.trip_id}` } : undefined;
+  const cards: Card[] = [];
+  const add = (c: Omit<Card, "viz" | "rank"> & { viz?: Card["viz"] }) => cards.push({ viz: "none", link, ...c, rank: cards.length + 1 });
+
+  // pace against the budget
+  const left = get("left"), dir = get("left_dir"), budget = get("budget");
+  if (budget && left && dir && phase === "during") {
+    const gap = get("projected_gap"), pdir = get("projected_dir"), per = get("actual_per_day"), plan = get("plan_per_day"), allow = get("allowance");
+    if (gap && pdir) {
+      const under = pdir.display === "under";
+      add({
+        key: `trip_pace:${facts.trip_id}`, type: "trip_pace", severity: under ? "positive" : "caution",
+        title: clip(under ? `At this pace you’ll finish about ${gap.display} under budget` : `At this pace you’ll finish about ${gap.display} over budget`, 70),
+        body: clip(`${per && plan ? `You’re spending ${per.display} a day on the trip against the ${plan.display} you planned.` : `${get("spent")?.display ?? ""} spent of ${budget.display}.`}${allow ? ` That leaves ${allow.display} a day for the rest of it.` : ""}`, 220),
+        metric: { fact_key: "spent", delta_fact_key: "budget" }, viz: "bar_compare",
+      });
+    }
+  } else if (budget && left && dir && phase === "after") {
+    add({
+      key: `trip_pace:${facts.trip_id}`, type: "trip_pace", severity: dir.display === "under" ? "positive" : "caution",
+      title: clip(`${name} finished ${left.display} ${dir.display} budget`, 70), body: clip(`${get("spent")?.display ?? ""} spent against a budget of ${budget.display}.`, 220),
+      metric: { fact_key: "spent", delta_fact_key: "budget" }, viz: "bar_compare",
+    });
+  } else if (phase !== "before" && get("actual_per_day")) {
+    add({ key: `trip_pace:${facts.trip_id}`, type: "trip_pace", severity: "info", title: clip(`You’re averaging ${get("actual_per_day")!.display} a day on the trip`, 70), body: clip(`${get("on_trip")?.display ?? ""} spent during ${name}, with ${get("booked")?.display ?? "nothing"} booked before.`, 220) });
+  }
+
+  // the biggest category
+  const top = facts.facts.find((f) => /^mix:.*:pct$/.test(f.key));
+  if (top) {
+    const s = top.key.split(":")[1]!;
+    const nm = get(`mix:${s}:name`)?.display ?? "", tot = get(`mix:${s}:total`), cnt = get(`mix:${s}:count`);
+    add({
+      key: `trip_mix:${facts.trip_id}`, type: "trip_mix", severity: "info", title: clip(`${nm} is ${top.display} of the trip`, 70),
+      body: clip(`${tot?.display ?? ""}${cnt ? ` across ${cnt.display} expense${cnt.display === "1" ? "" : "s"}` : ""} on ${name}.`, 220),
+      metric: tot ? { fact_key: tot.key } : undefined, link: facts.entities.find((e) => e.name === nm) ? link : link,
+    });
+  }
+
+  // one stop against another
+  const pct = get("stop_cmp_pct"), hi = get("stop_hi"), lo = get("stop_lo");
+  if (pct && hi && lo) {
+    const hiPer = get(`stop:${slugOf(hi.display)}:perday`), loPer = get(`stop:${slugOf(lo.display)}:perday`);
+    const nohotel = get("stop_lo_nohotel")?.display === "no hotel";
+    add({
+      key: `trip_stop:${facts.trip_id}`, type: "trip_stop", severity: "info", title: clip(`${hi.display} is costing ${pct.display} more a day than ${lo.display}`, 70),
+      body: clip(`${nohotel ? `With no hotel to pay for, ${lo.display}` : lo.display} came to ${loPer?.display ?? ""} a day. ${hi.display} is ${hiPer?.display ?? ""} a day so far.`, 220),
+    });
+  }
+
+  // the biggest single expense
+  const bigT = get("big_total"), bigP = get("big_payee"), bigD = get("big_day"), bigO = get("big_orig");
+  if (bigT && bigP && bigD) {
+    add({
+      key: `trip_big:${facts.trip_id}`, type: "trip_big", severity: "info", title: clip(`${bigP.display} was the biggest expense: ${bigT.display}`, 70),
+      body: clip(`${bigT.display}${bigO ? ` (${bigO.display})` : ""} on ${bigD.display}, the largest single expense on ${name}.`, 220), metric: { fact_key: "big_total" },
+    });
+  }
+
+  // against earlier trips
+  const cmp = get("cmp_perday");
+  if (cmp) {
+    const since = get("cmp_since_name"), sincePer = get("cmp_since_perday"), prev = get("cmp_prev_name"), prevPer = get("cmp_prev_perday");
+    add(since && sincePer ? {
+      key: `trip_compare:${facts.trip_id}`, type: "trip_compare", severity: "info", title: clip(`Your priciest trip per day since ${since.display}`, 70),
+      body: clip(`${name} is running at ${cmp.display} a day on the trip. ${since.display} came to ${sincePer.display} a day.`, 220), metric: { fact_key: "cmp_perday", delta_fact_key: "cmp_since_perday" }, viz: "bar_compare",
+    } : {
+      key: `trip_compare:${facts.trip_id}`, type: "trip_compare", severity: "caution", title: clip("Your priciest trip per day so far", 70),
+      body: clip(`${name} is at ${cmp.display} a day, ahead of ${prev?.display ?? "your earlier trips"}${prevPer ? ` at ${prevPer.display} a day` : ""}.`, 220), metric: prevPer ? { fact_key: "cmp_perday", delta_fact_key: "cmp_prev_perday" } : undefined, viz: prevPer ? "bar_compare" : "none",
+    });
+  }
+
+  // card fees
+  const fee = get("fx_fee_total"), rate = get("fx_fee_rate");
+  if (fee && rate) add({ key: `trip_fx:${facts.trip_id}`, type: "trip_fx", severity: "caution", title: clip(`Card fees have cost ${fee.display} so far`, 70), body: clip(`A ${rate.display} foreign fee on spending abroad on ${name}. A card with no foreign fees would save that.`, 220), metric: { fact_key: "fx_fee_total" } });
+
+  return cards.slice(0, 4).map((c, i) => ({ ...c, rank: i + 1 }));
+}
+
+const slugOf = (s: string) => s.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");

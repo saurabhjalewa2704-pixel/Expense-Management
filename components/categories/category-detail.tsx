@@ -3,10 +3,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { archiveCategory, deleteCategory, mergeCategory } from "@/app/actions/categories";
+import { archiveCategory, deleteCategory, mergeCategory, setTravelLike } from "@/app/actions/categories";
 import { CategoryEditor } from "@/components/capture/category-editor";
 import { PageHeader } from "@/components/ui/page-header";
 import { Sheet } from "@/components/ui/sheet";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/toast";
 import { CategoryIcon, UI } from "@/lib/icons";
 import { useCategoryTree } from "@/lib/queries/hooks";
@@ -78,6 +79,15 @@ export function CategoryDetail({ id }: { id: string }) {
             </div>
           )}
         </>
+      )}
+
+      {cat.kind === "expense" && (
+        <div className="list" style={{ marginTop: 20 }}>
+          <div className="row">
+            <div className="row-main"><div className="row-t" style={{ fontWeight: 400 }}>Travel-like</div><div className="row-s">Offer its expenses as earlier bookings when you plan a trip</div></div>
+            <Switch label="Travel-like" checked={!!cat.travel_like} onChange={async (v) => { const r = await setTravelLike(cat.id, v); if (!r.ok) return setError(r.error); await refresh(); }} />
+          </div>
+        </div>
       )}
 
       <div className="stack" style={{ marginTop: 28, gap: 10 }}>

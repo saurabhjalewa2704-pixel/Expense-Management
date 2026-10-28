@@ -16,12 +16,20 @@ import { formatGBP, pctChange } from "@/lib/money";
 import { resolvePeriod } from "@/lib/periods";
 import { periodQuery, useSharedPeriod } from "@/lib/period-url";
 import type { Category } from "@/lib/types";
-import { useCashFlow, useCategories, useDailySpend, useMonthlyTotals, usePayees, useProfile, useSpendByCategory, useToday, useTopPayees } from "@/lib/queries/hooks";
+import { useCashFlow, useCategories, useDailySpend, useMonthlyTotals, usePayees, useProfile, useSpendByCategory, useToday, useTopPayees, useTotals, useTrips } from "@/lib/queries/hooks";
+import { Switch } from "@/components/ui/switch";
 
 const NO_CATEGORIES: Category[] = [];
 
 type GroupBy = "category" | "sub";
 /** The last "Where it went" view, remembered on the device (AN-02a). Read after mount so the server and first client render agree. */
+/** TRIP-09: the "Exclude trips" switch, remembered on the device. */
+function useExcludeTrips(): [boolean, (v: boolean) => void] {
+  const [v, setV] = useState(false);
+  useEffect(() => { try { if (localStorage.getItem("an.excludeTrips") === "1") setV(true); } catch { /* storage unavailable */ } }, []);
+  return [v, (x) => { setV(x); try { localStorage.setItem("an.excludeTrips", x ? "1" : "0"); } catch { /* storage unavailable */ } }];
+}
+
 function useGroupBy(): [GroupBy, (g: GroupBy) => void] {
   const [g, setG] = useState<GroupBy>("category");
   useEffect(() => { try { if (localStorage.getItem("an.groupBy") === "sub") setG("sub"); } catch { /* storage unavailable */ } }, []);
@@ -51,17 +59,21 @@ export function AnalyticsScreen() {
   const [sel, setSel] = useSharedPeriod(today);
   const [groupBy, setGroupBy] = useGroupBy();
   const [showIncome, setShowIncome] = useState(false);
+  const [noTrips, setNoTrips] = useExcludeTrips();
   const p = resolvePeriod(sel, today);
 
-  const cur = useDailySpend(p.from, p.to);
-  const prev = useDailySpend(p.prevFrom, p.prevEnd);
-  const cats = useSpendByCategory(p.from, p.to, null);
-  const leaves = useSpendByCategory(p.from, p.to, null, false, "leaf");
-  const prevCats = useSpendByCategory(p.prevFrom, p.prevTo, null);
+  const cur = useDailySpend(p.from, p.to, false, noTrips);
+  const prev = useDailySpend(p.prevFrom, p.prevEnd, false, noTrips);
+  const cats = useSpendByCategory(p.from, p.to, null, false, "parent", noTrips);
+  const leaves = useSpendByCategory(p.from, p.to, null, false, "leaf", noTrips);
+  const prevCats = useSpendByCategory(p.prevFrom, p.prevTo, null, false, "parent", noTrips);
   const poolCats = useSpendByCategory(p.from, p.to, null, true);
   const flow = useCashFlow(p.from, p.to);
-  const totals = useMonthlyTotals(12);
-  const history = useDailySpend(monthStart(addMonths(monthStart(today), -6)), today);
+  const totals = useMonthlyTotals(12, noTrips);
+  const history = useDailySpend(monthStart(addMonths(monthStart(today), -6)), today, false, noTrips);
+  const tripTotals = useTotals({ from: p.from, to: p.to, trip: "any", types: ["expense"] });
+  const tripList = useTrips().data ?? [];
+  const tripsHere = tripList.filter((t) => t.start_on <= p.to && t.end_on >= p.from).map((t) => t.name);
   const payees = useTopPayees(p.from, p.to, 6);
   const allPayees = usePayees().data ?? [];
   const categories = useCategories().data ?? NO_CATEGORIES;
@@ -103,7 +115,7 @@ export function AnalyticsScreen() {
 
   // rhythm
   const heatMonth = monthStart(p.to);
-  const heatDays = useDailySpend(heatMonth, p.kind === "month" ? p.to : heatMonth.slice(0, 8) + "28", true);   // behaviour, not rent
+  const heatDays = useDailySpend(heatMonth, p.kind === "month" ? p.to : heatMonth.slice(0, 8) + "28", true, noTrips);   // behaviour, not rent
   const wk = weekdayAverages((heatDays.data ?? []).filter((d) => d.day <= today));
   const rhythm = rhythmFinding(wk);
 
@@ -127,6 +139,19 @@ export function AnalyticsScreen() {
       </div>
       <h1 className="large-title">Analytics</h1>
       <PeriodControl value={sel} today={today} onChange={setSel} />
+      {tripList.length > 0 && (
+        <div style={{ marginTop: 10 }}>
+          <label className="row-between" style={{ gap: 12, padding: "2px 4px" }}>
+            <span className="callout" style={{ color: "var(--ink-2)" }}>Exclude trips</span>
+            <Switch label="Exclude trips" checked={noTrips} onChange={setNoTrips} />
+          </label>
+          {noTrips && (
+            <p className="sub" style={{ margin: "6px 4px 0" }} data-testid="trips-banner">
+              {(tripTotals.data?.spend_pence ?? 0) > 0 ? <>Excluding {tripsHere.join(", ") || "trips"} (<span className="num">{formatGBP(tripTotals.data?.spend_pence ?? 0)}</span>)</> : "No trip spending in this period."}
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="analytics-grid" style={{ marginTop: 12 }}>
         <div className="span-all">
