@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ISODate } from "@/lib/dates";
 import type {
   Account, AccountBalance, CashFlow, Category, CategorySpend, DailySpend, MonthPace, MonthlyTotal, Payee, PayeeTotal, Profile,
-  TxnRow, TxnTotals, Pot, PotCategory, TopPlace, RecurringItem, RecurringOccurrence, RecurringSuggestion,
+  TxnRow, TxnTotals, Pot, PotCategory, TopPlace, Trip, TripStop, TripCategoryBudget, TripOverviewRow, TripSummary, TripDay, TripStopTotal, TripCategoryRow, TripCandidate, RecurringItem, RecurringOccurrence, RecurringSuggestion,
 } from "@/lib/types";
 import type { ActivityFilters } from "./keys";
 
@@ -60,6 +60,7 @@ const filterArgs = (f: ActivityFilters) => ({
   p_pot_id: f.pot && f.pot !== "exclude" && f.pot !== "only" ? f.pot : null,
   p_pots: f.pot === "exclude" || f.pot === "only" ? f.pot : null,
   p_recurring: f.recurring ? true : null,
+  p_trip: f.trip ?? null,
 });
 
 export interface ActivityCursor { on: ISODate; created: string; id: string }
@@ -179,3 +180,17 @@ export async function fetchTxnRow(db: SupabaseClient, id: string, on: ISODate): 
   const rows = await unwrap<TxnRow[]>(db.rpc("list_transactions", { p_from: on, p_to: on, p_limit: 200 }));
   return rows.find((r) => r.id === id) ?? null;
 }
+
+// ── Trips ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+export const fetchTrips = (db: SupabaseClient) => unwrap<Trip[]>(db.from("trips").select("*").order("start_on", { ascending: false }));
+export const fetchTripStops = (db: SupabaseClient, tripId?: string) => {
+  const q = db.from("trip_stops").select("*").order("start_on");
+  return unwrap<TripStop[]>(tripId ? q.eq("trip_id", tripId) : q);
+};
+export const fetchTripBudgets = (db: SupabaseClient, tripId: string) => unwrap<TripCategoryBudget[]>(db.from("trip_category_budgets").select("trip_id,category_id,amount_pence").eq("trip_id", tripId));
+export const fetchTripsOverview = (db: SupabaseClient, asOf: ISODate) => unwrap<TripOverviewRow[]>(db.rpc("trips_overview", { p_as_of: asOf }));
+export const fetchTripSummary = async (db: SupabaseClient, id: string, asOf: ISODate) => (await unwrap<TripSummary[]>(db.rpc("trip_summary", { p_trip: id, p_as_of: asOf })))[0] ?? null;
+export const fetchTripByDay = (db: SupabaseClient, id: string) => unwrap<TripDay[]>(db.rpc("trip_by_day", { p_trip: id }));
+export const fetchTripByStop = (db: SupabaseClient, id: string, asOf: ISODate) => unwrap<TripStopTotal[]>(db.rpc("trip_by_stop", { p_trip: id, p_as_of: asOf }));
+export const fetchTripByCategory = (db: SupabaseClient, id: string, level: "parent" | "leaf") => unwrap<TripCategoryRow[]>(db.rpc("trip_by_category", { p_trip: id, p_level: level }));
+export const fetchTripCandidates = (db: SupabaseClient, id: string) => unwrap<TripCandidate[]>(db.rpc("trip_candidates", { p_trip: id }));

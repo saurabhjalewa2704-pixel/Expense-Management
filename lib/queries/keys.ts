@@ -16,6 +16,8 @@ export interface ActivityFilters {
   pot?: "exclude" | "only" | (string & {});
   /** true: only transactions logged by a recurring payment (REC-09). */
   recurring?: boolean;
+  /** "any" (on a trip), "none", or one trip id. */
+  trip?: string;
 }
 
 export const qk = {
@@ -42,6 +44,15 @@ export const qk = {
   lastIncomeAccount: ["last-income-account"] as const,
   pots: ["pots"] as const,
   nonBalanceSpend: (from: ISODate, to: ISODate) => ["non-balance-spend", from, to] as const,
+  trips: ["trips"] as const,
+  tripStops: (id?: string) => ["trips", "stops", id ?? "all"] as const,
+  tripBudgets: (id: string) => ["trips", "budgets", id] as const,
+  tripsOverview: (asOf: ISODate) => ["trips", "overview", asOf] as const,
+  tripSummary: (id: string, asOf: ISODate) => ["trips", "summary", id, asOf] as const,
+  tripByDay: (id: string) => ["trips", "day", id] as const,
+  tripByStop: (id: string, asOf: ISODate) => ["trips", "stop", id, asOf] as const,
+  tripByCategory: (id: string, level: string) => ["trips", "category", id, level] as const,
+  tripCandidates: (id: string) => ["trips", "candidates", id] as const,
   recurring: ["recurring"] as const,
   recurringItems: ["recurring", "items"] as const,
   recurringOccurrences: (from: ISODate, to: ISODate) => ["recurring", "occurrences", from, to] as const,

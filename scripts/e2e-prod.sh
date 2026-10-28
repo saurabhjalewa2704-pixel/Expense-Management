@@ -10,6 +10,8 @@ export NEXT_PUBLIC_VAPID_PUBLIC_KEY="${NEXT_PUBLIC_VAPID_PUBLIC_KEY:-BOhikE_J3XW
 export STERLING_ASK_STUB=1
 export STERLING_HOLIDAYS_FILE="$PWD/tests/fixtures/bank-holidays.json"
 export STERLING_PUSH_STUB="$PWD/.stack/push.log"
+export STERLING_FX_STUB="USD=0.79,EUR=0.86,JPY=0.0052"      # fixed reference rates (GBP per unit), no network
+if [ "${E2E_TRIPS:-0}" = "1" ]; then export STERLING_TEST_TODAY="${STERLING_TEST_TODAY:-2027-03-12}"; set -- --project=trips "$@"; fi
 export STERLING_TEST_TODAY="${STERLING_TEST_TODAY:-2026-10-18}"
 PORT="${E2E_PORT:-3200}"
 pkill -f "[n]ext-server" 2>/dev/null || true

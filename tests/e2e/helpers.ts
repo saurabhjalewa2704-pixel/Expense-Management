@@ -4,7 +4,7 @@ const GATEWAY = "http://127.0.0.1:54321";
 export const OWNER = "owner@sterling.local";
 
 /** Wipe the database and recreate the owner. seed: "demo" loads supabase/seed.sql; onboarded skips first-run setup. */
-export async function resetDb(opts: { seed?: "demo"; onboarded?: boolean } = {}) {
+export async function resetDb(opts: { seed?: "demo" | "trip"; onboarded?: boolean } = {}) {
   const q = new URLSearchParams();
   if (opts.seed) q.set("seed", opts.seed);
   if (opts.onboarded) q.set("onboarded", "1");
@@ -42,6 +42,15 @@ export async function fixClock(ctx: BrowserContext) {
 export async function startDemo(page: P) {
   await resetDb({ seed: "demo" });
   await fixClock(page.context());
+  await signIn(page);
+  await page.clock.resume();
+  await expect(page.getByTestId("hero")).toBeVisible();
+}
+
+/** The USA trip data (PRD Appendix A.2), the clock on Fri 12 March 2027 09:30, signed in. The server must run with STERLING_TEST_TODAY=2027-03-12 (E2E_TRIPS=1 does). */
+export async function startTrip(page: P) {
+  await resetDb({ seed: "trip" });
+  await page.context().clock.install({ time: new Date("2027-03-12T09:30:00Z") });
   await signIn(page);
   await page.clock.resume();
   await expect(page.getByTestId("hero")).toBeVisible();

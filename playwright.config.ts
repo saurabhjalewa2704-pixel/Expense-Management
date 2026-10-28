@@ -25,7 +25,9 @@ export default defineConfig({
   projects: [
     // iPhone 14 on Chromium at the installed-PWA size, 390×844 (the device profile's own 664px viewport includes Safari's toolbar).
     // The installed browser here is Chromium, so the profile's WebKit default is overridden.
-    { name: "mobile", testIgnore: /desktop\./, use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 }, defaultBrowserType: "chromium", launchOptions: chromium } },
+    { name: "mobile", testIgnore: [/desktop\./, /\/trips\//], use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 }, defaultBrowserType: "chromium", launchOptions: chromium } },
+    // The Trips specs live on Fri 12 March 2027 (PRD Appendix A.2), so the server runs with STERLING_TEST_TODAY=2027-03-12: E2E_TRIPS=1 scripts/e2e-prod.sh
+    { name: "trips", testMatch: /\/trips\/.*\.spec\.ts/, use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 }, defaultBrowserType: "chromium", launchOptions: chromium } },
     { name: "desktop", testMatch: /desktop\./, use: { viewport: { width: 1440, height: 1024 }, launchOptions: chromium } },
   ],
   webServer: {

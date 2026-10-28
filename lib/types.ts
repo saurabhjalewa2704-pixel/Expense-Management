@@ -35,6 +35,8 @@ export interface Account {
   opening_date: ISODate;
   /** The last reconcile; with the opening date it is the balance anchor (BAL-01). */
   last_reconciled_on?: ISODate | null;
+  /** Extra % charged by the card on foreign amounts, in basis points (TRIP-06). */
+  fx_fee_bps?: number;
   counts_as_cash: boolean;
   is_default: boolean;
   sort_order: number;
@@ -119,6 +121,15 @@ export interface TxnRow {
   counter_counts_in_balance?: boolean | null;
   is_reconcile?: boolean;
   occurred_tz?: string | null;
+  /** The trip this belongs to, and the original amount when it was paid in another currency (TRIP-06). */
+  trip_id?: string | null;
+  trip_name?: string | null;
+  trip_origin?: "auto" | "manual" | "booking" | null;
+  original_amount_minor?: number | null;
+  original_currency?: string | null;
+  fx_rate?: number | null;
+  fx_rate_on?: ISODate | null;
+  fx_source?: "auto" | "manual" | null;
   /** Set on rows that exist only in the offline outbox and have not reached the server yet. */
   pending?: boolean;
 }
@@ -235,3 +246,27 @@ export interface RecurringSuggestion {
   seen: number;
   last_on: ISODate;
 }
+
+// ── Trips (PRD §6.12) ──────────────────────────────────────────────────────────────────────────────────────────────
+export interface Trip {
+  id: string; name: string; country_code: string | null; currency: string; start_on: ISODate; end_on: ISODate;
+  budget_pence: number | null; auto_tag: boolean; created_at: string;
+}
+export interface TripStop { id: string; trip_id: string; name: string; start_on: ISODate; end_on: ISODate; sort: number; currency: string | null }
+export interface TripCategoryBudget { trip_id: string; category_id: string; amount_pence: number }
+export interface TripOverviewRow {
+  trip_id: string; name: string; country_code: string | null; currency: string; start_on: ISODate; end_on: ISODate; budget_pence: number | null;
+  booked_pence: number; on_trip_pence: number; spent_pence: number; txn_count: number;
+}
+export interface TripSummary {
+  trip_id: string; name: string; currency: string; start_on: ISODate; end_on: ISODate; budget_pence: number | null;
+  booked_pence: number; on_trip_pence: number; spent_pence: number; refund_pence: number; txn_count: number; days: number; day_n: number;
+  local_minor: number; local_pence: number;
+}
+export interface TripDay { day: ISODate; total_pence: number; top_payee: string | null; top_pence: number | null; txn_count: number }
+export interface TripStopTotal { stop_id: string | null; name: string; start_on: ISODate | null; end_on: ISODate | null; days: number; days_elapsed: number; total_pence: number }
+export interface TripCategoryRow {
+  category_id: string; name: string; icon: string; color: CategoryColor; parent_id: string | null; total_pence: number; txn_count: number;
+  parent_name: string | null; is_parent_direct: boolean; budget_pence: number | null; net_refund_pence: number;
+}
+export interface TripCandidate { id: string; occurred_on: ISODate; amount_pence: number; payee_name: string | null; note: string | null; category_name: string; parent_name: string | null; account_name: string }
