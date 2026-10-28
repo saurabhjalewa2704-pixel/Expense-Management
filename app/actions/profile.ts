@@ -37,5 +37,7 @@ export async function deleteAllData(confirmation: string): Promise<ActionResult>
   if (confirmation !== "DELETE") return fail('Type DELETE to confirm.');
   const supabase = await supabaseServer();
   const { error } = await supabase.rpc("delete_all_my_data");
-  return error ? fail(friendlyDbError(error)) : ok(undefined);
+  if (error) return fail(friendlyDbError(error));
+  await supabase.auth.signOut({ scope: "global" });                  // EC-P8: signs out everywhere
+  return ok(undefined);
 }

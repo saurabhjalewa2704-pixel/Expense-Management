@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { TxnItem, recentWhen } from "@/components/activity/txn-row";
 import { useQuickAdd } from "@/components/capture/quick-add";
-import { Figure } from "@/components/money";
+import { Figure, cashLabel } from "@/components/money";
 import { ReminderPrompt } from "@/components/home/reminder-prompt";
 import { PotsSection } from "@/components/home/pots-section";
 import { BillsCard } from "@/components/home/bills-card";
@@ -41,7 +41,7 @@ function MobileHome() {
 
       <section className="hero" style={{ marginTop: 20 }} aria-label="Available cash">
         <Link href="/cash" className="hero-label" aria-label="Available cash, see the detail">
-          Available cash <UI.ChevronRight size={16} strokeWidth={1.75} className="chev" aria-hidden />
+          {cashLabel(cash)} <UI.ChevronRight size={16} strokeWidth={1.75} className="chev" aria-hidden />
         </Link>
         {cash === undefined ? (
           <div className="skeleton" style={{ height: 64, width: 260, marginTop: 10 }} aria-busy />

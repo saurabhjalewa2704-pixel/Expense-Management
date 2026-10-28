@@ -7,7 +7,7 @@ const poundsKeys = async (page: Page, amount: string) => {
 };
 
 test.describe("Add expense on a trip, in dollars (TRIP-04, TRIP-06)", () => {
-  test("AC1 / AC2 a $ expense during the trip is tagged, converted, stored in both currencies, and the £ can be corrected", async ({ page }) => {
+  test("EC-T11 AC1 / AC2 a $ expense during the trip is tagged, converted, stored in both currencies, and the £ can be corrected", async ({ page }) => {
     await startTrip(page);
     await openAdd(page);
     await expect(page.getByTestId("trip-chip")).toContainText("USA");

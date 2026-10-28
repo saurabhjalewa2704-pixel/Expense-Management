@@ -146,7 +146,7 @@ test.describe("evening reminder (M4b, NOT-01)", () => {
       expect(sent()).toHaveLength(0);
     });
 
-    test("turning the reminder off stops it; an expired subscription is deleted", async ({ page }) => {
+    test("EC-P3 turning the reminder off stops it; an expired subscription is deleted", async ({ page }) => {
       await clearToday();
       await sql(`update profiles set reminder_enabled = false`);
       const off = await (await page.request.get(`/api/cron/nudge?now=${at("21:00")}`, { headers: AUTH })).json();

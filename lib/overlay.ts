@@ -2,7 +2,7 @@
 // even offline. These are pure functions over integer pence; they mirror the SQL in PRD §10.4 for one transaction.
 import type { OutboxItem } from "@/lib/outbox";
 import type { Account, CashFlow, Category, MonthPace, TxnRow } from "@/lib/types";
-import type { ISODate } from "@/lib/dates";
+import { todayLondon, type ISODate } from "@/lib/dates";
 
 /**
  * Items that still need to be layered over a query's data. An item stops counting once the server accepted it
@@ -18,6 +18,7 @@ const inPool = (accounts: readonly Account[], id: string | null | undefined) =>
 /** Effect of one pending item on one account's balance. */
 export function balanceDelta(item: OutboxItem, accountId: string): number {
   const p = item.payload;
+  if (p.occurred_on > todayLondon()) return 0;                       // a scheduled entry moves nothing until its day (EC-D5)
   const a = item.flags?.a ?? true, b = item.flags?.b ?? true;             // an entry that does not count moves nothing (BAL-02)
   if (p.type === "expense") return p.account_id === accountId && a ? -p.amount_pence : 0;
   if (p.type === "income") return p.account_id === accountId && a ? p.amount_pence : 0;

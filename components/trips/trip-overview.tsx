@@ -174,9 +174,9 @@ function WhereItWent({ trip }: { trip: Trip }) {
   return (
     <ChartCard testId="trip-where" finding={finding} sub="Whole trip, including bookings made before" empty={rows !== undefined && sorted.length === 0} emptyText="Spending will show up here as you add expenses."
       table={{ columns: ["Category", "Spent", "Share"], rows: sorted.map((r) => [r.name, formatGBP(r.total_pence), `${share(r)}%`]) }}>
-      <div className="view-seg" role="tablist" aria-label="Group by">
-        <span role="tab" tabIndex={0} aria-selected={level === "parent"} className={level === "parent" ? "on" : ""} onClick={() => setLevel("parent")} onKeyDown={(e) => e.key === "Enter" && setLevel("parent")}>Categories</span>
-        <span role="tab" tabIndex={0} aria-selected={level === "leaf"} className={level === "leaf" ? "on" : ""} onClick={() => setLevel("leaf")} onKeyDown={(e) => e.key === "Enter" && setLevel("leaf")}>Sub-categories</span>
+      <div className="seg view-seg" role="tablist" aria-label="Group by">
+        <button role="tab" aria-selected={level === "parent"} className={level === "parent" ? "on" : ""} onClick={() => setLevel("parent")}>Categories</button>
+        <button role="tab" aria-selected={level === "leaf"} className={level === "leaf" ? "on" : ""} onClick={() => setLevel("leaf")}>Sub-categories</button>
       </div>
       <div style={{ marginTop: 6 }}>
         {shown.map((r) => {

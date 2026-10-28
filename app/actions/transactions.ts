@@ -26,7 +26,8 @@ export async function createTransaction(input: unknown): Promise<ActionResult<Tr
     p_original_amount_minor: v.original_amount_minor ?? null, p_original_currency: v.original_currency ?? null, p_fx_rate: v.fx_rate ?? null,
     p_fx_rate_on: v.fx_rate_on ?? null, p_fx_source: v.original_currency ? (v.fx_source ?? "auto") : null,
   });
-  if (error) return fail(friendlyDbError(error), isRetryableDbError(error));
+  // EC-C5: a session that expired while offline is not a failed entry: it stays queued and is sent, under the same client_id, once signed in again
+  if (error) return fail(friendlyDbError(error), isRetryableDbError(error) || error.code === "28000");
   return ok(data as Transaction);
 }
 
@@ -35,6 +36,10 @@ export async function updateTransaction(id: string, input: unknown): Promise<Act
   if (!p.success) return fail(firstIssue(p.error));
   const v = p.data;
   const supabase = await supabaseServer();
+  if (v.expected_updated_at) {
+    const { data: cur } = await supabase.from("transactions").select("updated_at").eq("id", id).maybeSingle();
+    if (cur && new Date((cur as { updated_at: string }).updated_at).getTime() > new Date(v.expected_updated_at).getTime()) return fail("Updated on another device");
+  }
   const { data, error } = await supabase.rpc("update_transaction", {
     p_id: id, p_type: v.type, p_amount_pence: v.amount_pence, p_account_id: v.account_id,
     p_counter_account_id: v.type === "transfer" ? v.counter_account_id : null,

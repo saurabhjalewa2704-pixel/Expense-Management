@@ -403,3 +403,7 @@ td + td{padding-left:14px}
 .srow.static::after{display:none}
 .srow{color:inherit}
 .srow .cbar-amt{font-size:15px;font-weight:500;text-align:right}
+.caution-dot{width:10px;height:10px;border-radius:50%;background:var(--caution);margin:18px 0 0 10px;flex:none}
+@keyframes shake{20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+.shake{animation:shake 320ms ease-in-out}
+@media (prefers-reduced-motion:reduce){.shake{animation:none}}

@@ -7,8 +7,8 @@ export interface TableData { columns: string[]; rows: (string | number)[][] }
  * Every chart: a finding title (a sentence stating the insight), a quieter subtitle with units and period, the chart,
  * and a "View as table" alternative (WCAG: charts provide a table). Skeleton and empty states are handled by the caller.
  */
-export function ChartCard({ finding, sub, children, table, testId, loading, empty, emptyText, actions }: {
-  finding: string; sub?: string; children: ReactNode; table?: TableData; testId?: string; loading?: boolean; empty?: boolean; emptyText?: string; actions?: ReactNode;
+export function ChartCard({ finding, sub, children, table, testId, loading, empty, emptyText, emptyAction, actions }: {
+  finding: string; sub?: string; children: ReactNode; table?: TableData; testId?: string; loading?: boolean; empty?: boolean; emptyText?: string; emptyAction?: ReactNode; actions?: ReactNode;
 }) {
   const [asTable, setAsTable] = useState(false);
   const id = useId();
@@ -24,7 +24,7 @@ export function ChartCard({ finding, sub, children, table, testId, loading, empt
       {loading ? (
         <div className="skeleton" style={{ height: 160, marginTop: 16 }} aria-busy />
       ) : empty ? (
-        <p className="sub" style={{ marginTop: 16, padding: "24px 0", textAlign: "center" }}>{emptyText ?? "Nothing to show for this period yet."}</p>
+        <div style={{ marginTop: 16, padding: "24px 0", textAlign: "center" }} data-testid="chart-empty"><p className="sub">{emptyText ?? "Nothing to show for this period yet."}</p>{emptyAction && <div style={{ marginTop: 10 }}>{emptyAction}</div>}</div>
       ) : asTable && table ? (
         <div style={{ overflowX: "auto", marginTop: 12 }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>

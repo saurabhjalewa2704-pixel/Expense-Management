@@ -85,6 +85,8 @@ export interface GenerateOptions {
 export interface InsightRunRow {
   id: string; scope: string; period_start: ISODate; period_end: ISODate; facts: Facts; cards: Card[]; model: string;
   input_tokens: number | null; output_tokens: number | null; used_fallback: boolean; created_at: string;
+  /** A transaction was back-dated into this period after the run (EC-D4). */
+  stale?: boolean;
 }
 
 export async function generateInsights(o: GenerateOptions): Promise<InsightRunRow> {

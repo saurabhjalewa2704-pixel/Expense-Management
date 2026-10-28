@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
     for (const scope of scopes) {
       const today = serverToday();
       const { period } = periodFor(scope, today);
-      const { data: existing } = await db.from("insight_runs").select("id").eq("user_id", u.id).eq("scope", scope).eq("period_start", period.from).limit(1);
+      const { data: existing } = await db.from("insight_runs").select("id").eq("user_id", u.id).eq("scope", scope).eq("period_start", period.from).eq("stale", false).limit(1);
       if (existing?.length) { ran.push({ user: u.id, scope, skipped: "already generated" }); continue; }
       try {
         const run = await runDigest(db, u.id, scope, { includeNotes: u.ai_include_notes, today });

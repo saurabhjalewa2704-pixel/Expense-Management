@@ -50,7 +50,7 @@ test.describe("capture (CAP-01..05)", () => {
     expect(times.sort((a, b) => a - b)[1]).toBeLessThan(100);
   });
 
-  test("Undo removes it completely and the hero goes back", async ({ page }) => {
+  test("EC-C6 Undo removes it completely and the hero goes back", async ({ page }) => {
     await startDemo(page);
     await openAdd(page);
     await amountKeys(page, "9.99");
@@ -94,7 +94,7 @@ test.describe("capture (CAP-01..05)", () => {
     await expect(page.getByTestId("amount")).toHaveText("123,456");            // capped at £999,999.99
   });
 
-  test("the primary button waits for an amount and a category; swipe-down asks before discarding", async ({ page }) => {
+  test("EC-C9 the primary button waits for an amount and a category; swipe-down asks before discarding", async ({ page }) => {
     await startDemo(page);
     await openAdd(page);
     await expect(page.getByRole("button", { name: /^Add £/ })).toBeDisabled();
@@ -157,7 +157,7 @@ test.describe("capture (CAP-01..05)", () => {
     await expect.poll(() => heroPence(page)).toBe(COFFEE_BEFORE - 100);                     // back at £7.40
   });
 
-  test("CAP-05: offline capture survives killing the app and syncs exactly once", async ({ page, context }) => {
+  test("EC-C2 CAP-05: offline capture survives killing the app and syncs exactly once", async ({ page, context }) => {
     await startDemo(page);
     await page.waitForTimeout(1500);                       // let the queries settle into the cache
     await context.setOffline(true);

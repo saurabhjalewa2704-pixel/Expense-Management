@@ -26,8 +26,8 @@ export async function GET(req: NextRequest) {
 
   for (const p of (profiles ?? []) as Profile[]) {
     const [{ count: today }, { data: last }, { data: ns }, { data: subs }] = await Promise.all([
-      db.from("transactions").select("id", { count: "exact", head: true }).eq("user_id", p.id).eq("occurred_on", now.date).is("deleted_at", null),
-      db.from("transactions").select("occurred_on").eq("user_id", p.id).is("deleted_at", null).order("occurred_on", { ascending: false }).limit(1),
+      db.from("transactions").select("id", { count: "exact", head: true }).eq("user_id", p.id).eq("occurred_on", now.date).neq("source", "recurring").is("deleted_at", null),            // EC-P5: a bill logged by itself is not the owner logging
+      db.from("transactions").select("occurred_on").eq("user_id", p.id).neq("source", "recurring").is("deleted_at", null).order("occurred_on", { ascending: false }).limit(1),
       db.from("no_spend_days").select("day").eq("user_id", p.id).eq("day", now.date),
       db.from("push_subscriptions").select("id, endpoint, p256dh, auth").eq("user_id", p.id),
     ]);

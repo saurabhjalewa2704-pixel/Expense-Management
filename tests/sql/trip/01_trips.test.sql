@@ -54,7 +54,7 @@ begin
 
   -- AC7 / TRIP-09: "Exclude trips" drops exactly the trip's spending, and norms never include it
   assert (select sum(total_pence) from spend_by_category('2027-03-01', '2027-03-31'))
-       - (select coalesce(sum(total_pence), 0) from spend_by_category('2027-03-01', '2027-03-31', null, false, 'parent', true)) = 110131, 'AC7 March drops exactly £1,101.31';
+       - (select coalesce(sum(total_pence), 0) from spend_by_category('2027-03-01', '2027-03-31', null, false, 'parent', true)) = 110131, 'EC-N3 AC7 March drops exactly £1,101.31';
   assert (select sum(total_pence) from spend_by_category('2024-01-01', '2027-12-31'))
        - (select sum(total_pence) from spend_by_category('2024-01-01', '2027-12-31', null, false, 'parent', true)) = 246020 + 110131 + 124080 + 68420 + 231560, 'AC7 everything tagged to a trip';
   assert (select norm_pence from spend_by_category('2027-04-01', '2027-04-30', null, false, 'parent', false) where name = 'Eating out' limit 1) is not distinct from

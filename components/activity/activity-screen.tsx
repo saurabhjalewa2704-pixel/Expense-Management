@@ -5,7 +5,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AccountsFilterSheet, AmountFilterSheet, CategoriesFilterSheet, PeriodSheet, PotFilterSheet, TripFilterSheet, TypeFilterSheet, periodLabel, periodRange, type Period } from "./filter-sheets";
 import { TxnItem } from "./txn-row";
 import { groupByDay } from "@/components/accounts/account-detail";
-import { dayHeader, todayLondon } from "@/lib/dates";
+import { addDays, dayHeader, formatShort, todayLondon } from "@/lib/dates";
+import { rowSubtitle } from "@/lib/categories";
 import { UI } from "@/lib/icons";
 import { formatGBP } from "@/lib/money";
 import { useActivity, useTotals, useToday } from "@/lib/queries/hooks";
@@ -41,10 +42,17 @@ export function ActivityScreen() {
     const s = parseSearch(debounced);
     return {
       q: s.text || undefined, amount: s.amount, min: s.min ?? amount.min, max: s.max ?? amount.max,
-      from: period.from, to: period.to, payeeId, pot, recurring: recurring || undefined, trip,
+      from: period.from, to: period.to && period.to < today ? period.to : today, payeeId, pot, recurring: recurring || undefined, trip,
       accountIds: accountIds.length ? accountIds : undefined, categoryIds: categoryIds.length ? categoryIds : undefined, types: types.length ? types : undefined,
     };
-  }, [debounced, period, accountIds, categoryIds, types, amount, payeeId, pot, recurring, trip]);
+  }, [debounced, period, accountIds, categoryIds, types, amount, payeeId, pot, recurring, trip, today]);
+
+  // EC-D5: expenses dated after today are "Scheduled": listed apart, and not in the totals or balances until their day
+  const tomorrow = addDays(today, 1);
+  const scheduledFilters = useMemo<ActivityFilters>(() => (period.to && period.to < tomorrow
+    ? { ...filters, from: tomorrow, to: today }
+    : { ...filters, from: period.from && period.from > tomorrow ? period.from : tomorrow, to: period.to ?? addDays(today, 366) }), [filters, period, tomorrow, today]);
+  const scheduled = useActivity(scheduledFilters);
 
   const activity = useActivity(filters);
   const totals = useTotals(filters);
@@ -94,6 +102,12 @@ export function ActivityScreen() {
         {t ? (<>{t.txn_count.toLocaleString("en-GB")} transaction{t.txn_count === 1 ? "" : "s"} · <span className="num">{formatGBP(t.spend_pence)}</span> out{t.income_pence > 0 && <> · <span className="num pos">{formatGBP(t.income_pence)}</span> in</>}{!!t.pot_pence && <> · <span className="num" data-testid="pot-total">{formatGBP(Math.abs(t.pot_pence))}</span> {t.pot_pence < 0 ? "out" : "in"} in pots</>}</>) : " "}
       </div>
 
+      {scheduled.rows.length > 0 && (
+        <section aria-label="Scheduled" data-testid="scheduled">
+          <div className="day-h"><b>Scheduled</b><span className="num">{scheduled.rows.length}</span></div>
+          <div className="list">{[...scheduled.rows].sort((a, b) => a.occurred_on.localeCompare(b.occurred_on)).map((r) => <TxnItem key={r.client_id} row={r} subtitle={`${rowSubtitle(r)} · ${formatShort(r.occurred_on)}`} />)}</div>
+        </section>
+      )}
       {activity.isLoading && activity.rows.length === 0 ? (
         <div className="list" style={{ marginTop: 24 }} aria-busy>{[0, 1, 2, 3].map((i) => <div key={i} className="row"><div className="skeleton" style={{ height: 36, width: "100%" }} /></div>)}</div>
       ) : groups.length === 0 ? (

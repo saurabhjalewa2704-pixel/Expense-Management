@@ -39,6 +39,8 @@ export interface Account {
   last_reconciled_on?: ISODate | null;
   /** Extra % charged by the card on foreign amounts, in basis points (TRIP-06). */
   fx_fee_bps?: number;
+  /** The day this account last joined or left available cash (EC-A5). */
+  pool_changed_on?: ISODate | null;
   counts_as_cash: boolean;
   is_default: boolean;
   sort_order: number;

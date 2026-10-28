@@ -571,7 +571,8 @@ language sql stable as $$
      group by g.gid, k.k
   ),
   norms as (
-    select gid, round(percentile_cont(0.5) within group (order by total))::bigint as norm from prior group by gid
+    -- EC-N2: with fewer than three earlier periods there is no "usual"
+    select gid, round(percentile_cont(0.5) within group (order by total))::bigint as norm from prior group by gid having count(*) >= 3
   )
   select c.id, c.name, c.icon, c.color, c.parent_id, cur.total, cur.n, norms.norm,
          pc.name,

@@ -6,11 +6,12 @@ import { resolveOccurrence } from "@/app/actions/recurring";
 import { useQuickAdd } from "@/components/capture/quick-add";
 import { useToast } from "@/components/ui/toast";
 import { billsIn, dotsByDay, summariseMonth, type BillRow } from "@/lib/bills";
-import { addMonths, dayOfMonth, formatMonthYear, formatShort, monthEnd, monthStart, weekdayIndex, type ISODate } from "@/lib/dates";
+import { addDays, addMonths, dayOfMonth, formatMonthYear, formatShort, monthEnd, monthStart, weekdayIndex, type ISODate } from "@/lib/dates";
 import { UI } from "@/lib/icons";
 import { formatGBP } from "@/lib/money";
 import { fetchTxnRow } from "@/lib/queries/fetchers";
-import { useBankHolidays, useRecurringItems, useRecurringOccurrences, useToday } from "@/lib/queries/hooks";
+import { useActivity, useBankHolidays, useRecurringItems, useRecurringOccurrences, useToday } from "@/lib/queries/hooks";
+import { TxnItem } from "@/components/activity/txn-row";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { BillTile, useBillLabels } from "./shared";
 import { SchedulerStatus } from "./scheduler-status";
@@ -33,7 +34,15 @@ export function BillsScreen() {
   const labels = useBillLabels();
   const rows = useMemo(() => billsIn(items.data ?? [], occ.data ?? [], from, to, holidays), [items.data, occ.data, from, to, holidays]);
   const sum = summariseMonth(rows);
-  const dots = useMemo(() => dotsByDay(rows), [rows]);
+  // EC-D5: one-off expenses dated ahead (a deposit next week) show on the calendar as due
+  const ahead = addDays(today, 1);
+  const sched = useActivity({ from: from > ahead ? from : ahead, to: to >= ahead ? to : today });
+  const scheduled = useMemo(() => (to >= ahead ? sched.rows.filter((r) => r.type === "expense" && r.source !== "recurring" && r.occurred_on >= ahead && r.occurred_on <= to) : []), [sched.rows, to, ahead]);
+  const dots = useMemo(() => {
+    const m = new Map(dotsByDay(rows));
+    for (const r of scheduled) { const d = m.get(r.occurred_on) ?? { logged: 0, due: 0, other: 0 }; m.set(r.occurred_on, { ...d, due: d.due + 1 }); }
+    return m;
+  }, [rows, scheduled]);
   const pending = rows.filter((r) => r.state === "pending");
   const coming = rows.filter((r) => r.state === "due");
   const logged = rows.filter((r) => r.state === "logged" || r.state === "estimate" || r.state === "skipped");
@@ -167,6 +176,13 @@ export function BillsScreen() {
             </div>
             <div className="cal-legend"><span><i className="cal-dot" />Logged</span><span><i className="cal-dot due" />Due</span><span><i className="cal-dot other" />Transfer</span></div>
           </section>
+
+          {scheduled.length > 0 && (
+            <section data-testid="bills-scheduled">
+              <div className="section-h"><h2>Scheduled</h2><span className="sub num">{formatGBP(scheduled.reduce((s, r) => s + r.amount_pence, 0))}</span></div>
+              <div className="list">{scheduled.map((r) => <TxnItem key={r.client_id} row={r} subtitle={`${r.category_name ?? ""} · ${formatShort(r.occurred_on)}`} />)}</div>
+            </section>
+          )}
 
           {coming.length > 0 && (
             <section data-testid="bills-coming">

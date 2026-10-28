@@ -30,9 +30,9 @@ export function CategoryBars({ rows, fixedIds, showUsual, href, total }: {
             <Link key={r.category_id} href={href(r.category_id)} className="cbar-row" data-testid="category-row" aria-label={`${r.name} ${formatGBP(r.total_pence)}, ${pctOf(r.total_pence, total)}% of spending${flag ? `, up ${flag.pct}% on usual` : ""}`}>
               <div className="tile"><CategoryIcon name={r.icon} size={16} /></div>
               <div className="cbar-name">{r.name}{flag && <span className="delta" data-testid="delta">↑ {flag.pct}%</span>}</div>
-              <div className="cbar-amt num">{formatGBP(r.total_pence)}</div>
+              <div className="cbar-amt num">{r.total_pence < 0 ? <>£0.00<small style={{ display: "block", color: "var(--ink-3)", fontWeight: 400 }} data-testid="net-refund">net refund {formatGBP(-r.total_pence)}</small></> : formatGBP(r.total_pence)}</div>
               <div className="cbar-track" aria-hidden>
-                <div className="b" style={{ width: `${(r.total_pence / scale) * 100}%`, background: flag ? "var(--caution)" : undefined, transition: "width 280ms var(--spring)" }} />
+                <div className="b" style={{ width: `${(Math.max(0, r.total_pence) / scale) * 100}%`, background: flag ? "var(--caution)" : undefined, transition: "width 280ms var(--spring)" }} />
                 {showUsual && r.norm_pence != null && r.norm_pence > 0 && <div className="n" style={{ left: `${(r.norm_pence / scale) * 100}%` }} />}
               </div>
             </Link>

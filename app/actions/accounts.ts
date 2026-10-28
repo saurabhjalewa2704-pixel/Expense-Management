@@ -45,3 +45,13 @@ export async function setDefaultAccount(id: string): Promise<ActionResult> {
   const { error } = await supabase.rpc("set_default_account", { p_account_id: id });
   return error ? fail(friendlyDbError(error)) : ok(undefined);
 }
+
+/** EC-A7: an account with any transactions (even deleted ones: they are history) cannot be deleted; archive it instead. */
+export async function deleteAccount(id: string): Promise<ActionResult> {
+  const supabase = await supabaseServer();
+  const { count } = await supabase.from("transactions").select("id", { count: "exact", head: true }).or(`account_id.eq.${id},counter_account_id.eq.${id}`);
+  if ((count ?? 0) > 0) return fail("This account has transactions, so it can’t be deleted. Archive it instead and its history stays.");
+  const { error } = await supabase.from("accounts").delete().eq("id", id);
+  if (error?.code === "23503") return fail("Something still uses this account (a bill, for example). Archive it instead.");
+  return error ? fail(friendlyDbError(error)) : ok(undefined);
+}

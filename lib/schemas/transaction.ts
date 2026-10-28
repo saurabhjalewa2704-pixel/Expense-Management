@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { addDays, todayLondon } from "@/lib/dates";
 import { MAX_PENCE } from "@/lib/money";
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Choose a date.");
@@ -37,10 +38,13 @@ const base = z.object({
   fx_source: z.enum(["auto", "manual"]).nullish(),
   /** Edit only: apply the FX fields (including clearing them). */
   fx_set: z.boolean().nullish(),
+  /** Edit only: the row's updated_at when the editor opened. If another device changed it since, the edit is not applied (EC-C3). */
+  expected_updated_at: z.string().nullish(),
 });
 
 type Shape = z.infer<typeof base>;
 const rules = (v: Shape, ctx: z.RefinementCtx) => {
+  if (isoDate.safeParse(v.occurred_on).success && v.occurred_on > addDays(todayLondon(), 366)) ctx.addIssue({ code: "custom", path: ["occurred_on"], message: "Choose a date within the next 12 months." });
   const fx = [v.original_amount_minor, v.original_currency, v.fx_rate, v.fx_rate_on].filter((x) => x != null).length;
   if (fx !== 0 && fx !== 4) ctx.addIssue({ code: "custom", path: ["fx_rate"], message: "The original amount needs a currency and a rate." });
   if (fx === 4 && v.type !== "expense" && v.type !== "income") ctx.addIssue({ code: "custom", path: ["original_currency"], message: "Only expenses and income can be in another currency." });

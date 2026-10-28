@@ -33,7 +33,7 @@ test.describe("category picker (parent → child)", () => {
     await expect.poll(() => saved("Taxis", 750)).toBe(1);
   });
 
-  test("'(general)' is a visible row, so choosing the parent itself needs no hidden second tap", async ({ page }) => {
+  test("EC-K5 '(general)' is a visible row, so choosing the parent itself needs no hidden second tap", async ({ page }) => {
     await startDemo(page);
     await openAdd(page);
     await amountKeys(page, "12");

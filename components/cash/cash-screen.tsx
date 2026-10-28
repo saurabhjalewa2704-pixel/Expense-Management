@@ -2,11 +2,11 @@
 import { useState } from "react";
 import { AccountIcon } from "@/components/accounts/accounts-screen";
 import { CashChart } from "@/components/charts/cash-chart";
-import { Figure } from "@/components/money";
+import { Figure, cashLabel } from "@/components/money";
 import { PageHeader } from "@/components/ui/page-header";
 import { Sheet } from "@/components/ui/sheet";
 import { accountTypeLabel } from "@/lib/accounts";
-import { addMonths, formatLong, formatShort, londonTime, monthEnd, monthStart, yearEnd, yearStart, type ISODate } from "@/lib/dates";
+import { addMonths, formatDayMonth, formatLong, formatShort, londonTime, monthEnd, monthStart, yearEnd, yearStart, type ISODate } from "@/lib/dates";
 import { UI } from "@/lib/icons";
 import { formatGBP } from "@/lib/money";
 import { useAccounts, useBalances, useCashFlow, useCashSeries, useNonBalanceSpend, useNow, useProfile, useToday, useTotals } from "@/lib/queries/hooks";
@@ -52,10 +52,11 @@ export function CashScreen() {
       <PageHeader title="" back="/" backLabel="Home"
         right={<button className="icon-btn" style={{ marginRight: 8 }} aria-label="Pick a date" onClick={() => setPicking(true)}><UI.Calendar size={18} strokeWidth={1.75} aria-hidden /></button>} />
       <div className="hero" style={{ marginTop: -26 }}>
-        <div className="hero-label">Available cash</div>
+        <div className="hero-label" data-testid="cash-label">{cashLabel(cash)}</div>
         {cash === undefined ? <div className="skeleton" style={{ height: 76, width: 280, marginTop: 10 }} aria-busy /> : (
           <div data-testid="cash-figure" aria-label={`Available cash ${formatGBP(f?.closing_pence ?? 0)}`}><Figure pence={cash} xl /></div>
         )}
+        {(() => { const ch = (accounts ?? []).filter((a) => a.pool_changed_on).map((a) => a.pool_changed_on!).sort().at(-1); return ch ? <div className="sub" style={{ marginTop: 6 }} data-testid="pool-changed">Pool changed on {formatDayMonth(ch)}. History uses today’s accounts.</div> : null; })()}
         <div className="sub" style={{ marginTop: 10 }} data-testid="as-at">As at {isToday ? `${formatLong(at)}, ${londonTime(now)}` : formatLong(at)}</div>
       </div>
 

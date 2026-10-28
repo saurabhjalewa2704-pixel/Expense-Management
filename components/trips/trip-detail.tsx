@@ -46,9 +46,9 @@ export function TripDetail({ id }: { id: string }) {
         <h1 className="tr-name" style={{ fontSize: 34 }} data-testid="trip-title">{trip.name}</h1>
         <div className="tr-sub">{[stopsLabel(stops), rangeLabel(trip.start_on, trip.end_on)].filter(Boolean).join(" · ")}</div>
       </div>
-      <div className="view-seg" role="tablist" aria-label="Trip" style={{ marginTop: 16 }}>
-        <span role="tab" tabIndex={0} aria-selected={tab === "overview"} className={tab === "overview" ? "on" : ""} onClick={() => setTab("overview")} onKeyDown={(e) => e.key === "Enter" && setTab("overview")} data-testid="tab-overview">Overview</span>
-        <span role="tab" tabIndex={0} aria-selected={tab === "expenses"} className={tab === "expenses" ? "on" : ""} onClick={() => setTab("expenses")} onKeyDown={(e) => e.key === "Enter" && setTab("expenses")} data-testid="tab-expenses">Expenses{count !== undefined ? ` · ${count}` : ""}</span>
+      <div className="seg view-seg" role="tablist" aria-label="Trip" style={{ marginTop: 16 }}>
+        <button role="tab" aria-selected={tab === "overview"} className={tab === "overview" ? "on" : ""} onClick={() => setTab("overview")} data-testid="tab-overview">Overview</button>
+        <button role="tab" aria-selected={tab === "expenses"} className={tab === "expenses" ? "on" : ""} onClick={() => setTab("expenses")} data-testid="tab-expenses">Expenses{count !== undefined ? ` · ${count}` : ""}</button>
       </div>
       {tab === "overview" ? <TripOverview trip={trip} stops={stops} today={today} /> : <TripExpenses trip={trip} stops={stops} today={today} />}
       <BookingsSheet trip={trip} open={bookings} onOpenChange={closeBookings} />

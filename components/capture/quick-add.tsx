@@ -6,7 +6,7 @@ import { deleteByClientId, deleteTransaction, restoreTransaction, updateTransact
 import { Sheet } from "@/components/ui/sheet";
 import { useToast } from "@/components/ui/toast";
 import { defaultCounts, pendingFlags } from "@/lib/balance-flags";
-import { dateChipLabel, todayLondon, type ISODate } from "@/lib/dates";
+import { dateChipLabel, deviceToday, todayLondon, type ISODate } from "@/lib/dates";
 import { BalanceFlagBlock } from "./balance-flag-block";
 import { CategoryIcon, UI } from "@/lib/icons";
 import { formatGBP, pressKey, toPence } from "@/lib/money";
@@ -102,7 +102,7 @@ function minorToText(minor: number, currency: string): string {
 
 /** Where the date starts when Add expense is opened from a trip: today while it runs or is coming up, else its last day. */
 function defaultDateFor(tripId: string | undefined, trips: readonly Trip[]): ISODate {
-  const today = todayLondon(), t = tripId ? trips.find((x) => x.id === tripId) : undefined;
+  const today = deviceToday(), t = tripId ? trips.find((x) => x.id === tripId) : undefined;
   return t && today > t.end_on ? t.end_on : today;
 }
 
@@ -138,7 +138,7 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
   const [accountManual, setAccountManual] = useState(false);
   const [potId, setPotId] = useState<string | null>(null);
   const [counterId, setCounterId] = useState<string | null>(null);
-  const [date, setDate] = useState<ISODate>(todayLondon());
+  const [date, setDate] = useState<ISODate>(deviceToday());
   const [note, setNote] = useState("");
   const [picker, setPicker] = useState<null | "category" | "account" | "counter" | "date" | "note" | "pot" | "trip" | "currency" | "pounds">(null);
   const [tripPick, setTripPick] = useState<{ id: string | null } | null>(null);   // the owner's own choice of trip (null id = None); null = automatic
@@ -146,6 +146,8 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
   const [curTouched, setCurTouched] = useState(false);
   const [pounds, setPounds] = useState<string | null>(null);                    // £ typed to match the statement (fx_source = manual)
   const [manualRate, setManualRate] = useState("");                             // EC-T9: no rate available
+  const [shake, setShake] = useState(false);
+  const [baseStamp, setBaseStamp] = useState<string | null>(null);          // the row's updated_at when the editor opened (EC-C3)
   const [fxDirty, setFxDirty] = useState(false);                                // an edited foreign row keeps its stored £ until something changes
   const [confirm, setConfirm] = useState<null | "discard" | "delete" | "duplicate">(null);
   const [flagAnswer, setFlagAnswer] = useState<boolean | null>(null);       // the owner's explicit answer about the balance (BAL-03); null = let the database decide
@@ -174,6 +176,16 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
       setMode(options.mode ?? "expense"); setAmount(""); setPayee(""); setCategoryId(null); setAccountId(null); setCounterId(null); setPotId(null);
       setDate(options.date ?? defaultDateFor(options.trip, trips)); setNote(""); setAutoFilled(false); setAccountManual(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, session]);
+
+  // EC-C3: remember when the row last changed, so a save made after another device changed it is not applied silently
+  useEffect(() => {
+    setBaseStamp(null);
+    if (!open || !editing || editing.pending) return;
+    let live = true;
+    void supabaseBrowser().from("transactions").select("updated_at").eq("id", editing.id).maybeSingle().then(({ data }) => { if (live) setBaseStamp((data as { updated_at: string } | null)?.updated_at ?? null); });
+    return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, session]);
 
@@ -252,7 +264,7 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
     const defaults = TRAVEL_DEFAULTS.map((n) => categories.find((c) => c.name === n && !c.archived_at && c.kind === "expense")?.id).filter((x): x is string => !!x);
     return [...new Set([...ranked, ...defaults])].slice(0, 6).flatMap((id): Suggestion[] => {
       const c = tree.byId.get(id);
-      return c && !c.archived_at ? [{ categoryId: id, label: c.name, parentLabel: c.parent_id ? tree.byId.get(c.parent_id)?.name : undefined }] : [];
+      return c && !c.archived_at ? [{ categoryId: id, label: c.name, parentLabel: c.parent_id ? tree.byId.get(c.parent_id)?.name : tree.children(c.id).length ? undefined : "General" }] : [];
     });
   }, [selTrip, mode, tripTxns, categories, tree]);
   const baseChips = tripChips ?? chips;
@@ -277,7 +289,13 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
   };
 
   // ---- behaviour ----
-  const press = (k: string) => { setError(undefined); setFxDirty(true); setPounds(null); setAmount((a) => (foreign ? pressKeyFx(a, k, effCur) : pressKey(a, k))); };
+  const press = (k: string) => {
+    setError(undefined); setFxDirty(true); setPounds(null);
+    const next = foreign ? pressKeyFx(amount, k, effCur) : pressKey(amount, k);
+    // EC-M2: past the ceiling further digits are ignored, with a short shake on the amount
+    if (next === amount && /^\d$/.test(k) && amount !== "0" && (amount.split(".")[1]?.length ?? 0) < (foreign ? exponentOf(effCur) : 2)) { setShake(true); setTimeout(() => setShake(false), 350); }
+    setAmount(next);
+  };
   const chooseAccount = (id: string) => { setAccountId(id); setAccountManual(true); };
 
   const applyPayee = (p: Payee) => {
@@ -316,7 +334,7 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
     counter_account_id: mode === "transfer" ? effCounter : null,
     category_id: mode === "transfer" ? null : category,
     payee: mode === "transfer" ? null : payee.trim() || null, note: note.trim() || null, tags: [],
-    occurred_on: date, occurred_at: !editing && date === todayLondon() ? new Date().toISOString() : (editing?.occurred_at ?? null),
+    occurred_on: date, occurred_at: !editing && date === deviceToday() ? new Date().toISOString() : (editing?.occurred_at ?? null),
     account_manual: accountManual, source: "app",
     pot_id: mode === "transfer" ? null : potId,
     counts_in_balance: flagAnswer, occurred_tz: !editing ? deviceZone() : undefined,
@@ -345,8 +363,9 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
       if (typeof navigator !== "undefined" && !navigator.onLine) { setBusy(false); return setError("You're offline. Edits need a connection; new entries can still be added."); }
       const { client_id: _c, account_manual: _m, source: _s, ...patch } = input;
       void _c; void _m; void _s;
-      const r = await updateTransaction(editing.id, patch);
+      const r = await updateTransaction(editing.id, { ...patch, expected_updated_at: baseStamp });
       setBusy(false);
+      if (!r.ok && r.error === "Updated on another device") { await qc.invalidateQueries(); close(); toast({ message: "Updated on another device. Showing the latest; open it again to edit.", duration: 5000 }); return; }
       if (!r.ok) return setError(r.error);
       await qc.invalidateQueries();
       close(); toast({ message: "Saved", duration: 2500 });
@@ -453,7 +472,7 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
           ))}
         </div>
 
-        <div className={`amount num`} aria-label={`Amount ${formatGBP(pence)}`} style={mode === "income" ? { color: "var(--positive)" } : undefined}>
+        <div className={`amount num${shake ? " shake" : ""}`} data-testid="amount-box" aria-label={`Amount ${formatGBP(pence)}`} style={mode === "income" ? { color: "var(--positive)" } : undefined}>
           <span className="cur">{sym}</span>
           <span className="whole" style={amount === "" ? { color: "var(--ink-3)" } : undefined} data-testid="amount">{display}</span>
           <span className="caret" aria-hidden />
@@ -538,8 +557,8 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
                   <UI.CreditCard size={16} strokeWidth={1.75} aria-hidden />{account?.name ?? "Account"}
                 </button>
               )}
-              <button className="chip" onClick={() => setPicker("date")} aria-label={`Date ${dateChipLabel(date)}`}>
-                <UI.Calendar size={16} strokeWidth={1.75} aria-hidden />{dateChipLabel(date)}
+              <button className="chip" onClick={() => setPicker("date")} aria-label={`Date ${dateChipLabel(date, deviceToday())}`}>
+                <UI.Calendar size={16} strokeWidth={1.75} aria-hidden />{dateChipLabel(date, deviceToday())}
               </button>
               {mode !== "transfer" && (
                 <button className={`chip ${potId ? "sel" : ""}`} onClick={() => setPicker("pot")} aria-label={potId ? `One-off pot ${potName}` : "One-off pot"} style={{ maxWidth: potId ? 112 : 150, ...(potId ? {} : { padding: "0 11px" }) }}>

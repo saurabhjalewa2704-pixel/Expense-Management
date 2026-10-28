@@ -90,7 +90,11 @@ export function AnalyticsScreen() {
   const leafHref = (r: { category_id: string }) => `/analytics/subcategory/${r.category_id}?${periodQuery(sel)}`;
   const leafRows = leaves.data ?? [];
   const flexLeaves = leafRows.filter((r) => !r.is_fixed);
-  const showUsual = p.kind === "month";
+  // EC-N2: with fewer than three earlier periods there is nothing usual to compare with, so the markers and flags stay hidden
+  const haveNorms = (leaves.data ?? []).some((r) => r.norm_pence != null) || (cats.data ?? []).some((r) => r.norm_pence != null);
+  const showUsual = p.kind === "month" && haveNorms;
+  // EC-N4: an empty period offers a way to the one before it
+  const toPrev = sel.kind === "custom" ? undefined : <button className="link" data-testid="see-previous" onClick={() => setSel({ ...sel, anchor: p.prevFrom })}>See {p.prevLabel}</button>;
 
   // fixed costs: a parent where more than half of its sub-categories are fixed (Home yes, Bills no)
   const fixedIds = useMemo(() => {
@@ -163,13 +167,13 @@ export function AnalyticsScreen() {
           </ChartCard>
         </div>
 
-        <ChartCard testId="chart-categories" loading={cats.isLoading || (groupBy === "sub" && leaves.isLoading)} empty={catRows.length === 0}
+        <ChartCard testId="chart-categories" loading={cats.isLoading || (groupBy === "sub" && leaves.isLoading)} empty={catRows.length === 0} emptyAction={toPrev}
           finding={groupBy === "sub"
             ? subcategoryFinding(flexLeaves)
             : showUsual ? categoryFinding(catRows, totalSpend) : catRows[0] ? `${catRows[0].name} is where most of the money went` : "Where it went"}
           sub={groupBy === "sub"
-            ? (showUsual ? `This month · every sub-category, ranked · marker = usual by day ${p.elapsed}` : `Every sub-category, ranked, ${p.label}`)
-            : showUsual ? `Category spend this month · marker = usual by day ${p.elapsed}` : `Category spend, ${p.label}`}
+            ? (showUsual ? `This month · every sub-category, ranked · marker = usual by day ${p.elapsed}` : p.kind === "month" ? `This month · every sub-category, ranked · Not enough history yet` : `Every sub-category, ranked, ${p.label}`)
+            : showUsual ? `Category spend this month · marker = usual by day ${p.elapsed}` : p.kind === "month" ? `Category spend this month · Not enough history yet` : `Category spend, ${p.label}`}
           table={groupBy === "sub"
             ? { columns: ["Sub-category", "Spend", "Share", ...(showUsual ? ["Usual by now"] : [])], rows: leafRows.map((r) => [`${r.name} (${r.parent_name ?? "—"})`, formatGBP(r.total_pence), `${Math.round((r.total_pence * 100) / (totalSpend || 1))}%`, ...(showUsual ? [r.norm_pence == null ? "—" : formatGBP(r.norm_pence)] : [])]) }
             : { columns: ["Category", "Spend", "Share", ...(showUsual ? ["Usual by now"] : [])], rows: catRows.map((r) => [r.name, formatGBP(r.total_pence), `${Math.round((r.total_pence * 100) / (totalSpend || 1))}%`, ...(showUsual ? [r.norm_pence == null ? "—" : formatGBP(r.norm_pence)] : [])]) }}>

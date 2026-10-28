@@ -7,7 +7,7 @@ import { useToast } from "@/components/ui/toast";
 import { PageHeader } from "@/components/ui/page-header";
 import type { InsightRunRow } from "@/lib/ai/generate";
 import { UI } from "@/lib/icons";
-import { useInsightFeedback, useInsightRuns, useProfile } from "@/lib/queries/hooks";
+import { useInsightFeedback, useInsightRuns, useProfile, useTransactionCount } from "@/lib/queries/hooks";
 import { qk } from "@/lib/queries/keys";
 
 type Tab = "weekly" | "monthly" | "adhoc";
@@ -17,7 +17,7 @@ const stamp = (iso: string) =>
   new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(iso)).replace(/,\s*/g, " ").replace(/(\d{2}:\d{2})$/, ", $1");
 
 export function InsightsScreen() {
-  const runs = useInsightRuns(), fb = useInsightFeedback(), profile = useProfile();
+  const runs = useInsightRuns(), fb = useInsightFeedback(), profile = useProfile(), count = useTransactionCount();
   const qc = useQueryClient();
   const toast = useToast();
   const feedback = useCardFeedback();
@@ -57,6 +57,8 @@ export function InsightsScreen() {
       <div className="stack" style={{ marginTop: 16 }}>
         {off ? (
           <p className="sub">AI insights are switched off. Turn them on in Settings → AI insights.</p>
+        ) : count.data !== undefined && count.data < 10 ? (
+          <div className="card" data-testid="insights-too-few"><h3 style={{ fontWeight: 600 }}>Not much to go on yet</h3><p className="sub" style={{ marginTop: 6 }}>Log a few more days and insights will appear.</p></div>
         ) : runs.isLoading ? (
           <div className="card" aria-busy><div className="skeleton" style={{ height: 120 }} /></div>
         ) : !run ? (
@@ -67,6 +69,8 @@ export function InsightsScreen() {
           cards.map((c) => <InsightCardView key={c.key} run={run} card={c} onFeedback={(a) => feedback(run, c, a)} />)
         )}
       </div>
+      {run?.stale && <p className="sub" data-testid="insights-stale" style={{ marginTop: 12, textAlign: "center" }}>You added something to this period afterwards. These cards may be out of date; the next refresh updates them.</p>}
+      {run && (run.model.startsWith("template") || run.used_fallback) && <p className="sub" data-testid="insights-paused" style={{ marginTop: 8, textAlign: "center" }}>AI summary paused. These cards are written from your numbers directly.</p>}
       {run && <p className="sub" style={{ marginTop: 20, textAlign: "center" }}>Generated from your data · {run.period_start === run.period_end ? run.period_start : `${run.period_start} to ${run.period_end}`}</p>}
       {!off && <AskDock />}
     </div>

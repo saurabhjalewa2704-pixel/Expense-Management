@@ -93,7 +93,7 @@ test.describe("bills (REC-01..REC-09)", () => {
       .toEqual({ d: "2026-10-01", s: "recurring", a: 7500, n: "2026-11-01" });
   });
 
-  test("Bill detail: next payment, history chart, Skip next (and undo), Pause / Resume, Stop, Delete", async ({ page }) => {
+  test("EC-B5 EC-B10 Bill detail: next payment, history chart, Skip next (and undo), Pause / Resume, Stop, Delete", async ({ page }) => {
     await startDemo(page);
     await page.goto("/bills");
     await page.getByTestId("bills-logged-list").getByRole("link", { name: /Octopus Energy/ }).click();
@@ -134,7 +134,7 @@ test.describe("bills (REC-01..REC-09)", () => {
     expect(await sqlOne(`select count(*)::int n from transactions where payee_id = (select id from payees where name = 'Octopus Energy') and deleted_at is null`)).toEqual({ n: 7 });   // the payments stay in Activity
   });
 
-  test("editing the amount changes the next payment, never one already logged (criterion 8)", async ({ page }) => {
+  test("EC-B6 editing the amount changes the next payment, never one already logged (criterion 8)", async ({ page }) => {
     await startDemo(page);
     await page.goto("/bills");
     await page.getByTestId("bills-logged-list").getByRole("link", { name: /Netflix/ }).click();
@@ -164,7 +164,7 @@ test.describe("bills (REC-01..REC-09)", () => {
     for (const r of await page.getByTestId("txn-row").all()) await expect(r.getByTestId("recurring-glyph")).toBeVisible();
   });
 
-  test("adding by hand what a bill logs around now asks first (REC-08)", async ({ page }) => {
+  test("EC-C10 adding by hand what a bill logs around now asks first (REC-08)", async ({ page }) => {
     await startDemo(page);
     await sql(`update recurring_items set next_due_on = '2026-10-20' where payee_id = (select id from payees where name = 'Spotify')`);
     await page.getByRole("button", { name: "Add transaction" }).click();

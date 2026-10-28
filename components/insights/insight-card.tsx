@@ -8,7 +8,7 @@ import type { Card as CardT } from "@/lib/ai/types";
 import type { InsightRunRow } from "@/lib/ai/generate";
 import { UI } from "@/lib/icons";
 import { qk } from "@/lib/queries/keys";
-import { useInsightFeedback, useInsightRuns } from "@/lib/queries/hooks";
+import { useInsightFeedback, useInsightRuns, useTransactionCount } from "@/lib/queries/hooks";
 import { formatGBP } from "@/lib/money";
 
 const TAG: Record<CardT["type"], string> = {
@@ -84,9 +84,10 @@ export function useVisibleCards() {
 export function InsightCard({ variant }: { variant: "home" | "list" }) {
   const visible = useVisibleCards();
   const { run } = visible;
+  const count = useTransactionCount().data;
   const cards = variant === "home" ? visible.cards.filter((c) => c.type !== "pace") : visible.cards;   // Home already has the pace card
   const feedback = useCardFeedback();
-  if (!run || cards.length === 0) return null;
+  if (!run || cards.length === 0 || (count !== undefined && count < 10)) return null;               // EC-N8: too little to say
   const shown = variant === "home" ? cards.slice(0, 1) : cards.slice(0, 3);
   return (
     <>

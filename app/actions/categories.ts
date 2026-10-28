@@ -55,8 +55,8 @@ export async function deleteCategory(id: string): Promise<ActionResult> {
   return error ? fail(friendlyDbError(error)) : ok(undefined);
 }
 
-export async function mergeCategory(from: string, into: string): Promise<ActionResult> {
+export async function mergeCategory(from: string, into: string, clash: "combine" | "keep_both" = "combine"): Promise<ActionResult> {
   const supabase = await supabaseServer();
-  const { error } = await supabase.rpc("merge_category", { p_from: from, p_into: into });
+  const { error } = await supabase.rpc("merge_category", { p_from: from, p_into: into, p_clash: clash });
   return error ? fail(friendlyDbError(error)) : ok(undefined);
 }

@@ -22,7 +22,7 @@ export function DataScreen() {
     if (!r.ok) return setError(r.error);
     qc.clear();
     await del("sterling-query-cache").catch(() => {});
-    router.replace("/welcome");
+    router.replace("/sign-in");
   };
 
   return (

@@ -1,6 +1,6 @@
 "use client";
 import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { updateProfile } from "@/app/actions/profile";
 import { PageHeader } from "@/components/ui/page-header";
 import { Switch } from "@/components/ui/switch";
@@ -8,7 +8,7 @@ import { useToast } from "@/components/ui/toast";
 import { addDays, weekdayIndex } from "@/lib/dates";
 import { UI } from "@/lib/icons";
 import { REMINDER_SLOTS } from "@/lib/nudge";
-import { disableReminders, enableReminders } from "@/lib/push";
+import { disableReminders, enableReminders, pushSupport, type PushSupport } from "@/lib/push";
 import { useProfile, useToday, useWeekActivity } from "@/lib/queries/hooks";
 import { qk } from "@/lib/queries/keys";
 
@@ -24,6 +24,9 @@ export function RemindersScreen() {
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string>();
+  const [support, setSupport] = useState<PushSupport>("ready");
+  const [denied, setDenied] = useState(false);
+  useEffect(() => { setSupport(pushSupport()); setDenied(typeof Notification !== "undefined" && Notification.permission === "denied"); }, []);
   const monday = addDays(today, -weekdayIndex(today));
   const week = useWeekActivity(monday, addDays(monday, 6));
   const on = profile.data?.reminder_enabled ?? false;
@@ -54,8 +57,8 @@ export function RemindersScreen() {
       <PageHeader title="Reminders" back="/settings" backLabel="Settings" />
       <div className="list" style={{ marginTop: 20 }}>
         <div className="row"><div className="tile"><UI.Bell size={18} strokeWidth={1.75} aria-hidden /></div>
-          <div className="row-main"><div className="row-t">Evening reminder</div><div className="row-s">Only if nothing&rsquo;s logged that day</div></div>
-          <Switch label="Evening reminder" checked={on} disabled={busy} onChange={toggle} /></div>
+          <div className="row-main"><div className="row-t">Evening reminder</div><div className="row-s" data-testid="reminder-sub">{denied ? "Off in iPhone Settings" : "Only if nothing’s logged that day"}</div></div>
+          <Switch label="Evening reminder" checked={on} disabled={busy || support !== "ready" || (denied && !on)} onChange={toggle} /></div>
         {on && (
           <div className="row" style={{ flexWrap: "wrap", rowGap: 12 }}>
             <div className="tile"><UI.Clock size={18} strokeWidth={1.75} aria-hidden /></div>
@@ -69,6 +72,18 @@ export function RemindersScreen() {
           </div>
         )}
       </div>
+      {support === "needs-install" && (
+        <div className="card" style={{ marginTop: 12 }} data-testid="install-card">
+          <div className="headline">Install Sterling to get reminders</div>
+          <p className="sub" style={{ marginTop: 4 }}>On iPhone, reminders only work from the Home Screen. Tap Share, then Add to Home Screen, and open Sterling from there.</p>
+        </div>
+      )}
+      {denied && support === "ready" && (
+        <div className="card" style={{ marginTop: 12 }} data-testid="denied-card">
+          <div className="headline">Notifications are off for Sterling</div>
+          <p className="sub" style={{ marginTop: 4 }}>Open Settings → Notifications → Sterling and allow notifications, then come back and turn the reminder on. Sterling won’t ask again.</p>
+        </div>
+      )}
       {problem && <p role="alert" className="sub" style={{ margin: "10px 16px 0", color: "var(--caution)" }}>{problem}</p>}
 
       <div className="eyebrow group-label">This week</div>
