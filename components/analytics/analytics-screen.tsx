@@ -10,13 +10,13 @@ import { TrendChart } from "@/components/charts/trend-chart";
 import { WaterfallChart } from "@/components/charts/waterfall-chart";
 import { PeriodControl } from "./period-control";
 import { average, buildWaterfall, categoryFinding, subcategoryFinding, paceFinding, projectMonth, rhythmFinding, trendBars, trendFinding, waterfallFinding, weekdayAverages, WEEKDAY_NAMES } from "@/lib/analytics";
-import { addMonths, formatDayMonth, formatMonthYear, monthStart } from "@/lib/dates";
+import { addMonths, formatDayMonth, formatMonthYear, monthStart, type ISODate } from "@/lib/dates";
 import { CategoryIcon, UI } from "@/lib/icons";
 import { formatGBP, pctChange } from "@/lib/money";
 import { resolvePeriod } from "@/lib/periods";
 import { periodQuery, useSharedPeriod } from "@/lib/period-url";
 import type { Category } from "@/lib/types";
-import { useCashFlow, useCategories, useDailySpend, useMonthlyTotals, usePayees, useSpendByCategory, useToday, useTopPayees } from "@/lib/queries/hooks";
+import { useCashFlow, useCategories, useDailySpend, useMonthlyTotals, usePayees, useProfile, useSpendByCategory, useToday, useTopPayees } from "@/lib/queries/hooks";
 
 const NO_CATEGORIES: Category[] = [];
 
@@ -71,7 +71,9 @@ export function AnalyticsScreen() {
   const curRows = cur.data ?? [], prevRows = prev.data ?? [];
   const curSpend = curRows.at(-1)?.cumulative_pence ?? 0;
   const prevAt = prevRows[Math.min(curRows.length, prevRows.length) - 1]?.cumulative_pence ?? 0;
-  const hasPrev = prevRows.some((d) => d.total_pence > 0);
+  const trackStart = useProfile().data?.tracking_started_on ?? null;
+  const isPartial = (m: ISODate) => !!trackStart && m <= monthStart(trackStart);          // BAL-07: back-filled months are not history
+  const hasPrev = prevRows.some((d) => d.total_pence > 0) && !(p.kind === "month" && isPartial(monthStart(p.prevFrom)));
   const hrefFor = (id: string) => `/analytics/category/${id}?${periodQuery(sel)}`;
   const leafHref = (r: { category_id: string }) => `/analytics/subcategory/${r.category_id}?${periodQuery(sel)}`;
   const leafRows = leaves.data ?? [];
@@ -91,9 +93,10 @@ export function AnalyticsScreen() {
   // 12-month trend with the current month projected
   const thisMonth = monthStart(today);
   const monthSpendSoFar = totals.data?.find((t) => t.month === thisMonth)?.spend_pence ?? 0;
-  const projected = p.kind === "month" && p.isCurrent && history.data ? projectMonth(history.data, today, monthSpendSoFar) : null;
+  const projected = p.kind === "month" && p.isCurrent && history.data ? projectMonth(trackStart ? history.data.filter((d) => d.day >= trackStart) : history.data, today, monthSpendSoFar) : null;
   const bars = trendBars(totals.data ?? [], thisMonth, projected);
-  const past = bars.filter((b) => !b.isCurrent && b.spend > 0);
+  const past = bars.filter((b) => !b.isCurrent && b.spend > 0 && !isPartial(b.month));
+  const partialBars = bars.filter((b) => !b.isCurrent && b.spend > 0 && isPartial(b.month));
   const avg = average(past.map((b) => b.spend));
   const trendTitle = projected !== null ? trendFinding(formatMonthYear(thisMonth).split(" ")[0]!, projected, avg) : avg ? `You spend about ${formatGBP(avg, { whole: true })} a month` : "Monthly spend";
   const first = bars[0], lastBar = bars.at(-1);
@@ -159,9 +162,9 @@ export function AnalyticsScreen() {
         </ChartCard>
 
         <ChartCard testId="chart-trend" loading={totals.isLoading} empty={past.length === 0 && monthSpendSoFar === 0}
-          finding={trendTitle} sub={first && lastBar ? `Monthly spend, ${formatMonthYear(first.month).replace(/(\w+) (\d+)/, "$1 $2").slice(0, 3)} ${first.month.slice(0, 4)} – ${formatMonthYear(lastBar.month).slice(0, 3)} ${lastBar.month.slice(0, 4)}${projected !== null ? " · hatched = projected" : ""}` : "Monthly spend"}
+          finding={trendTitle} sub={first && lastBar ? `Monthly spend, ${formatMonthYear(first.month).replace(/(\w+) (\d+)/, "$1 $2").slice(0, 3)} ${first.month.slice(0, 4)} – ${formatMonthYear(lastBar.month).slice(0, 3)} ${lastBar.month.slice(0, 4)}${projected !== null ? " · hatched = projected" : ""}${partialBars.length ? " · Partial: before tracking" : ""}` : "Monthly spend"}
           actions={<button className={`chip plain ${showIncome ? "sel" : ""}`} style={{ height: 30, fontSize: 12 }} aria-pressed={showIncome} onClick={() => setShowIncome((v) => !v)}>Income</button>}
-          table={{ columns: ["Month", "Spend", "Income"], rows: bars.map((b) => [formatMonthYear(b.month), formatGBP(b.spend + b.projectedExtra) + (b.projectedExtra ? " (projected)" : ""), formatGBP(b.income)]) }}>
+          table={{ columns: ["Month", "Spend", "Income"], rows: bars.map((b) => [formatMonthYear(b.month) + (isPartial(b.month) && !b.isCurrent ? " (partial: before tracking)" : ""), formatGBP(b.spend + b.projectedExtra) + (b.projectedExtra ? " (projected)" : ""), formatGBP(b.income)]) }}>
           <TrendChart bars={bars} avg={avg} showIncome={showIncome} />
         </ChartCard>
 

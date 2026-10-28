@@ -20,6 +20,8 @@ export interface Profile {
   reminder_time: string; // "21:00:00"
   reminder_prompted: boolean;
   bills_notify: boolean;
+  /** The earliest opening date of a live account; months before it are "Partial: before tracking" (BAL-07). */
+  tracking_started_on?: ISODate | null;
   last_reminder_on: ISODate | null;
   onboarded_at: string | null;
 }
@@ -31,6 +33,8 @@ export interface Account {
   type: AccountType;
   opening_balance_pence: number;
   opening_date: ISODate;
+  /** The last reconcile; with the opening date it is the balance anchor (BAL-01). */
+  last_reconciled_on?: ISODate | null;
   counts_as_cash: boolean;
   is_default: boolean;
   sort_order: number;
@@ -110,6 +114,11 @@ export interface TxnRow {
   /** The recurring payment that logged this (REC-09), and whether its amount is still an estimate. Absent on older cached rows. */
   recurring_id?: string | null;
   is_estimate?: boolean;
+  /** Whether this row moves an account balance (BAL-02). Absent on older cached rows: then it does. */
+  counts_in_balance?: boolean;
+  counter_counts_in_balance?: boolean | null;
+  is_reconcile?: boolean;
+  occurred_tz?: string | null;
   /** Set on rows that exist only in the offline outbox and have not reached the server yet. */
   pending?: boolean;
 }

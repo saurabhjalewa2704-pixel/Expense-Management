@@ -9,7 +9,7 @@ import { accountTypeLabel } from "@/lib/accounts";
 import { addMonths, formatLong, formatShort, londonTime, monthEnd, monthStart, yearEnd, yearStart, type ISODate } from "@/lib/dates";
 import { UI } from "@/lib/icons";
 import { formatGBP } from "@/lib/money";
-import { useAccounts, useBalances, useCashFlow, useCashSeries, useNow, useToday, useTotals } from "@/lib/queries/hooks";
+import { useAccounts, useBalances, useCashFlow, useCashSeries, useNonBalanceSpend, useNow, useProfile, useToday, useTotals } from "@/lib/queries/hooks";
 import { useAnimatedNumber } from "@/lib/use-animated-number";
 
 type Span = "month" | "year";
@@ -21,10 +21,14 @@ export function CashScreen() {
   const [asAt, setAsAt] = useState<ISODate | null>(null);
   const [span, setSpan] = useState<Span>("month");
   const [picking, setPicking] = useState(false);
-  const at = asAt && asAt <= today ? asAt : today;
+  const start = useProfile().data?.tracking_started_on ?? null;
+  // BAL-06: there are no balances before Sterling started tracking, so the scrubber and the date picker stop there
+  const wanted = asAt && asAt <= today ? asAt : today;
+  const at = start && wanted < start ? start : wanted;
+  const tooEarly = !!start && !!asAt && asAt < start;
   const isToday = at === today;
 
-  const from = span === "month" ? monthStart(at) : yearStart(at);
+  const from = (() => { const f = span === "month" ? monthStart(at) : yearStart(at); return start && f < start ? start : f; })();
   const to = (span === "month" ? monthEnd(at) : yearEnd(at)) < today ? (span === "month" ? monthEnd(at) : yearEnd(at)) : today;
   const series = useCashSeries(from, to);
   // the figure and its equation are for the month containing the chosen day (the owner's definition, PRD §6.5)
@@ -35,6 +39,7 @@ export function CashScreen() {
   const accounts = useAccounts().data ?? [];
   const balances = useBalances(at).data;
   const cash = useAnimatedNumber(flow.data?.closing_pence);
+  const nonBal = useNonBalanceSpend(eqFrom, at).data;
 
   const f = flow.data;
   const pool = (balances ?? []).filter((b) => b.counts_as_cash);
@@ -86,6 +91,14 @@ export function CashScreen() {
         ) : <div className="skeleton" style={{ height: 180, marginBottom: 12 }} aria-busy />}
       </div>
 
+      {nonBal && (nonBal.pre_tracking_pence > 0 || nonBal.pre_reconcile_pence > 0) && (
+        <p className="sub" data-testid="non-balance-note" style={{ margin: "12px 16px 0", lineHeight: 1.45 }}>
+          {nonBal.pre_tracking_pence > 0
+            ? `${formatGBP(nonBal.pre_tracking_pence)} of ${formatLong(at).split(" ")[2]} spending was paid before you started tracking. It’s in Analytics, not in this figure.`
+            : `${formatGBP(nonBal.pre_reconcile_pence)} of ${formatLong(at).split(" ")[2]} spending was already in a balance you reconciled. It’s in Analytics, not in this figure.`}
+        </p>
+      )}
+
       {balances && (
         <>
           <div className="eyebrow group-label">In available cash</div>
@@ -106,8 +119,9 @@ export function CashScreen() {
       <Sheet open={picking} onOpenChange={setPicking} title="Pick a date">
         <div className="vaul-body">
           <div className="sheet-head"><span /><span className="t">Cash on a day</span><button className="txt" onClick={() => setPicking(false)}>Cancel</button></div>
-          <input type="date" className="field w-full" aria-label="Date" max={today} value={at} onChange={(e) => { if (e.target.value) { setAsAt(e.target.value); setPicking(false); } }} />
+          <input type="date" className="field w-full" aria-label="Date" min={start ?? undefined} max={today} value={at} onChange={(e) => { if (e.target.value) { setAsAt(e.target.value); setPicking(false); } }} />
           <button className="btn secondary" style={{ marginTop: 12, height: 48 }} onClick={() => { setAsAt(null); setPicking(false); }}>Back to now</button>
+          {start && <p className="sub" data-testid="tracking-start-note" style={{ margin: "10px 4px 0", color: tooEarly ? "var(--caution)" : undefined }}>Sterling started tracking on {formatShort(start)}. There are no balances before that.</p>}
           <p className="sub" style={{ margin: "10px 4px 0" }}>{formatShort(addMonths(at, 0))}: the figure is worked out from your transactions up to the end of that day.</p>
         </div>
       </Sheet>

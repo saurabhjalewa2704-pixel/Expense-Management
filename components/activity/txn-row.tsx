@@ -20,6 +20,10 @@ export function rowAmount(r: TxnRow): { text: string; positive: boolean; muted: 
   return { text: formatGBP(r.amount_pence), positive: false, muted: false };
 }
 
+/** BAL-05: a row that does not move a balance says so under its amount (it is never hidden). */
+export const notInBalance = (r: Pick<TxnRow, "type" | "counts_in_balance" | "counter_counts_in_balance">) =>
+  r.type === "transfer" ? r.counts_in_balance === false && r.counter_counts_in_balance === false : r.counts_in_balance === false;
+
 /** One transaction. Tapping opens it in Quick Add to edit (CAP-04). */
 export function TxnItem({ row, subtitle }: { row: TxnRow; subtitle?: string }) {
   const { open } = useQuickAdd();
@@ -36,6 +40,7 @@ export function TxnItem({ row, subtitle }: { row: TxnRow; subtitle?: string }) {
       </div>
       <div className={`amt ${amt.positive ? "pos" : ""} ${amt.muted ? "muted" : ""}`}>
         {amt.text}
+        {notInBalance(row) && <small data-testid="not-in-balance" style={{ display: "block", color: "var(--ink-3)", fontWeight: 400 }}>Not in balance</small>}
         {row.pending && (
           <small aria-label="Waiting to sync" title="Waiting to sync" style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 4 }}>
             <UI.CloudUpload size={12} strokeWidth={2} aria-hidden /> Waiting

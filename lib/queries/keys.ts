@@ -41,6 +41,7 @@ export const qk = {
   suggestHistory: ["suggest-history"] as const,
   lastIncomeAccount: ["last-income-account"] as const,
   pots: ["pots"] as const,
+  nonBalanceSpend: (from: ISODate, to: ISODate) => ["non-balance-spend", from, to] as const,
   recurring: ["recurring"] as const,
   recurringItems: ["recurring", "items"] as const,
   recurringOccurrences: (from: ISODate, to: ISODate) => ["recurring", "occurrences", from, to] as const,

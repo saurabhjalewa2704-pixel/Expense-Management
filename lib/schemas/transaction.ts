@@ -17,6 +17,11 @@ const base = z.object({
   tags: z.array(z.string().trim().min(1).max(30)).max(10).default([]),
   occurred_on: isoDate,
   occurred_at: z.iso.datetime({ offset: true }).nullish(),
+  /** The owner's answer when an entry is dated before the account's anchor (BAL-03). Null/absent: the database decides. */
+  counts_in_balance: z.boolean().nullish(),
+  counter_counts_in_balance: z.boolean().nullish(),
+  /** IANA zone where it happened (EC-D1). */
+  occurred_tz: z.string().max(64).nullish(),
 });
 
 type Shape = z.infer<typeof base>;

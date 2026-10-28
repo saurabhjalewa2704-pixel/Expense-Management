@@ -5,11 +5,11 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { deleteByClientId, deleteTransaction, restoreTransaction, updateTransaction } from "@/app/actions/transactions";
 import { Sheet } from "@/components/ui/sheet";
 import { useToast } from "@/components/ui/toast";
-import { dateChipLabel, formatShort, todayLondon, type ISODate } from "@/lib/dates";
+import { defaultCounts, pendingFlags } from "@/lib/balance-flags";
+import { dateChipLabel, todayLondon, type ISODate } from "@/lib/dates";
+import { BalanceFlagBlock } from "./balance-flag-block";
 import { CategoryIcon, UI } from "@/lib/icons";
 import { formatGBP, pressKey, toPence } from "@/lib/money";
-import { moveAccountStart } from "@/app/actions/accounts";
-import { qk } from "@/lib/queries/keys";
 import { ordinal } from "@/lib/recurrence";
 import { fetchRecurringDuplicate } from "@/lib/queries/fetchers";
 import { supabaseBrowser } from "@/lib/supabase/client";
@@ -27,6 +27,8 @@ import { usePots } from "@/lib/queries/hooks";
 import { CategoryPicker } from "./category-picker";
 
 type Mode = "expense" | "income" | "transfer";
+/** The IANA zone this device is in, stored with the entry (EC-D1). */
+const deviceZone = (): string | undefined => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return undefined; } };
 export interface QuickAddOptions { mode?: Mode; edit?: TxnRow; date?: ISODate }
 
 const Ctx = createContext<{ open: (o?: QuickAddOptions) => void; isOpen: boolean }>({ open: () => {}, isOpen: false });
@@ -96,8 +98,8 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
   const [date, setDate] = useState<ISODate>(todayLondon());
   const [note, setNote] = useState("");
   const [picker, setPicker] = useState<null | "category" | "account" | "counter" | "date" | "note" | "pot">(null);
-  const [confirm, setConfirm] = useState<null | "discard" | "delete" | "duplicate" | "start">(null);
-  const [early, setEarly] = useState<Account[]>([]);
+  const [confirm, setConfirm] = useState<null | "discard" | "delete" | "duplicate">(null);
+  const [flagAnswer, setFlagAnswer] = useState<boolean | null>(null);       // the owner's explicit answer about the balance (BAL-03); null = let the database decide
   const [dup, setDup] = useState<{ name: string; due_on: ISODate } | null>(null);
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
@@ -111,7 +113,7 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
   // ---- reset every time the sheet is opened ----
   useEffect(() => {
     if (!open) return;
-    setError(undefined); setConfirm(null); setPicker(null); setBusy(false); setNowMs(Date.now());
+    setError(undefined); setConfirm(null); setPicker(null); setBusy(false); setNowMs(Date.now()); setFlagAnswer(null);
     if (editing) {
       setMode(editing.type === "adjustment" ? "expense" : (editing.type as Mode));
       setAmount(`${Math.trunc(editing.amount_pence / 100)}.${String(editing.amount_pence % 100).padStart(2, "0")}`.replace(/\.00$/, ""));
@@ -127,12 +129,16 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
   // defaults that depend on data which may still be loading when the sheet opens
   const effAccount = accountId ?? (mode === "income" ? (lastIncomeAccount && live.find((a) => a.id === lastIncomeAccount)?.id) : undefined) ?? defaultAccount?.id ?? null;
   const effCounter = counterId ?? live.find((a) => a.id !== effAccount)?.id ?? null;
+  useEffect(() => { setFlagAnswer(null); }, [effAccount, date]);       // a new account or date is a new question
 
   const pots = usePots().data ?? [];
   const potName = pots.find((x) => x.pot_id === potId)?.name ?? "Pot";
   const kind = mode === "income" ? "income" : "expense";
   const pence = toPence(amount) ?? 0;
   const account = accountById(effAccount);
+  // BAL-03: does this entry move the account's balance? The owner's answer wins; an unchanged edit keeps what the row already says.
+  const sameAsSaved = !!editing && editing.account_id === effAccount && editing.occurred_on === date;
+  const effCounts = flagAnswer ?? (sameAsSaved ? editing?.counts_in_balance ?? true : account ? defaultCounts(account, date) : true);
   const counter = accountById(effCounter);
 
   const matchedPayee = useMemo<Payee | undefined>(() => {
@@ -214,21 +220,17 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
     occurred_on: date, occurred_at: !editing && date === todayLondon() ? new Date().toISOString() : (editing?.occurred_at ?? null),
     account_manual: accountManual, source: "app",
     pot_id: mode === "transfer" ? null : potId,
+    counts_in_balance: flagAnswer, occurred_tz: !editing ? deviceZone() : undefined,
   });
 
   const canSave = pence > 0 && !!effAccount && (mode === "transfer" ? !!effCounter && effCounter !== effAccount : !!categoryId || !!potId);
 
-  const save = async (categoryOverride?: string, skipDuplicateCheck = false, skipStartCheck = false) => {
+  const save = async (categoryOverride?: string, skipDuplicateCheck = false) => {
     if (busy) return;
     const category = categoryOverride ?? categoryId;
     const input = buildInput(category);
     const parsed = TxnInput.safeParse(input);
     if (!parsed.success) return setError(parsed.error.issues[0]?.message ?? "Check the entry.");
-    // An account cannot hold an entry from before its start date. Say so now, instead of letting the server refuse it later where nobody sees it.
-    if (!skipStartCheck) {
-      const tooEarly = [account, mode === "transfer" ? counter : undefined].filter((a): a is Account => !!a && date < a.opening_date);
-      if (tooEarly.length) { setEarly(tooEarly); setConfirm("start"); return; }
-    }
     setBusy(true);
 
     if (editing) {
@@ -254,7 +256,7 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
       if (hit) { setBusy(false); setDup({ name: hit.payee_name, due_on: hit.due_on }); setConfirm("duplicate"); return; }
     }
 
-    await enqueue(input);
+    await enqueue(input, pendingFlags(mode, date, account, mode === "transfer" ? counter : undefined, { a: flagAnswer }));
     close();
     const catName = category ? tree.byId.get(category)?.name : undefined;
     const message = mode === "transfer"
@@ -265,15 +267,6 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
       action: { label: "Undo", onClick: () => undo(input.client_id) },
     });
     requestSync();
-  };
-
-  const moveStartAndSave = async () => {
-    setConfirm(null);
-    const r = await moveAccountStart(early.map((a) => a.id), date);
-    if (!r.ok) { setEarly([]); return setError(r.error); }
-    setEarly([]);
-    await qc.invalidateQueries({ queryKey: qk.accounts });
-    void save(undefined, false, true);
   };
 
   /** Undo removes the entry completely. If it has already reached the server it is soft-deleted there. */
@@ -427,6 +420,11 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
               </button>
             </div>
 
+            {mode !== "transfer" && (
+              <BalanceFlagBlock account={account} accountName={account?.name ?? "account"} date={date} counts={effCounts} editing={!!editing} trackingStart={profile?.tracking_started_on}
+                onAnswer={setFlagAnswer} />
+            )}
+
             {potId && mode !== "transfer" && <p className="sub" data-testid="pot-note" style={{ margin: "8px 2px 0" }}>In “{potName}”. No category needed. Kept out of monthly spend.</p>}
 
             <div className="keypad num" role="group" aria-label="Amount keypad">
@@ -447,19 +445,6 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
         )}
       </div>
 
-      {confirm === "start" && early.length > 0 && (
-        <div role="alertdialog" aria-label="Before this account's start date" style={{ position: "absolute", inset: 0, background: "var(--scrim)", borderRadius: "var(--r-sheet)", display: "grid", placeItems: "end center", padding: "var(--gutter)", zIndex: 5 }}>
-          <div className="card" style={{ width: "100%", background: "var(--surface-2)" }}>
-            <div className="headline" data-testid="start-title">{early.map((a) => a.name).join(" and ")} {early.length > 1 ? "start" : "starts"} on {formatShort(early.map((a) => a.opening_date).sort()[0]!)}.</div>
-            <p className="sub" style={{ marginTop: 4 }}>This is dated {formatShort(date)}. Move {early.length > 1 ? "their" : "its"} start back to {formatShort(date)} so it counts? The opening balance then means the balance on {formatShort(date)}, so today’s balance changes by {formatGBP(pence)}.</p>
-            <div className="stack" style={{ marginTop: 14, gap: 8 }}>
-              <button className="btn" style={{ height: 48 }} data-testid="start-move" onClick={() => void moveStartAndSave()}>Move start back and add</button>
-              <button className="btn secondary" style={{ height: 48 }} onClick={() => { setConfirm(null); setEarly([]); }}>Change the date</button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {confirm === "duplicate" && dup && (
         <div role="alertdialog" aria-label="Already logged automatically" style={{ position: "absolute", inset: 0, background: "var(--scrim)", borderRadius: "var(--r-sheet)", display: "grid", placeItems: "end center", padding: "var(--gutter)", zIndex: 5 }}>
           <div className="card" style={{ width: "100%", background: "var(--surface-2)" }}>
@@ -473,7 +458,7 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
         </div>
       )}
 
-      {confirm && confirm !== "duplicate" && confirm !== "start" && (
+      {confirm && confirm !== "duplicate" && (
         <div role="alertdialog" aria-label={confirm === "discard" ? "Discard this entry?" : "Delete this transaction?"} style={{ position: "absolute", inset: 0, background: "var(--scrim)", borderRadius: "var(--r-sheet)", display: "grid", placeItems: "end center", padding: "var(--gutter)", zIndex: 5 }}>
           <div className="card" style={{ width: "100%", background: "var(--surface-2)" }}>
             <div className="headline">{confirm === "discard" ? "Discard this entry?" : "Delete this transaction?"}</div>

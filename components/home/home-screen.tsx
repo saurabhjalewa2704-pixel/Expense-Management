@@ -62,7 +62,7 @@ function MobileHome() {
       </section>
 
       <div style={{ marginTop: 24 }} className="stack">
-        <PaceCard today={today} pace={pace} />
+        <PaceCard today={today} pace={pace} trackingStart={profile?.tracking_started_on} />
         <BillsCard />
         <InsightCard variant="home" />
         <ReminderPrompt />
@@ -97,12 +97,14 @@ function Term({ k, v, pos }: { k: string; v: string; pos?: boolean }) {
 }
 
 /** CASH-05: month-to-date spend, with a tick where last month was at this point. */
-function PaceCard({ today, pace }: { today: string; pace: ReturnType<typeof usePace>["data"] }) {
+function PaceCard({ today, pace, trackingStart }: { today: string; pace: ReturnType<typeof usePace>["data"]; trackingStart?: string | null }) {
   if (!pace) return <div className="card pace"><div className="skeleton" style={{ height: 108 }} aria-busy /></div>;
   const prevName = formatMonth(addMonths(monthStart(today), -1));
   const diff = pace.prev_spend_pence - pace.spend_pence;
   const scale = Math.max(pace.prev_total_pence, pace.spend_pence, pace.prev_spend_pence, 1);
-  const hasPrev = pace.prev_total_pence > 0;
+  // BAL-07: a month that started before tracking only has what was back-filled, so it is not a fair comparison
+  const prevPartial = !!trackingStart && addMonths(monthStart(today), -1) <= monthStart(trackingStart);
+  const hasPrev = pace.prev_total_pence > 0 && !prevPartial;
   return (
     <div className="card pace" data-testid="pace">
       <div className="row-between"><span className="k">{formatMonth(today)} so far</span><span className="k">Day {pace.day_of_month} of {pace.days_in_month}</span></div>
@@ -117,7 +119,7 @@ function PaceCard({ today, pace }: { today: string; pace: ReturnType<typeof useP
           {diff === 0 ? `Level with this point in ${prevName}` : `${formatGBP(Math.abs(diff))} ${diff > 0 ? "less" : "more"} than this point in ${prevName}`}
         </div>
       ) : (
-        <div className="pace-note" style={{ marginTop: 22 }}><i className="dot" />No {prevName} to compare with yet</div>
+        <div className="pace-note" style={{ marginTop: 22 }}><i className="dot" />{prevPartial ? "Not enough history yet" : `No ${prevName} to compare with yet`}</div>
       )}
     </div>
   );

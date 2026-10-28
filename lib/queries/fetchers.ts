@@ -152,6 +152,9 @@ export async function fetchAskTurns(db: SupabaseClient): Promise<AskTurn[]> {
   return rows.reverse();
 }
 
+export const fetchNonBalanceSpend = async (db: SupabaseClient, from: ISODate, to: ISODate) =>
+  (await unwrap<{ pre_tracking_pence: number; pre_reconcile_pence: number }[]>(db.rpc("non_balance_spend", { p_from: from, p_to: to })))[0] ?? { pre_tracking_pence: 0, pre_reconcile_pence: 0 };
+
 // ── Bills ──────────────────────────────────────────────────────────────────────────────────────────────────────────
 export const fetchRecurringItems = (db: SupabaseClient) =>
   unwrap<RecurringItem[]>(db.from("recurring_items").select("*").order("next_due_on").order("created_at"));

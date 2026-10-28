@@ -20,6 +20,8 @@ export async function createTransaction(input: unknown): Promise<ActionResult<Tr
     p_occurred_on: v.occurred_on, p_occurred_at: v.occurred_at ?? null, p_source: v.source,
     p_needs_review: false, p_account_manual: v.account_manual,
     p_pot_id: v.type === "transfer" ? null : (v.pot_id ?? null),
+    p_counts_in_balance: v.counts_in_balance ?? null, p_counter_counts_in_balance: v.type === "transfer" ? (v.counter_counts_in_balance ?? null) : null,
+    p_occurred_tz: v.occurred_tz ?? null,
   });
   if (error) return fail(friendlyDbError(error), isRetryableDbError(error));
   return ok(data as Transaction);
@@ -37,6 +39,7 @@ export async function updateTransaction(id: string, input: unknown): Promise<Act
     p_payee: v.type === "transfer" ? null : (v.payee ?? null), p_note: v.note ?? null, p_tags: v.tags,
     p_occurred_on: v.occurred_on, p_occurred_at: v.occurred_at ?? null,
     p_pot_id: v.type === "transfer" ? null : (v.pot_id ?? null),
+    p_counts_in_balance: v.counts_in_balance ?? null, p_counter_counts_in_balance: v.type === "transfer" ? (v.counter_counts_in_balance ?? null) : null,
   });
   if (error) return fail(friendlyDbError(error));
   return ok(data as Transaction);

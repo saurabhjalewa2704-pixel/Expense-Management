@@ -17,6 +17,8 @@ export interface OutboxItem {
   /** The server accepted it at this time; hidden from views once a refetch is newer than this. */
   confirmed_at?: number;
   payload: TxnInput;
+  /** Optimistic balance flags (BAL-03) so offline balances match what the server will compute: the account side and the receiving side. */
+  flags?: { a: boolean; b: boolean | null };
 }
 
 class SterlingDB extends Dexie {
@@ -32,8 +34,8 @@ const db = () => (instance ??= new SterlingDB());
 
 export const newClientId = () => uuidv7();
 
-export async function enqueue(payload: TxnInput): Promise<OutboxItem> {
-  const item: OutboxItem = { client_id: payload.client_id, created_at: Date.now(), status: "pending", attempts: 0, payload };
+export async function enqueue(payload: TxnInput, flags?: OutboxItem["flags"]): Promise<OutboxItem> {
+  const item: OutboxItem = { client_id: payload.client_id, created_at: Date.now(), status: "pending", attempts: 0, payload, flags };
   await db().outbox.put(item);
   return item;
 }

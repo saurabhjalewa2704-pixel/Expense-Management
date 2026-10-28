@@ -18,10 +18,11 @@ const inPool = (accounts: readonly Account[], id: string | null | undefined) =>
 /** Effect of one pending item on one account's balance. */
 export function balanceDelta(item: OutboxItem, accountId: string): number {
   const p = item.payload;
-  if (p.type === "expense") return p.account_id === accountId ? -p.amount_pence : 0;
-  if (p.type === "income") return p.account_id === accountId ? p.amount_pence : 0;
+  const a = item.flags?.a ?? true, b = item.flags?.b ?? true;             // an entry that does not count moves nothing (BAL-02)
+  if (p.type === "expense") return p.account_id === accountId && a ? -p.amount_pence : 0;
+  if (p.type === "income") return p.account_id === accountId && a ? p.amount_pence : 0;
   if (p.type === "transfer") {
-    return (p.account_id === accountId ? -p.amount_pence : 0) + (p.counter_account_id === accountId ? p.amount_pence : 0);
+    return (p.account_id === accountId && a ? -p.amount_pence : 0) + (p.counter_account_id === accountId && b ? p.amount_pence : 0);
   }
   return 0;
 }
@@ -33,14 +34,15 @@ export function applyBalances<T extends { account_id: string; balance_pence: num
 /** cash_flow() for a period, with pending items inside [from, to] layered on. */
 export function applyFlow(flow: CashFlow, items: readonly OutboxItem[], accounts: readonly Account[], from: ISODate, to: ISODate): CashFlow {
   let income = 0, spend = 0, pot = 0, setAside = 0;
-  for (const { payload: p } of items) {
+  for (const { payload: p, flags } of items) {
     if (p.occurred_on < from || p.occurred_on > to) continue;
-    if (p.type === "income" && inPool(accounts, p.account_id)) { if (p.pot_id) pot += p.amount_pence; else income += p.amount_pence; }
-    else if (p.type === "expense" && inPool(accounts, p.account_id)) { if (p.pot_id) pot -= p.amount_pence; else spend += p.amount_pence; }
+    const counts = flags?.a ?? true;
+    if (p.type === "income" && inPool(accounts, p.account_id) && counts) { if (p.pot_id) pot += p.amount_pence; else income += p.amount_pence; }
+    else if (p.type === "expense" && inPool(accounts, p.account_id) && counts) { if (p.pot_id) pot -= p.amount_pence; else spend += p.amount_pence; }
     else if (p.type === "transfer") {
-      const a = inPool(accounts, p.account_id), b = inPool(accounts, p.counter_account_id);
-      if (a && !b) setAside -= p.amount_pence;
-      if (!a && b) setAside += p.amount_pence;
+      const a = inPool(accounts, p.account_id) && counts, b = inPool(accounts, p.counter_account_id) && (flags?.b ?? true);
+      if (a && !(inPool(accounts, p.counter_account_id))) setAside -= p.amount_pence;
+      if (b && !(inPool(accounts, p.account_id))) setAside += p.amount_pence;
     }
   }
   return {
@@ -75,6 +77,7 @@ export function pendingRow(item: OutboxItem, accounts: readonly Account[], categ
     payee_id: null, payee_name: p.payee?.trim() || null, note: p.note ?? null, tags: p.tags ?? [],
     occurred_on: p.occurred_on, occurred_at: p.occurred_at ?? null, source: p.source ?? "app", needs_review: false,
     created_at: new Date(item.created_at).toISOString(), pot_id: p.pot_id ?? null, pot_name: pots.find((x) => x.pot_id === p.pot_id)?.name ?? null, pending: true,
+    counts_in_balance: item.flags?.a ?? true, counter_counts_in_balance: p.type === "transfer" ? item.flags?.b ?? true : null,
   };
 }
 

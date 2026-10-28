@@ -9,7 +9,7 @@ import { supabaseBrowser } from "@/lib/supabase/client";
 import type { AccountBalance, TxnRow } from "@/lib/types";
 import {
   fetchAccounts, fetchAccountSeries, fetchActivityPage, fetchBalances, fetchCashFlow, fetchCashSeries, fetchCategories,
-  fetchCategoryMonthly, fetchCategoryRemaining, fetchRecurringItems, fetchRecurringOccurrences, fetchItemOccurrences, fetchBankHolidays, fetchRecurringSuggestions, fetchTopPlaces, fetchDailySpend, fetchMonthlyTotals, fetchPace, fetchPayees, fetchProfile, fetchSpendByCategory,
+  fetchCategoryMonthly, fetchCategoryRemaining, fetchNonBalanceSpend, fetchRecurringItems, fetchRecurringOccurrences, fetchItemOccurrences, fetchBankHolidays, fetchRecurringSuggestions, fetchTopPlaces, fetchDailySpend, fetchMonthlyTotals, fetchPace, fetchPayees, fetchProfile, fetchSpendByCategory,
   fetchAskTurns, fetchPotCategories, fetchPots, fetchTransactionCount, fetchWeekActivity, fetchInsightFeedback, fetchInsightRuns, fetchLastIncomeAccount, fetchSuggestHistory, fetchTopPayees, fetchTotals, PAGE_SIZE, type ActivityCursor,
 } from "./fetchers";
 import { qk, type ActivityFilters } from "./keys";
@@ -194,6 +194,8 @@ export const useInsightFeedback = () => useQuery({ queryKey: [...qk.insights, "f
 export const useWeekActivity = (from: ISODate, to: ISODate) => useQuery({ queryKey: ["week-activity", from, to] as const, queryFn: () => fetchWeekActivity(db(), from, to) });
 export const useTransactionCount = () => useQuery({ queryKey: ["txn-count"] as const, queryFn: () => fetchTransactionCount(db()), staleTime: 60_000 });
 
+export const useNonBalanceSpend = (from: ISODate, to: ISODate) =>
+  useQuery({ queryKey: qk.nonBalanceSpend(from, to), queryFn: () => fetchNonBalanceSpend(db(), from, to), placeholderData: keepPreviousData });
 export const useRecurringItems = () => useQuery({ queryKey: qk.recurringItems, queryFn: () => fetchRecurringItems(db()) });
 export const useRecurringOccurrences = (from: ISODate, to: ISODate) =>
   useQuery({ queryKey: qk.recurringOccurrences(from, to), queryFn: () => fetchRecurringOccurrences(db(), from, to), placeholderData: keepPreviousData });
