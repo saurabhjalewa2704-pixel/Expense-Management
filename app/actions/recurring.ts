@@ -6,6 +6,9 @@ import { asRule } from "@/lib/bills";
 import { addDays, type ISODate } from "@/lib/dates";
 import { nextOccurrences, type Occurrence } from "@/lib/recurrence";
 import { RecurringInput } from "@/lib/schemas/recurring";
+import { londonParts } from "@/lib/dates";
+import { shouldAct } from "@/lib/recurring-engine";
+import { nameLookup, runDue, type RunItem } from "@/lib/recurring-run";
 import { supabaseServer } from "@/lib/supabase/server";
 import type { RecurringItem } from "@/lib/types";
 
@@ -151,4 +154,39 @@ export async function dismissSuggestion(payee: string): Promise<ActionResult> {
   const db = await supabaseServer();
   const { error } = await db.from("recurring_dismissed").upsert({ payee_id: payee }, { onConflict: "user_id,payee_id", ignoreDuplicates: true });
   return error ? fail(friendlyDbError(error)) : ok(undefined);
+}
+
+/**
+ * Catch up on whatever is due, from the app itself. The scheduled job is the main way bills log (and the only one that can send a
+ * notification), but it needs set-up on the host. This runs the same loop as the signed-in owner whenever the app is opened, so a bill
+ * dated 27 Oct appears with its own date the next time the app is used, whether or not the scheduled job ever ran.
+ * Like the job, it waits for 06:00 London time (the test clock skips that).
+ */
+export async function catchUpBills(): Promise<ActionResult<{ logged: number; names: string[] }>> {
+  const db = await supabaseServer();
+  const { data: u } = await db.auth.getUser();
+  if (!u.user) return fail("Please sign in again.", true);
+  if (!process.env.STERLING_TEST_TODAY && !shouldAct(londonParts(Date.now()).hour)) return ok({ logged: 0, names: [] });
+  const today = serverToday();
+  const { data: items, error } = await db.from("recurring_items").select("*").is("ended_at", null).is("paused_at", null).lte("next_due_on", today);
+  if (error) return fail(friendlyDbError(error));
+  const due = (items ?? []) as RunItem[];
+  let logged: { bill: { name: string } }[] = [];
+  if (due.length) {
+    const run = await runDue(db, "recurring_log_now", due, today, await holidays(db), await nameLookup(db, due));
+    logged = run.logged;
+    if (run.errors.length) console.error("[bills] catch-up", run.errors);
+  }
+  await db.from("profiles").update({ bills_checked_at: new Date().toISOString() }).eq("id", u.user.id);
+  return ok({ logged: logged.length, names: logged.map((l) => l.bill.name) });
+}
+
+/** What the Bills screen needs to tell the owner whether the scheduled job is set up (booleans only, never the secrets). */
+export async function schedulerStatus(): Promise<ActionResult<{ cronSecret: boolean; serviceKey: boolean; cronAt: string | null; cronAlive: boolean; checkedAt: string | null }>> {
+  const db = await supabaseServer();
+  const { data, error } = await db.from("profiles").select("bills_cron_at, bills_checked_at").single();
+  if (error) return fail(friendlyDbError(error));
+  const p = data as { bills_cron_at: string | null; bills_checked_at: string | null };
+  const alive = !!p.bills_cron_at && Date.now() - new Date(p.bills_cron_at).getTime() < 36 * 3600_000;    // a daily job that missed a day is not yet "broken"
+  return ok({ cronSecret: !!process.env.CRON_SECRET, serviceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY, cronAt: p.bills_cron_at, cronAlive: alive, checkedAt: p.bills_checked_at });
 }

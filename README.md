@@ -58,6 +58,14 @@ select cron.schedule('sterling-bills', '0 * * * *', $$
 $$);
 ```
 
+### Making bills log on their own (Vercel Hobby)
+
+Bills are logged three ways, and they all use the same safe, repeatable code, so they never double-log:
+
+1. **The app itself, when you open it.** Anything due on or before today is logged with its own due date (from 06:00 London time). This needs no set-up. You'll see "1 bill logged: Netflix".
+2. **The daily Vercel job** (`vercel.json`, 06:00 UTC). Logs while you're not using the app and sends the notifications. Hobby allows one run a day, anywhere inside that hour. It needs two environment variables on Vercel: `CRON_SECRET` (any long random string) and `SUPABASE_SERVICE_ROLE_KEY` (Supabase → Project Settings → API → the `service_role` secret). Without `CRON_SECRET` Vercel calls the job without the password and it is refused; without the service key it cannot write. After adding variables, **redeploy** (Deployments → ⋯ → Redeploy), then Settings → Cron Jobs → Run on `/api/cron/recurring`. Bills shows "Logged automatically each morning · last run …" once it has worked, and a warning naming what is missing while it hasn't.
+3. **An hourly job from Supabase** (optional, free): the `pg_cron` snippet above, for logging at about 6am all year.
+
 ## Develop
 
 ```bash
