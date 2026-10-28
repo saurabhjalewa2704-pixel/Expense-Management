@@ -3,10 +3,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { archiveCategory, deleteCategory, mergeCategory } from "@/app/actions/categories";
+import { archiveCategory, deleteCategory, mergeCategory, setTravelLike } from "@/app/actions/categories";
 import { CategoryEditor } from "@/components/capture/category-editor";
 import { PageHeader } from "@/components/ui/page-header";
 import { Sheet } from "@/components/ui/sheet";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/toast";
 import { CategoryIcon, UI } from "@/lib/icons";
 import { useCategoryTree } from "@/lib/queries/hooks";
@@ -80,6 +81,15 @@ export function CategoryDetail({ id }: { id: string }) {
         </>
       )}
 
+      {cat.kind === "expense" && (
+        <div className="list" style={{ marginTop: 20 }}>
+          <div className="row">
+            <div className="row-main"><div className="row-t" style={{ fontWeight: 400 }}>Travel-like</div><div className="row-s">Offer its expenses as earlier bookings when you plan a trip</div></div>
+            <Switch label="Travel-like" checked={!!cat.travel_like} onChange={async (v) => { const r = await setTravelLike(cat.id, v); if (!r.ok) return setError(r.error); await refresh(); }} />
+          </div>
+        </div>
+      )}
+
       <div className="stack" style={{ marginTop: 28, gap: 10 }}>
         <button className="btn secondary" style={{ height: 48 }} onClick={() => setMerging(true)}><UI.Merge size={18} strokeWidth={1.75} aria-hidden />Merge into another category</button>
         <button className="btn secondary" style={{ height: 48 }} onClick={toggleArchive}><UI.Archive size={18} strokeWidth={1.75} aria-hidden />{cat.archived_at ? "Restore to pickers" : "Archive (hide from pickers)"}</button>
@@ -107,12 +117,17 @@ function MergeSheet({ open, onOpenChange, source, onDone }: { open: boolean; onO
   const [target, setTarget] = useState<Category | null>(null);
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
-  const own = new Set([source.id, ...tree.children(source.id).map((c) => c.id)]);
-  const options = tree.parents(source.kind).flatMap((p) => [p, ...tree.children(p.id)]).filter((c) => !own.has(c.id));
+  const [clash, setClash] = useState<"combine" | "keep_both">("combine");
+  const kids = tree.children(source.id);
+  const own = new Set([source.id, ...kids.map((c) => c.id)]);
+  // a category with sub-categories can only move into a top-level one (two levels only)
+  const options = tree.parents(source.kind).flatMap((p) => [p, ...(kids.length ? [] : tree.children(p.id))]).filter((c) => !own.has(c.id));
+  // EC-K2: sub-categories that share a name with one already under the target
+  const clashes = target && !target.parent_id ? kids.filter((k) => tree.children(target.id).some((c) => c.name.toLowerCase() === k.name.toLowerCase())) : [];
   const go = async () => {
     if (!target) return;
     setBusy(true);
-    const r = await mergeCategory(source.id, target.id);
+    const r = await mergeCategory(source.id, target.id, clash);
     setBusy(false);
     if (!r.ok) return setError(r.error);
     onOpenChange(false);
@@ -122,7 +137,7 @@ function MergeSheet({ open, onOpenChange, source, onDone }: { open: boolean; onO
     <Sheet open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) { setTarget(null); setError(undefined); } }} title="Merge into another category" maxHeight="92dvh">
       <div className="vaul-body">
         <div className="sheet-head"><button className="txt" onClick={() => onOpenChange(false)}>Cancel</button><span className="t">Merge into…</span><span /></div>
-        <p className="sub" style={{ marginBottom: 12 }}>Every transaction in {source.name} moves to the category you choose, then {source.name} is archived.</p>
+        <p className="sub" style={{ marginBottom: 12 }}>Every transaction in {source.name} moves to the category you choose{kids.length ? ", and its sub-categories move under it" : ""}, then {source.name} is archived.</p>
         <div className="subs" style={{ marginTop: 0 }}>
           {options.map((c) => (
             <button key={c.id} className="row" style={{ width: "100%", textAlign: "left", paddingLeft: c.parent_id ? 36 : 16 }} onClick={() => setTarget(c)} aria-pressed={target?.id === c.id}>
@@ -131,6 +146,15 @@ function MergeSheet({ open, onOpenChange, source, onDone }: { open: boolean; onO
             </button>
           ))}
         </div>
+        {clashes.length > 0 && (
+          <div className="card" style={{ marginTop: 12 }} data-testid="merge-clash">
+            <div className="headline">{clashes.map((k) => k.name).join(", ")} {clashes.length === 1 ? "is" : "are"} in both.</div>
+            <div className="seg" role="radiogroup" aria-label="Same-named sub-categories" style={{ marginTop: 10 }}>
+              <button role="radio" aria-checked={clash === "combine"} className={clash === "combine" ? "on" : ""} onClick={() => setClash("combine")}>Combine</button>
+              <button role="radio" aria-checked={clash === "keep_both"} className={clash === "keep_both" ? "on" : ""} onClick={() => setClash("keep_both")}>Keep both</button>
+            </div>
+          </div>
+        )}
         {error && <p role="alert" className="callout" style={{ color: "var(--caution)", marginTop: 12 }}>{error}</p>}
         <button className="btn" style={{ marginTop: 16, opacity: target && !busy ? 1 : 0.4 }} disabled={!target || busy} onClick={go}>{target ? `Merge into ${target.name}` : "Choose a category"}</button>
       </div>

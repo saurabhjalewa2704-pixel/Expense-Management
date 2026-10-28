@@ -2,10 +2,11 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AccountsFilterSheet, AmountFilterSheet, CategoriesFilterSheet, PeriodSheet, PotFilterSheet, TypeFilterSheet, periodLabel, periodRange, type Period } from "./filter-sheets";
+import { AccountsFilterSheet, AmountFilterSheet, CategoriesFilterSheet, PeriodSheet, PotFilterSheet, TripFilterSheet, TypeFilterSheet, periodLabel, periodRange, type Period } from "./filter-sheets";
 import { TxnItem } from "./txn-row";
 import { groupByDay } from "@/components/accounts/account-detail";
-import { dayHeader, todayLondon } from "@/lib/dates";
+import { addDays, dayHeader, formatShort, todayLondon } from "@/lib/dates";
+import { rowSubtitle } from "@/lib/categories";
 import { UI } from "@/lib/icons";
 import { formatGBP } from "@/lib/money";
 import { useActivity, useTotals, useToday } from "@/lib/queries/hooks";
@@ -25,14 +26,15 @@ export function ActivityScreen() {
   const sp = useSearchParams();
   const urlFrom = sp.get("from") ?? undefined, urlTo = sp.get("to") ?? undefined;
   const [payeeId, setPayeeId] = useState<string | undefined>(sp.get("payee") ?? undefined);
-  const [period, setPeriod] = useState<Period>(urlFrom || urlTo ? { key: "custom", from: urlFrom, to: urlTo } : { key: "this-month", ...periodRange("this-month", todayLondon()) });
+  const [trip, setTrip] = useState<string | undefined>(sp.get("trip") ?? undefined);
+  const [period, setPeriod] = useState<Period>(urlFrom || urlTo ? { key: "custom", from: urlFrom, to: urlTo } : sp.get("trip") ? { key: "all" } : { key: "this-month", ...periodRange("this-month", todayLondon()) });
   const [accountIds, setAccountIds] = useState<string[]>([]);
   const [categoryIds, setCategoryIds] = useState<string[]>(sp.get("categories")?.split(",").filter(Boolean) ?? []);
   const [types, setTypes] = useState<string[]>([]);
   const [amount, setAmount] = useState<{ min?: number; max?: number }>({});
   const [pot, setPot] = useState<ActivityFilters["pot"]>((sp.get("pot") as ActivityFilters["pot"]) ?? undefined);
   const [recurring, setRecurring] = useState(sp.get("recurring") === "1");
-  const [sheet, setSheet] = useState<null | "period" | "accounts" | "category" | "type" | "amount" | "pot">(null);
+  const [sheet, setSheet] = useState<null | "period" | "accounts" | "category" | "type" | "amount" | "pot" | "trip">(null);
 
   useEffect(() => { const t = setTimeout(() => setDebounced(input), 250); return () => clearTimeout(t); }, [input]);
 
@@ -40,10 +42,17 @@ export function ActivityScreen() {
     const s = parseSearch(debounced);
     return {
       q: s.text || undefined, amount: s.amount, min: s.min ?? amount.min, max: s.max ?? amount.max,
-      from: period.from, to: period.to, payeeId, pot, recurring: recurring || undefined,
+      from: period.from, to: period.to && period.to < today ? period.to : today, payeeId, pot, recurring: recurring || undefined, trip,
       accountIds: accountIds.length ? accountIds : undefined, categoryIds: categoryIds.length ? categoryIds : undefined, types: types.length ? types : undefined,
     };
-  }, [debounced, period, accountIds, categoryIds, types, amount, payeeId, pot, recurring]);
+  }, [debounced, period, accountIds, categoryIds, types, amount, payeeId, pot, recurring, trip, today]);
+
+  // EC-D5: expenses dated after today are "Scheduled": listed apart, and not in the totals or balances until their day
+  const tomorrow = addDays(today, 1);
+  const scheduledFilters = useMemo<ActivityFilters>(() => (period.to && period.to < tomorrow
+    ? { ...filters, from: tomorrow, to: today }
+    : { ...filters, from: period.from && period.from > tomorrow ? period.from : tomorrow, to: period.to ?? addDays(today, 366) }), [filters, period, tomorrow, today]);
+  const scheduled = useActivity(scheduledFilters);
 
   const activity = useActivity(filters);
   const totals = useTotals(filters);
@@ -83,6 +92,7 @@ export function ActivityScreen() {
         <button className={`chip plain ${categoryIds.length ? "sel" : ""}`} onClick={() => setSheet("category")}>Category{active(categoryIds.length)} <UI.ChevronDown size={14} strokeWidth={2} aria-hidden /></button>
         <button className={`chip plain ${types.length ? "sel" : ""}`} onClick={() => setSheet("type")}>Type{active(types.length)} <UI.ChevronDown size={14} strokeWidth={2} aria-hidden /></button>
         <button className={`chip plain ${pot ? "sel" : ""}`} onClick={() => setSheet("pot")}>One-off <UI.ChevronDown size={14} strokeWidth={2} aria-hidden /></button>
+        <button className={`chip plain ${trip ? "sel" : ""}`} data-testid="trip-chip-filter" onClick={() => setSheet("trip")}><UI.MapPin size={14} strokeWidth={1.75} aria-hidden />Trip <UI.ChevronDown size={14} strokeWidth={2} aria-hidden /></button>
         <button className={`chip plain ${recurring ? "sel" : ""}`} aria-pressed={recurring} data-testid="recurring-chip" onClick={() => setRecurring((v) => !v)}><UI.Repeat size={14} strokeWidth={1.75} aria-hidden />Recurring</button>
         <button className={`chip plain ${amount.min != null || amount.max != null ? "sel" : ""}`} onClick={() => setSheet("amount")}>Amount <UI.ChevronDown size={14} strokeWidth={2} aria-hidden /></button>
       </div>
@@ -92,6 +102,12 @@ export function ActivityScreen() {
         {t ? (<>{t.txn_count.toLocaleString("en-GB")} transaction{t.txn_count === 1 ? "" : "s"} · <span className="num">{formatGBP(t.spend_pence)}</span> out{t.income_pence > 0 && <> · <span className="num pos">{formatGBP(t.income_pence)}</span> in</>}{!!t.pot_pence && <> · <span className="num" data-testid="pot-total">{formatGBP(Math.abs(t.pot_pence))}</span> {t.pot_pence < 0 ? "out" : "in"} in pots</>}</>) : " "}
       </div>
 
+      {scheduled.rows.length > 0 && (
+        <section aria-label="Scheduled" data-testid="scheduled">
+          <div className="day-h"><b>Scheduled</b><span className="num">{scheduled.rows.length}</span></div>
+          <div className="list">{[...scheduled.rows].sort((a, b) => a.occurred_on.localeCompare(b.occurred_on)).map((r) => <TxnItem key={r.client_id} row={r} subtitle={`${rowSubtitle(r)} · ${formatShort(r.occurred_on)}`} />)}</div>
+        </section>
+      )}
       {activity.isLoading && activity.rows.length === 0 ? (
         <div className="list" style={{ marginTop: 24 }} aria-busy>{[0, 1, 2, 3].map((i) => <div key={i} className="row"><div className="skeleton" style={{ height: 36, width: "100%" }} /></div>)}</div>
       ) : groups.length === 0 ? (
@@ -105,6 +121,7 @@ export function ActivityScreen() {
       <div ref={sentinel} style={{ height: 1 }} />
       {activity.isFetchingNextPage && <p className="sub" style={{ textAlign: "center", margin: "16px 0" }}>Loading…</p>}
 
+      <TripFilterSheet open={sheet === "trip"} onOpenChange={(o) => setSheet(o ? "trip" : null)} value={trip} onChange={setTrip} />
       <PotFilterSheet open={sheet === "pot"} onOpenChange={(o) => setSheet(o ? "pot" : null)} value={pot} onChange={setPot} />
       <PeriodSheet open={sheet === "period"} onOpenChange={(o) => setSheet(o ? "period" : null)} value={period} today={today} onChange={setPeriod} />
       <AccountsFilterSheet open={sheet === "accounts"} onOpenChange={(o) => setSheet(o ? "accounts" : null)} value={accountIds} onChange={setAccountIds} />

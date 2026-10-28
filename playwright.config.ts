@@ -13,6 +13,8 @@ if (existsSync(envFile)) {
 const PORT = Number(process.env.E2E_PORT ?? 3100);
 const chromium = { executablePath: process.env.CHROMIUM_PATH ?? "/opt/pw-browsers/chromium", args: ["--no-sandbox"] };
 
+const tripsProject = { name: "trips", testMatch: /\/trips\/.*\.spec\.ts/, use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 }, defaultBrowserType: "chromium" as const, launchOptions: chromium } };
+
 export default defineConfig({
   testDir: "tests/e2e",
   timeout: 60_000,
@@ -25,7 +27,9 @@ export default defineConfig({
   projects: [
     // iPhone 14 on Chromium at the installed-PWA size, 390×844 (the device profile's own 664px viewport includes Safari's toolbar).
     // The installed browser here is Chromium, so the profile's WebKit default is overridden.
-    { name: "mobile", testIgnore: /desktop\./, use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 }, defaultBrowserType: "chromium", launchOptions: chromium } },
+    { name: "mobile", testIgnore: [/desktop\./, /\/trips\//], use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 }, defaultBrowserType: "chromium", launchOptions: chromium } },
+    // The Trips specs live on Fri 12 March 2027 (PRD Appendix A.2), so the server runs with STERLING_TEST_TODAY=2027-03-12: E2E_TRIPS=1 scripts/e2e-prod.sh
+    ...(process.env.E2E_TRIPS === "1" ? [tripsProject] : []),
     { name: "desktop", testMatch: /desktop\./, use: { viewport: { width: 1440, height: 1024 }, launchOptions: chromium } },
   ],
   webServer: {

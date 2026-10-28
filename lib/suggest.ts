@@ -42,7 +42,8 @@ export function suggestCategories({ history, categories, now, today, payeeCatego
     if (!c || c.archived_at || c.kind !== "expense") return;
     seen.add(categoryId);
     const parent = c.parent_id ? byId.get(c.parent_id) : undefined;
-    out.push({ categoryId, label: c.name, parentLabel: parent?.name });
+    // EC-K5: a parent with no sub-categories is offered as itself, captioned "General"
+    out.push({ categoryId, label: c.name, parentLabel: parent?.name ?? (c.parent_id || categories.some((x) => x.parent_id === c.id && !x.archived_at) ? undefined : "General") });
   };
 
   push(payeeCategoryId);

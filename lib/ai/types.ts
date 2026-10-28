@@ -17,7 +17,9 @@ export interface Entity { id: string; kind: "category" | "payee"; name: string }
 
 export interface Facts {
   generated_on: ISODate;
-  scope: "weekly" | "monthly" | "adhoc";
+  scope: "weekly" | "monthly" | "adhoc" | "trip";
+  /** Trip scope only (TRIP-08): the trip these facts are about. */
+  trip_id?: string;
   period: { from: ISODate; to: ISODate; label: string; compare_label: string };
   facts: Fact[];
   entities: Entity[];
@@ -25,7 +27,7 @@ export interface Facts {
   preferences: string[];
 }
 
-export const CARD_TYPES = ["pace", "anomaly", "trend", "subscription", "new_payee", "win", "suggestion"] as const;
+export const CARD_TYPES = ["pace", "anomaly", "trend", "subscription", "new_payee", "win", "suggestion", "trip_pace", "trip_mix", "trip_stop", "trip_compare", "trip_big", "trip_fx"] as const;
 export type CardType = (typeof CARD_TYPES)[number];
 
 export const Card = z.object({

@@ -150,7 +150,7 @@ test.describe("categories (CAT-01..04)", () => {
     await expect.poll(async () => (await sql<{ n: number }>(`select count(*)::int n from transactions t join categories c on c.id=t.category_id where c.name='Dog walker'`))[0]!.n).toBe(1);
   });
 
-  test("CAT-04: archive hides from pickers but keeps history; delete only with no transactions; merge re-points everything", async ({ page }) => {
+  test("EC-K1 CAT-04: archive hides from pickers but keeps history; delete only with no transactions; merge re-points everything", async ({ page }) => {
     // merge "Takeaway & delivery" (it has history) into Restaurants
     const { takeaway } = await sqlOne<{ takeaway: number }>(`select count(*)::int takeaway from transactions t join categories c on c.id=t.category_id where c.name='Takeaway & delivery' and t.deleted_at is null`);
     const { rest } = await sqlOne<{ rest: number }>(`select count(*)::int rest from transactions t join categories c on c.id=t.category_id where c.name='Restaurants' and t.deleted_at is null`);

@@ -99,3 +99,17 @@ export const dateChipLabel = (d: ISODate, today: ISODate = todayLondon()) =>
   d === today ? "Today" : d === addDays(today, -1) ? "Yesterday" : formatShort(d);
 
 export const isISODate = (s: string): s is ISODate => /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(utc(s).getTime());
+
+/** The calendar date in an IANA zone at an instant (EC-D1). Falls back to London when the zone is unknown. */
+export function dateInZone(zone: string | undefined, now: Date | number = Date.now()): ISODate {
+  try {
+    return new Intl.DateTimeFormat("en-CA", { timeZone: zone || LONDON, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(now)) as ISODate;
+  } catch { return todayLondon(now); }
+}
+
+/** The day the person is living through: the device's own date, which can differ from London's when abroad (EC-D1). */
+export function deviceToday(now: Date | number = Date.now()): ISODate {
+  let zone: string | undefined;
+  try { zone = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { zone = undefined; }
+  return dateInZone(zone, now);
+}

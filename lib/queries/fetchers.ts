@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ISODate } from "@/lib/dates";
 import type {
   Account, AccountBalance, CashFlow, Category, CategorySpend, DailySpend, MonthPace, MonthlyTotal, Payee, PayeeTotal, Profile,
-  TxnRow, TxnTotals, Pot, PotCategory, TopPlace, RecurringItem, RecurringOccurrence, RecurringSuggestion,
+  TxnRow, TxnTotals, Pot, PotCategory, TopPlace, Trip, TripStop, TripCategoryBudget, TripOverviewRow, TripSummary, TripDay, TripStopTotal, TripCategoryRow, TripCandidate, RecurringItem, RecurringOccurrence, RecurringSuggestion,
 } from "@/lib/types";
 import type { ActivityFilters } from "./keys";
 
@@ -60,6 +60,7 @@ const filterArgs = (f: ActivityFilters) => ({
   p_pot_id: f.pot && f.pot !== "exclude" && f.pot !== "only" ? f.pot : null,
   p_pots: f.pot === "exclude" || f.pot === "only" ? f.pot : null,
   p_recurring: f.recurring ? true : null,
+  p_trip: f.trip ?? null,
 });
 
 export interface ActivityCursor { on: ISODate; created: string; id: string }
@@ -76,14 +77,14 @@ export async function fetchTotals(db: SupabaseClient, f: ActivityFilters): Promi
   return rows[0]!;
 }
 
-export const fetchSpendByCategory = (db: SupabaseClient, from: ISODate, to: ISODate, parent: string | null, pool = false, level: "parent" | "leaf" = "parent") =>
-  unwrap<CategorySpend[]>(db.rpc("spend_by_category", { p_from: from, p_to: to, p_parent: parent, p_pool_only: pool, p_level: level }));
+export const fetchSpendByCategory = (db: SupabaseClient, from: ISODate, to: ISODate, parent: string | null, pool = false, level: "parent" | "leaf" = "parent", noTrips = false) =>
+  unwrap<CategorySpend[]>(db.rpc("spend_by_category", { p_from: from, p_to: to, p_parent: parent, p_pool_only: pool, p_level: level, p_exclude_trips: noTrips }));
 
-export const fetchDailySpend = (db: SupabaseClient, from: ISODate, to: ISODate, excludeFixed = false) =>
-  unwrap<DailySpend[]>(db.rpc("daily_spend", { p_from: from, p_to: to, p_exclude_fixed: excludeFixed }));
+export const fetchDailySpend = (db: SupabaseClient, from: ISODate, to: ISODate, excludeFixed = false, noTrips = false) =>
+  unwrap<DailySpend[]>(db.rpc("daily_spend", { p_from: from, p_to: to, p_exclude_fixed: excludeFixed, p_exclude_trips: noTrips }));
 
-export const fetchMonthlyTotals = (db: SupabaseClient, months: number) =>
-  unwrap<MonthlyTotal[]>(db.rpc("monthly_totals", { p_months: months }));
+export const fetchMonthlyTotals = (db: SupabaseClient, months: number, noTrips = false) =>
+  unwrap<MonthlyTotal[]>(db.rpc("monthly_totals", { p_months: months, p_exclude_trips: noTrips }));
 
 export const fetchTopPayees = (db: SupabaseClient, from: ISODate, to: ISODate, limit = 10, category: string | null = null) =>
   unwrap<PayeeTotal[]>(db.rpc("top_payees", { p_from: from, p_to: to, p_limit: limit, p_category: category }));
@@ -120,8 +121,14 @@ export async function fetchLastIncomeAccount(db: SupabaseClient): Promise<string
 /** The latest insight runs (digests and refreshes), newest first. Cards are stored with the run, so this works offline from the cache. */
 export const fetchInsightRuns = (db: SupabaseClient) =>
   unwrap<import("@/lib/ai/generate").InsightRunRow[]>(
-    db.from("insight_runs").select("id,scope,period_start,period_end,facts,cards,model,input_tokens,output_tokens,used_fallback,created_at").order("created_at", { ascending: false }).limit(12),
+    db.from("insight_runs").select("id,scope,period_start,period_end,facts,cards,model,input_tokens,output_tokens,used_fallback,created_at,stale").is("trip_id", null).order("created_at", { ascending: false }).limit(12),
   );
+
+/** The newest insight run for one trip (TRIP-08). */
+export const fetchTripInsightRun = async (db: SupabaseClient, tripId: string) =>
+  (await unwrap<import("@/lib/ai/generate").InsightRunRow[]>(
+    db.from("insight_runs").select("id,scope,period_start,period_end,facts,cards,model,input_tokens,output_tokens,used_fallback,created_at").eq("trip_id", tripId).order("created_at", { ascending: false }).limit(1),
+  ))[0] ?? null;
 
 export interface FeedbackRow { run_id: string; card_key: string; card_type: string; action: "helpful" | "dismissed" | "opened" }
 export const fetchInsightFeedback = (db: SupabaseClient) =>
@@ -152,6 +159,9 @@ export async function fetchAskTurns(db: SupabaseClient): Promise<AskTurn[]> {
   return rows.reverse();
 }
 
+export const fetchNonBalanceSpend = async (db: SupabaseClient, from: ISODate, to: ISODate) =>
+  (await unwrap<{ pre_tracking_pence: number; pre_reconcile_pence: number }[]>(db.rpc("non_balance_spend", { p_from: from, p_to: to })))[0] ?? { pre_tracking_pence: 0, pre_reconcile_pence: 0 };
+
 // ── Bills ──────────────────────────────────────────────────────────────────────────────────────────────────────────
 export const fetchRecurringItems = (db: SupabaseClient) =>
   unwrap<RecurringItem[]>(db.from("recurring_items").select("*").order("next_due_on").order("created_at"));
@@ -176,3 +186,30 @@ export async function fetchTxnRow(db: SupabaseClient, id: string, on: ISODate): 
   const rows = await unwrap<TxnRow[]>(db.rpc("list_transactions", { p_from: on, p_to: on, p_limit: 200 }));
   return rows.find((r) => r.id === id) ?? null;
 }
+
+// ── Trips ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+export const fetchTrips = (db: SupabaseClient) => unwrap<Trip[]>(db.from("trips").select("*").order("start_on", { ascending: false }));
+export const fetchTripStops = (db: SupabaseClient, tripId?: string) => {
+  const q = db.from("trip_stops").select("*").order("start_on");
+  return unwrap<TripStop[]>(tripId ? q.eq("trip_id", tripId) : q);
+};
+export const fetchTripBudgets = (db: SupabaseClient, tripId: string) => unwrap<TripCategoryBudget[]>(db.from("trip_category_budgets").select("trip_id,category_id,amount_pence").eq("trip_id", tripId));
+export const fetchTripsOverview = (db: SupabaseClient, asOf: ISODate) => unwrap<TripOverviewRow[]>(db.rpc("trips_overview", { p_as_of: asOf }));
+export const fetchTripSummary = async (db: SupabaseClient, id: string, asOf: ISODate) => (await unwrap<TripSummary[]>(db.rpc("trip_summary", { p_trip: id, p_as_of: asOf })))[0] ?? null;
+export const fetchTripByDay = (db: SupabaseClient, id: string) => unwrap<TripDay[]>(db.rpc("trip_by_day", { p_trip: id }));
+export const fetchTripByStop = (db: SupabaseClient, id: string, asOf: ISODate) => unwrap<TripStopTotal[]>(db.rpc("trip_by_stop", { p_trip: id, p_as_of: asOf }));
+export const fetchTripByCategory = (db: SupabaseClient, id: string, level: "parent" | "leaf") => unwrap<TripCategoryRow[]>(db.rpc("trip_by_category", { p_trip: id, p_level: level }));
+/** Every transaction on a trip, paged through list_transactions (which caps a page at 200). */
+export async function fetchTripTxns(db: SupabaseClient, tripId: string): Promise<TxnRow[]> {
+  const out: TxnRow[] = [];
+  let cursor: ActivityCursor | undefined;
+  for (let i = 0; i < 20; i++) {
+    const page = await fetchActivityPage(db, { trip: tripId }, cursor, 200);
+    out.push(...page);
+    if (page.length < 200) break;
+    const last = page[page.length - 1]!;
+    cursor = { on: last.occurred_on, created: last.created_at, id: last.id };
+  }
+  return out;
+}
+export const fetchTripCandidates = (db: SupabaseClient, id: string) => unwrap<TripCandidate[]>(db.rpc("trip_candidates", { p_trip: id }));

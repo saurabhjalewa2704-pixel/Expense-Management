@@ -19,4 +19,14 @@ for f in "$ROOT"/tests/sql/seed/*.test.sql; do
   printf '• seed/%s ... ' "$(basename "$f")"
   if out=$(psql -q -v ON_ERROR_STOP=1 -d sterling_seed -f "$f" 2>&1); then echo ok; else echo FAILED; echo "$out"; status=1; fi
 done
+
+# the trip demo seed (PRD Appendix A.2) in its own database, with the TRIP acceptance criteria
+psql -q -v ON_ERROR_STOP=1 -d postgres -c "drop database if exists sterling_trip with (force)" -c "create database sterling_trip" >/dev/null
+fresh_db sterling_trip 2>/dev/null
+psql -q -v ON_ERROR_STOP=1 -d sterling_trip -f "$ROOT/supabase/seed_trip.sql" >/dev/null 2>&1 || { echo "seed_trip.sql FAILED"; psql -v ON_ERROR_STOP=1 -d sterling_trip -f "$ROOT/supabase/seed_trip.sql" 2>&1 | tail -5; status=1; }
+for f in "$ROOT"/tests/sql/trip/*.test.sql; do
+  [ -e "$f" ] || continue
+  printf '• trip/%s ... ' "$(basename "$f")"
+  if out=$(psql -q -v ON_ERROR_STOP=1 -d sterling_trip -f "$f" 2>&1); then echo ok; else echo FAILED; echo "$out"; status=1; fi
+done
 exit $status

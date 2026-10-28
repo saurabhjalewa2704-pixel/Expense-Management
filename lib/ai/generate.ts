@@ -3,7 +3,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ISODate } from "@/lib/dates";
 import { buildFacts, periodFor } from "./facts";
-import { fallbackCards } from "./fallback";
+import { fallbackCards, fallbackTripCards } from "./fallback";
+import { buildTripFacts } from "./trip-facts";
 import { Card, type Facts } from "./types";
 import { failureList, validateCards, type Dropped } from "./validator";
 import type { CardWriter } from "./writer";
@@ -33,10 +34,13 @@ function parseCards(raw: unknown[]): { cards: Card[]; bad: Dropped[] } {
 
 /** The narration step on its own (no database): writer → validate → one retry → fallback. */
 export async function narrate(facts: Facts, writer: CardWriter | null, log: Log = () => {}): Promise<Narration> {
+  const trip = facts.scope === "trip";
+  const min = trip ? 2 : MIN_CARDS, max = trip ? 4 : 6;                                   // a trip gets two to four cards (TRIP-08)
+  const fallback = trip ? fallbackTripCards : fallbackCards;
   const out: Narration = { cards: [], model: writer?.model ?? "template", inputTokens: 0, outputTokens: 0, usedFallback: false, dropped: [] };
   if (writer) {
     let failures: string | undefined;
-    for (let attempt = 1; attempt <= 2 && out.cards.length < MIN_CARDS; attempt++) {
+    for (let attempt = 1; attempt <= 2 && out.cards.length < min; attempt++) {
       try {
         const res = await writer.write(facts, failures);
         out.inputTokens += res.inputTokens; out.outputTokens += res.outputTokens;
@@ -53,15 +57,15 @@ export async function narrate(facts: Facts, writer: CardWriter | null, log: Log 
       }
     }
   }
-  if (out.cards.length < MIN_CARDS) {
-    // fewer than three survived (even after the retry): top up from the deterministic cards, grounded by construction
-    for (const f of fallbackCards(facts)) {
-      if (out.cards.length >= MIN_CARDS && writer) break;
-      if (!out.cards.some((c) => c.key === f.key || (c.type === f.type && c.link?.id === f.link?.id && c.link))) { out.cards.push(f); out.usedFallback = true; }
-      if (out.cards.length >= 6) break;
+  if (out.cards.length < min) {
+    // fewer than the minimum survived (even after the retry): top up from the deterministic cards, grounded by construction
+    for (const f of fallback(facts)) {
+      if (out.cards.length >= min && writer) break;
+      if (!out.cards.some((c) => c.key === f.key || (!trip && c.type === f.type && c.link?.id === f.link?.id && c.link) || (trip && c.type === f.type))) { out.cards.push(f); out.usedFallback = true; }
+      if (out.cards.length >= max) break;
     }
   }
-  out.cards = out.cards.slice(0, 6).map((c, i) => ({ ...c, rank: i + 1 }));
+  out.cards = out.cards.slice(0, max).map((c, i) => ({ ...c, rank: i + 1 }));
   return out;
 }
 
@@ -81,6 +85,8 @@ export interface GenerateOptions {
 export interface InsightRunRow {
   id: string; scope: string; period_start: ISODate; period_end: ISODate; facts: Facts; cards: Card[]; model: string;
   input_tokens: number | null; output_tokens: number | null; used_fallback: boolean; created_at: string;
+  /** A transaction was back-dated into this period after the run (EC-D4). */
+  stale?: boolean;
 }
 
 export async function generateInsights(o: GenerateOptions): Promise<InsightRunRow> {
@@ -96,5 +102,23 @@ export async function generateInsights(o: GenerateOptions): Promise<InsightRunRo
     validation: { dropped: n.dropped.map((d) => ({ key: d.card.key, reasons: d.reasons })) },
   }).select().single();
   if (error) throw new Error(`could not store the insight run: ${error.message}`);
+  return data as InsightRunRow;
+}
+
+export interface TripGenerateOptions { db: SupabaseClient; userId: string; tripId: string; today: ISODate; writer: CardWriter | null; usedTokens?: number; tokenCap?: number; log?: Log }
+
+/** TRIP-08: facts for one trip, narrated and validated like any other run, and stored with the trip's id. */
+export async function generateTripInsights(o: TripGenerateOptions): Promise<InsightRunRow> {
+  const log = o.log ?? (() => {});
+  const facts = await buildTripFacts(o.db, o.tripId, o.today);
+  const capped = o.tokenCap !== undefined && (o.usedTokens ?? 0) >= o.tokenCap;
+  if (capped) log("monthly AI token cap reached: using template cards");
+  const n = await narrate(facts, capped ? null : o.writer, log);
+  const { data, error } = await o.db.from("insight_runs").insert({
+    user_id: o.userId, scope: "trip", trip_id: o.tripId, period_start: facts.period.from, period_end: facts.period.to, facts, cards: n.cards,
+    model: capped ? "template (token cap)" : n.model, input_tokens: n.inputTokens, output_tokens: n.outputTokens, used_fallback: n.usedFallback,
+    validation: { dropped: n.dropped.map((d) => ({ key: d.card.key, reasons: d.reasons })) },
+  }).select().single();
+  if (error) throw new Error(`could not store the trip insight run: ${error.message}`);
   return data as InsightRunRow;
 }

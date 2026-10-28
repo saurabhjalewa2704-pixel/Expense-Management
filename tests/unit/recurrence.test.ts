@@ -15,7 +15,7 @@ describe("monthly", () => {
   it("nothing before the first payment even if earlier days match", () => {
     expect(due(rule({ starts_on: "2026-10-28" }), "2026-10-01", "2026-10-31")).toEqual([]);
   });
-  it("the 31st moves to the last day of shorter months (30 Nov, 31 Dec, 28 Feb 2027)", () => {
+  it("EC-D3 the 31st moves to the last day of shorter months (30 Nov, 31 Dec, 28 Feb 2027)", () => {
     expect(due(rule({ day_of_month: 31, starts_on: "2026-10-31" }), "2026-10-01", "2027-03-31"))
       .toEqual(["2026-10-31", "2026-11-30", "2026-12-31", "2027-01-31", "2027-02-28", "2027-03-31"]);
   });

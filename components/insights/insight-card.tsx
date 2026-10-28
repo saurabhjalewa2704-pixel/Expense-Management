@@ -8,10 +8,13 @@ import type { Card as CardT } from "@/lib/ai/types";
 import type { InsightRunRow } from "@/lib/ai/generate";
 import { UI } from "@/lib/icons";
 import { qk } from "@/lib/queries/keys";
-import { useInsightFeedback, useInsightRuns } from "@/lib/queries/hooks";
+import { useInsightFeedback, useInsightRuns, useTransactionCount } from "@/lib/queries/hooks";
 import { formatGBP } from "@/lib/money";
 
-const TAG: Record<CardT["type"], string> = { pace: "Pace", anomaly: "Unusual", trend: "Trend", subscription: "Subscriptions", new_payee: "New payee", win: "Going well", suggestion: "Suggestion" };
+const TAG: Record<CardT["type"], string> = {
+  pace: "Pace", anomaly: "Unusual", trend: "Trend", subscription: "Subscriptions", new_payee: "New payee", win: "Going well", suggestion: "Suggestion",
+  trip_pace: "Trip pace", trip_mix: "Where it's going", trip_stop: "By stop", trip_compare: "Past trips", trip_big: "Biggest expense", trip_fx: "Card fees",
+};
 
 function href(card: CardT): string | null {
   const l = card.link;
@@ -81,9 +84,10 @@ export function useVisibleCards() {
 export function InsightCard({ variant }: { variant: "home" | "list" }) {
   const visible = useVisibleCards();
   const { run } = visible;
+  const count = useTransactionCount().data;
   const cards = variant === "home" ? visible.cards.filter((c) => c.type !== "pace") : visible.cards;   // Home already has the pace card
   const feedback = useCardFeedback();
-  if (!run || cards.length === 0) return null;
+  if (!run || cards.length === 0 || (count !== undefined && count < 10)) return null;               // EC-N8: too little to say
   const shown = variant === "home" ? cards.slice(0, 1) : cards.slice(0, 3);
   return (
     <>

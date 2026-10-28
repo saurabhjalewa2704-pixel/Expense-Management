@@ -32,6 +32,11 @@ export function SyncEngine() {
       }
     };
     const onSync = () => void run(false);
+    // EC-C11: flush on every successful network call too: Safari can evict local data, so queued entries should not wait for the next launch
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const unsubscribe = qc.getQueryCache().subscribe((e) => {
+      if (e.type === "updated" && e.action.type === "success") { clearTimeout(timer); timer = setTimeout(() => void run(false), 1500); }
+    });
     const onOnline = () => void run(true);
     const onVisible = () => { if (document.visibilityState === "visible") void run(true); };
     window.addEventListener(EVENT, onSync);
@@ -39,6 +44,8 @@ export function SyncEngine() {
     document.addEventListener("visibilitychange", onVisible);
     void run(false);
     return () => {
+      unsubscribe();
+      clearTimeout(timer);
       window.removeEventListener(EVENT, onSync);
       window.removeEventListener("online", onOnline);
       document.removeEventListener("visibilitychange", onVisible);

@@ -2,7 +2,7 @@
 import { fail, friendlyDbError, ok, type ActionResult } from "@/lib/action";
 import { AccountInput } from "@/lib/schemas/account";
 import { supabaseServer } from "@/lib/supabase/server";
-import { isISODate, todayLondon } from "@/lib/dates";
+import { todayLondon } from "@/lib/dates";
 import type { Account, Transaction } from "@/lib/types";
 
 export async function upsertAccount(input: unknown): Promise<ActionResult<Account>> {
@@ -25,18 +25,6 @@ export async function upsertAccount(input: unknown): Promise<ActionResult<Accoun
   return error ? fail(friendlyDbError(error)) : ok(data as Account);
 }
 
-/**
- * An entry dated before an account's start date: the owner agreed to move the start back to that date. The opening balance keeps its
- * number but now means "the balance at the start of the earlier date", so every later balance includes the entry.
- */
-export async function moveAccountStart(ids: string[], date: string): Promise<ActionResult> {
-  if (!isISODate(date) || date > todayLondon()) return fail("Choose a date that is not in the future.");
-  if (ids.length === 0 || ids.length > 2) return fail("Nothing to move.");
-  const supabase = await supabaseServer();
-  const { error } = await supabase.from("accounts").update({ opening_date: date }).in("id", ids).gt("opening_date", date);
-  return error ? fail(friendlyDbError(error)) : ok(undefined);
-}
-
 /** ACC-03: archive; a non-zero balance needs `writeOff`, which records an adjustment first. */
 export async function archiveAccount(id: string, writeOff = false, on?: string): Promise<ActionResult> {
   const supabase = await supabaseServer();
@@ -55,5 +43,15 @@ export async function reconcileAccount(id: string, actualPence: number, on?: str
 export async function setDefaultAccount(id: string): Promise<ActionResult> {
   const supabase = await supabaseServer();
   const { error } = await supabase.rpc("set_default_account", { p_account_id: id });
+  return error ? fail(friendlyDbError(error)) : ok(undefined);
+}
+
+/** EC-A7: an account with any transactions (even deleted ones: they are history) cannot be deleted; archive it instead. */
+export async function deleteAccount(id: string): Promise<ActionResult> {
+  const supabase = await supabaseServer();
+  const { count } = await supabase.from("transactions").select("id", { count: "exact", head: true }).or(`account_id.eq.${id},counter_account_id.eq.${id}`);
+  if ((count ?? 0) > 0) return fail("This account has transactions, so it can’t be deleted. Archive it instead and its history stays.");
+  const { error } = await supabase.from("accounts").delete().eq("id", id);
+  if (error?.code === "23503") return fail("Something still uses this account (a bill, for example). Archive it instead.");
   return error ? fail(friendlyDbError(error)) : ok(undefined);
 }

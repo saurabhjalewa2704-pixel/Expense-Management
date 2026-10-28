@@ -7,7 +7,7 @@ import {
   Heart, HeartPulse, House, IdCard, Info, KeyRound, Lamp, Landmark, Laptop, Layers, ListFilter, Lock, LogOut, Merge, Music, NotebookPen,
   Package, Palette, PartyPopper, PawPrint, Pencil, Percent, Phone, PiggyBank, Pill, Plane, Plus, ReceiptText, Repeat, Sandwich, Scissors, Search, Settings,
   Shield, ShieldCheck, Shirt, ShoppingBag, ShoppingCart, Smartphone, Sparkles, SprayCan, SquareParking, Stethoscope, Store, Ticket,
-  TrainFront, TreePalm, Utensils, List, ChartNoAxesColumn, CloudUpload, Tags, Database, Share, SquarePlus, TriangleAlert, Trash2, Tv, Undo2, Users, Wallet, Wifi, Wine, X, Zap, SlidersHorizontal, RefreshCw, TrendingUp,
+  TrainFront, TreePalm, Utensils, List, ChartNoAxesColumn, CloudUpload, Tags, Database, Share, SquarePlus, TriangleAlert, Trash2, Tv, Undo2, Users, Wallet, Wifi, Wine, X, Zap, MapPin, SlidersHorizontal, RefreshCw, TrendingUp,
   SkipForward, Pause, Play, Receipt,
   type LucideIcon, type LucideProps,
 } from "lucide-react";
@@ -46,6 +46,6 @@ export function CategoryIcon({ name, size = 20, ...rest }: { name: string | null
 export const UI = {
   Archive, ArrowLeftRight, ArrowUp, Bell, Calendar, Check, ChevronDown, ChevronLeft, ChevronRight, CircleCheck, Clock, CloudOff, CreditCard, Copy,
   Delete, Download, Ellipsis, FileText, GripVertical, Info, ListFilter, Lock, LogOut, Merge, Pencil, Plus, RefreshCw, Search, Settings,
-  Repeat, SkipForward, Pause, Play, Receipt, SlidersHorizontal, Sparkles, Trash2, List, ChartNoAxesColumn, CloudUpload, Tags, Database, Share, SquarePlus, House, ShieldCheck, Bike, TrendingUp, Wallet, X, ChevronDownIcon: ChevronDown, Landmark, PiggyBank, Banknote,
+  Repeat, SkipForward, Pause, Play, Receipt, SlidersHorizontal, Sparkles, Trash2, List, ChartNoAxesColumn, CloudUpload, Tags, Database, Share, SquarePlus, House, ShieldCheck, Plane, MapPin, Bike, TrendingUp, Wallet, X, ChevronDownIcon: ChevronDown, Landmark, PiggyBank, Banknote,
 };
 export type { LucideIcon };

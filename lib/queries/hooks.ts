@@ -9,7 +9,7 @@ import { supabaseBrowser } from "@/lib/supabase/client";
 import type { AccountBalance, TxnRow } from "@/lib/types";
 import {
   fetchAccounts, fetchAccountSeries, fetchActivityPage, fetchBalances, fetchCashFlow, fetchCashSeries, fetchCategories,
-  fetchCategoryMonthly, fetchCategoryRemaining, fetchRecurringItems, fetchRecurringOccurrences, fetchItemOccurrences, fetchBankHolidays, fetchRecurringSuggestions, fetchTopPlaces, fetchDailySpend, fetchMonthlyTotals, fetchPace, fetchPayees, fetchProfile, fetchSpendByCategory,
+  fetchCategoryMonthly, fetchCategoryRemaining, fetchNonBalanceSpend, fetchTrips, fetchTripStops, fetchTripBudgets, fetchTripsOverview, fetchTripSummary, fetchTripByDay, fetchTripByStop, fetchTripByCategory, fetchTripCandidates, fetchTripInsightRun, fetchTripTxns, fetchRecurringItems, fetchRecurringOccurrences, fetchItemOccurrences, fetchBankHolidays, fetchRecurringSuggestions, fetchTopPlaces, fetchDailySpend, fetchMonthlyTotals, fetchPace, fetchPayees, fetchProfile, fetchSpendByCategory,
   fetchAskTurns, fetchPotCategories, fetchPots, fetchTransactionCount, fetchWeekActivity, fetchInsightFeedback, fetchInsightRuns, fetchLastIncomeAccount, fetchSuggestHistory, fetchTopPayees, fetchTotals, PAGE_SIZE, type ActivityCursor,
 } from "./fetchers";
 import { qk, type ActivityFilters } from "./keys";
@@ -163,12 +163,12 @@ export function useRecent(limit = 4) {
 }
 
 // ---- analytics (server only: charts are not overlaid with pending entries) ----
-export const useSpendByCategory = (from: ISODate, to: ISODate, parent: string | null = null, pool = false, level: "parent" | "leaf" = "parent") =>
-  useQuery({ queryKey: qk.spendByCategory(from, to, parent, pool, level), queryFn: () => fetchSpendByCategory(db(), from, to, parent, pool, level), placeholderData: keepPreviousData });
-export const useDailySpend = (from: ISODate, to: ISODate, excludeFixed = false) =>
-  useQuery({ queryKey: qk.dailySpend(from, to, excludeFixed), queryFn: () => fetchDailySpend(db(), from, to, excludeFixed), placeholderData: keepPreviousData });
-export const useMonthlyTotals = (months = 12) =>
-  useQuery({ queryKey: qk.monthlyTotals(months), queryFn: () => fetchMonthlyTotals(db(), months) });
+export const useSpendByCategory = (from: ISODate, to: ISODate, parent: string | null = null, pool = false, level: "parent" | "leaf" = "parent", noTrips = false) =>
+  useQuery({ queryKey: qk.spendByCategory(from, to, parent, pool, level, noTrips), queryFn: () => fetchSpendByCategory(db(), from, to, parent, pool, level, noTrips), placeholderData: keepPreviousData });
+export const useDailySpend = (from: ISODate, to: ISODate, excludeFixed = false, noTrips = false) =>
+  useQuery({ queryKey: qk.dailySpend(from, to, excludeFixed, noTrips), queryFn: () => fetchDailySpend(db(), from, to, excludeFixed, noTrips), placeholderData: keepPreviousData });
+export const useMonthlyTotals = (months = 12, noTrips = false) =>
+  useQuery({ queryKey: qk.monthlyTotals(months, noTrips), queryFn: () => fetchMonthlyTotals(db(), months, noTrips) });
 export const useTopPayees = (from: ISODate, to: ISODate, limit = 10, category: string | null = null) =>
   useQuery({ queryKey: [...qk.topPayees(from, to), limit, category], queryFn: () => fetchTopPayees(db(), from, to, limit, category), placeholderData: keepPreviousData });
 export const useCategoryMonthly = (id: string, months = 12, children = true) =>
@@ -194,6 +194,19 @@ export const useInsightFeedback = () => useQuery({ queryKey: [...qk.insights, "f
 export const useWeekActivity = (from: ISODate, to: ISODate) => useQuery({ queryKey: ["week-activity", from, to] as const, queryFn: () => fetchWeekActivity(db(), from, to) });
 export const useTransactionCount = () => useQuery({ queryKey: ["txn-count"] as const, queryFn: () => fetchTransactionCount(db()), staleTime: 60_000 });
 
+export const useNonBalanceSpend = (from: ISODate, to: ISODate) =>
+  useQuery({ queryKey: qk.nonBalanceSpend(from, to), queryFn: () => fetchNonBalanceSpend(db(), from, to), placeholderData: keepPreviousData });
+export const useTrips = () => useQuery({ queryKey: qk.trips, queryFn: () => fetchTrips(db()) });
+export const useTripStops = (id?: string) => useQuery({ queryKey: qk.tripStops(id), queryFn: () => fetchTripStops(db(), id) });
+export const useTripBudgets = (id: string) => useQuery({ queryKey: qk.tripBudgets(id), queryFn: () => fetchTripBudgets(db(), id) });
+export const useTripsOverview = (asOf: ISODate) => useQuery({ queryKey: qk.tripsOverview(asOf), queryFn: () => fetchTripsOverview(db(), asOf) });
+export const useTripSummary = (id: string, asOf: ISODate) => useQuery({ queryKey: qk.tripSummary(id, asOf), queryFn: () => fetchTripSummary(db(), id, asOf) });
+export const useTripByDay = (id: string) => useQuery({ queryKey: qk.tripByDay(id), queryFn: () => fetchTripByDay(db(), id) });
+export const useTripByStop = (id: string, asOf: ISODate) => useQuery({ queryKey: qk.tripByStop(id, asOf), queryFn: () => fetchTripByStop(db(), id, asOf) });
+export const useTripByCategory = (id: string, level: "parent" | "leaf") => useQuery({ queryKey: qk.tripByCategory(id, level), queryFn: () => fetchTripByCategory(db(), id, level) });
+export const useTripTxns = (id?: string) => useQuery({ queryKey: qk.tripTxns(id ?? ""), queryFn: () => fetchTripTxns(db(), id!), enabled: !!id });
+export const useTripInsightRun = (id: string) => useQuery({ queryKey: qk.tripInsights(id), queryFn: () => fetchTripInsightRun(db(), id) });
+export const useTripCandidates = (id: string, enabled = true) => useQuery({ queryKey: qk.tripCandidates(id), queryFn: () => fetchTripCandidates(db(), id), enabled });
 export const useRecurringItems = () => useQuery({ queryKey: qk.recurringItems, queryFn: () => fetchRecurringItems(db()) });
 export const useRecurringOccurrences = (from: ISODate, to: ISODate) =>
   useQuery({ queryKey: qk.recurringOccurrences(from, to), queryFn: () => fetchRecurringOccurrences(db(), from, to), placeholderData: keepPreviousData });

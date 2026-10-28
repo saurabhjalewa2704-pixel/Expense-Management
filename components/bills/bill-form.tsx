@@ -266,8 +266,8 @@ export function BillForm({ id }: { id?: string }) {
 
         {askCatchUp && thisMonthDate && (
           <div className="card" style={{ marginTop: 12 }} role="group" aria-label="Catch up" data-testid="bill-catchup">
-            <div className="headline">{(to || "This payment")} was due on the {ordinal(Number(thisMonthDate.slice(8)))}.</div>
-            <p className="sub" style={{ marginTop: 4 }}>Log {formatMonthYear(thisMonthDate).split(" ")[0]}’s now?</p>
+            <div className="headline">{(to || "This payment")} was due on {account && thisMonthDate < account.opening_date ? formatShort(thisMonthDate) : `the ${ordinal(Number(thisMonthDate.slice(8)))}`}{account && thisMonthDate < account.opening_date ? ", before you started tracking" : ""}.</div>
+            <p className="sub" style={{ marginTop: 4 }}>{account && thisMonthDate < account.opening_date ? "Log it for your records? It won’t change your balance." : `Log ${formatMonthYear(thisMonthDate).split(" ")[0]}’s now?`}</p>
             <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
               <button className={`btn${catchUp === "log" ? "" : " secondary"}`} style={{ height: 42, flex: 1, fontSize: 14 }} aria-pressed={catchUp === "log"} onClick={() => setCatchUp("log")}>Log it now</button>
               <button className={`btn${catchUp === "next" ? "" : " secondary"}`} style={{ height: 42, flex: 1, fontSize: 14 }} aria-pressed={catchUp === "next"} onClick={() => setCatchUp("next")}>Start next month</button>

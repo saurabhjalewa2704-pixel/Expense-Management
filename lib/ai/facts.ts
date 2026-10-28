@@ -141,7 +141,7 @@ export async function buildFacts(db: SupabaseClient, o: { scope: Facts["scope"];
     if (error) throw new Error(`${fn}: ${error.message}`);
     return data as T;
   };
-  const [pace, history, big, newPayeesRaw, monthlyTotals, daily6, periodDaily, feedback] = await Promise.all([
+  const [pace0, history, big, newPayeesRaw, monthlyTotals, daily6raw, periodDaily, feedback, trackingRow] = await Promise.all([
     fetchPace(db, o.today),
     rpc<HistoryRow[]>("category_period_history", { p_from: period.from, p_to: period.to, p_periods: periods, p_step: step }),
     rpc<FactsInput["big"]>("top_transactions", { p_from: period.from, p_to: period.to, p_limit: 3 }),
@@ -150,12 +150,19 @@ export async function buildFacts(db: SupabaseClient, o: { scope: Facts["scope"];
     fetchDailySpend(db, monthStart(addMonths(monthStart(o.today), -6)), o.today),
     fetchDailySpend(db, period.from, period.to, true),
     db.from("insight_feedback").select("card_type, card_key, action").order("created_at", { ascending: false }).limit(50).then((r) => (r.data ?? []) as FeedbackRow[]),
+    db.from("profiles").select("tracking_started_on").limit(1).then((r) => ((r.data?.[0] as { tracking_started_on: ISODate | null } | undefined)?.tracking_started_on ?? null)),
   ]);
+
+  // BAL-07: months before tracking began only hold what was back-filled, so they are never a baseline, pace comparison or average
+  const trackStart = trackingRow as ISODate | null;
+  const partial = (m: ISODate) => !!trackStart && m <= monthStart(trackStart);
+  const daily6 = trackStart ? daily6raw.filter((d) => d.day >= trackStart) : daily6raw;
+  const pace = partial(addMonths(monthStart(o.today), -1)) ? { ...pace0, prev_spend_pence: 0, prev_total_pence: 0 } : pace0;
 
   const thisMonth = monthStart(o.today);
   const monthSpend = monthlyTotals.find((t) => t.month === thisMonth)?.spend_pence ?? 0;
   const projected = o.scope === "adhoc" || o.scope === "weekly" ? projectMonth(daily6 as DailySpend[], o.today, monthSpend) : null;
-  const complete = monthlyTotals.filter((t) => t.month < thisMonth && t.spend_pence > 0).map((t) => t.spend_pence);
+  const complete = monthlyTotals.filter((t) => t.month < thisMonth && t.spend_pence > 0 && !partial(t.month)).map((t) => t.spend_pence);
 
   // monthly history for the top categories and the streaming sub-category, full months only
   const upTo = monthStart(period.to);

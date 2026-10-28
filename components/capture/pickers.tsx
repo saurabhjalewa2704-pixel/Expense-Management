@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Sheet } from "@/components/ui/sheet";
-import { addDays, formatShort, todayLondon, type ISODate } from "@/lib/dates";
+import { addDays, deviceToday, formatShort, todayLondon, type ISODate } from "@/lib/dates";
 import { UI } from "@/lib/icons";
 import { formatGBP } from "@/lib/money";
 import { useAccounts, useBalances } from "@/lib/queries/hooks";
@@ -38,8 +38,9 @@ export function AccountPicker({ open, onOpenChange, title, selectedId, excludeId
 export function DateSheet({ open, onOpenChange, value, min, onChange }: {
   open: boolean; onOpenChange: (o: boolean) => void; value: ISODate; min?: ISODate; onChange: (d: ISODate) => void;
 }) {
-  const today = todayLondon();
+  const today = deviceToday();
   const yesterday = addDays(today, -1);
+  const latest = addDays(today > todayLondon() ? today : todayLondon(), 365);          // a future-dated expense is allowed up to 12 months ahead (EC-D5)
   const [custom, setCustom] = useState(false);
   const choose = (d: ISODate) => { onChange(d); onOpenChange(false); setCustom(false); };
   return (
@@ -59,7 +60,7 @@ export function DateSheet({ open, onOpenChange, value, min, onChange }: {
           </button>
         </div>
         {custom && (
-          <input type="date" className="field w-full" style={{ marginTop: 12 }} aria-label="Date" value={value} min={min} max={today}
+          <input type="date" className="field w-full" style={{ marginTop: 12 }} aria-label="Date" value={value} min={min} max={latest}
             onChange={(e) => e.target.value && choose(e.target.value)} />
         )}
       </div>

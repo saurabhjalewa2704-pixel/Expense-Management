@@ -42,7 +42,10 @@ Not built (P1, PRD §M5): natural-language entry, Shortcuts endpoint, recurring 
 | Bills | `/api/cron/recurring` | daily 06:00 UTC (in `vercel.json`); hourly is better | Logs every bill due on or before today that has no record yet, from 06:00 London time. A later or repeated run is harmless (it catches up and never double-logs), so the daily Vercel job works; an hourly `pg_cron` job (below) makes logging happen at about 6am all year. Also refreshes bank holidays on the 1st of the month. |
 | Evening reminder | `/api/cron/nudge` | **every 15 minutes** | Vercel Hobby cannot do this. Use Vercel Pro, or Supabase `pg_cron` + `pg_net` below, or any scheduler that can send the bearer header. If you can only run it hourly, set `NUDGE_WINDOW_MIN=60`. |
 
-All four expect `Authorization: Bearer $CRON_SECRET`. Vercel sends it automatically for jobs in `vercel.json` when `CRON_SECRET` is set.
+| FX rates | `/api/cron/fx` | daily 05:15 UTC (in `vercel.json`) | Caches Frankfurter reference rates (GBP per unit) for the currencies of active and upcoming trips. The app also fetches on demand, so this only keeps the cache warm. |
+| Trip insights | `/api/cron/digest` | daily 07:00 UTC (same job) | After the weekly and monthly digests it refreshes insights for the trip in progress and sends the wrap-up push the morning after one ends. `?scope=trip` forces it. |
+
+All of them expect `Authorization: Bearer $CRON_SECRET`. Vercel sends it automatically for jobs in `vercel.json` when `CRON_SECRET` is set.
 
 ```sql
 -- Supabase SQL editor (enable the pg_cron and pg_net extensions first)
@@ -83,6 +86,7 @@ npm run stack:up          # once; STERLING_RESET=1 rebuilds the database after m
 npm test                  # unit tests (Vitest)
 npm run test:sql          # RLS, cash-identity invariants, business rules, analytics, PRD Appendix A to the penny
 bash scripts/e2e-prod.sh  # production build + Playwright at 390×844 (mobile) and 1440×1024 (desktop)
+E2E_TRIPS=1 bash scripts/e2e-prod.sh   # the Trips specs, with the clock pinned to Fri 12 Mar 2027 (PRD Appendix A.2) and fixed rates (STERLING_FX_STUB)
 npx tsx scripts/ai-check.ts 20   # needs ANTHROPIC_API_KEY + Supabase env: the PRD §12.8 check against the real model
 npx tsx scripts/ask-check.ts      # the same for Ask Sterling: nine sample questions, answers and tools printed
 ```
@@ -93,5 +97,6 @@ These need a real account or device and are the owner's to check:
 
 - **The real Claude output.** Everything around the model is tested (validator, retry, fallback, caps) with fake writers and, for Ask Sterling, a scripted stand-in model that drives the real tools; run `scripts/ai-check.ts` and `scripts/ask-check.ts` with your key.
 - **Web Push on an iPhone.** iOS delivers push only to an installed Home Screen app and not to simulators. Subscription, the nudge rules and the service-worker handlers are tested with a stubbed push service.
+- **Live exchange rates.** Tests pin rates with `STERLING_FX_STUB`; confirm Frankfurter answers from your Vercel region (`/api/fx?currency=USD` while signed in).
 - **Real Supabase Auth e-mail.** Tests use the local gateway; confirm the code e-mail template and sign-up setting in your project.
 - **Safari/WebKit specifics** (keyboard behaviour, Face ID is not built). E2E runs on Chromium with an iPhone profile.

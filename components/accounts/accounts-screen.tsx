@@ -82,7 +82,7 @@ function Group({ label, accounts, bal }: { label: string; accounts: Account[]; b
               <div className="tile"><AccountIcon type={a.type} /></div>
               <div className="row-main"><div className="row-t">{a.name}</div><div className="row-s">{accountTypeLabel(a.type)}{a.is_default ? " · Default" : ""}</div></div>
               <UI.ChevronRight size={18} strokeWidth={1.75} className="chev" aria-hidden />
-              <div className="amt">{b === undefined ? "—" : formatGBP(b)}</div>
+              <div className="amt" data-testid="account-amt">{b === undefined ? "—" : a.type === "credit_card" && b > 0 ? <>{formatGBP(b)}<small style={{ display: "block", color: "var(--ink-3)", fontWeight: 400 }}>in credit</small></> : formatGBP(b)}</div>
             </Link>
           );
         })}

@@ -44,8 +44,14 @@ begin
   assert (select parent_id from categories where name = 'Farm shop') = shopping;
 
   ---------------- guards ----------------
-  assert pg_temp.raises(format('insert into transactions (client_id,type,amount_pence,account_id,category_id,occurred_on) values (gen_random_uuid(),''expense'',100,%L,%L,''2026-08-31'')', cur, groceries)),
-    'a transaction before the account opens was allowed';
+  -- an entry from before the account opened is accepted, and does not move the balance (PRD §6.2a, EC-A1)
+  declare before_bal bigint := (select balance_pence from account_balances('2026-09-30') where account_id = cur);
+  begin
+    insert into transactions (client_id,type,amount_pence,account_id,category_id,occurred_on) values (gen_random_uuid(),'expense',100,cur,groceries,'2026-08-31');
+    assert not (select counts_in_balance from transactions where occurred_on = '2026-08-31'), 'before the opening date it is neutral';
+    assert (select balance_pence from account_balances('2026-09-30') where account_id = cur) = before_bal, 'and the balance is unchanged';
+    delete from transactions where occurred_on = '2026-08-31';
+  end;
   assert pg_temp.raises(format('insert into transactions (client_id,type,amount_pence,account_id,category_id,occurred_on) values (gen_random_uuid(),''expense'',100,%L,%L,''2026-09-02'')', cur, salary)),
     'an expense in an income category was allowed';
   assert pg_temp.raises(format('insert into transactions (client_id,type,amount_pence,account_id,occurred_on) values (gen_random_uuid(),''expense'',100,%L,''2026-09-02'')', cur)),

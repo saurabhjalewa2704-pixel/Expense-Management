@@ -1,5 +1,8 @@
 "use client";
+import { useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { deleteAccount } from "@/app/actions/accounts";
 import { AccountEditor } from "./account-editor";
 import { ReconcileSheet } from "./reconcile-sheet";
 import { TxnItem } from "@/components/activity/txn-row";
@@ -23,6 +26,10 @@ export function AccountDetail({ id }: { id: string }) {
   const activity = useActivity(filters);
   const [editing, setEditing] = useState(false);
   const [reconciling, setReconciling] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState<string>();
+  const router = useRouter();
+  const qc = useQueryClient();
   const account = accounts?.find((a) => a.id === id);
   const balance = balances?.find((b) => b.account_id === id)?.balance_pence;
 
@@ -39,7 +46,7 @@ export function AccountDetail({ id }: { id: string }) {
 
       <div className="hero" style={{ marginTop: 16 }}>
         {balance === undefined ? <div className="skeleton" style={{ height: 64, width: 240 }} aria-busy /> : <div data-testid="account-balance"><Figure pence={balance} /></div>}
-        <div className="sub" style={{ marginTop: 10 }}>{balance !== undefined && balance < 0 ? `${formatGBP(Math.abs(balance))} owed · ` : ""}{account.counts_as_cash ? "Counts towards available cash" : "Not in available cash"}</div>
+        <div className="sub" style={{ marginTop: 10 }}>{balance !== undefined && balance < 0 ? `${formatGBP(Math.abs(balance))} owed · ` : ""}{balance !== undefined && balance > 0 && account.type === "credit_card" ? `${formatGBP(balance)} in credit · ` : ""}{account.counts_as_cash ? "Counts towards available cash" : "Not in available cash"}</div>
       </div>
 
       <div className="card chart-card" style={{ marginTop: 20 }}>
@@ -53,6 +60,19 @@ export function AccountDetail({ id }: { id: string }) {
           <button className="btn secondary" style={{ height: 48 }} onClick={() => setEditing(true)}><UI.Pencil size={18} strokeWidth={1.75} aria-hidden />Edit</button>
         </div>
       )}
+
+      {!activity.isLoading && groups.length === 0 && (
+        <div style={{ marginTop: 12 }}>
+          {deleting ? (
+            <div className="card"><div className="headline">Delete {account.name}?</div><p className="sub" style={{ marginTop: 4 }}>It has no transactions, so nothing is lost.</p>
+              <div className="stack" style={{ marginTop: 12, gap: 8 }}>
+                <button className="btn" style={{ height: 46, background: "var(--danger)", color: "var(--ink)" }} data-testid="account-delete-confirm"
+                  onClick={async () => { const r = await deleteAccount(account.id); if (!r.ok) { setDeleting(false); return setError(r.error); } await qc.invalidateQueries(); router.replace("/settings/accounts"); }}>Delete</button>
+                <button className="btn secondary" style={{ height: 46 }} onClick={() => setDeleting(false)}>Keep it</button></div></div>
+          ) : <button className="btn secondary" style={{ height: 48, color: "var(--danger)" }} data-testid="account-delete" onClick={() => setDeleting(true)}><UI.Trash2 size={18} strokeWidth={1.75} aria-hidden />Delete account</button>}
+        </div>
+      )}
+      {error && <p role="alert" className="callout" style={{ color: "var(--caution)", marginTop: 12 }}>{error}</p>}
 
       <div className="section-h"><h2>Transactions</h2></div>
       {activity.isLoading && activity.rows.length === 0 ? <div className="list" aria-busy><div className="row"><div className="skeleton" style={{ height: 36, width: "100%" }} /></div></div>

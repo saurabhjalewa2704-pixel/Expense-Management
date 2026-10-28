@@ -16,6 +16,8 @@ export interface ActivityFilters {
   pot?: "exclude" | "only" | (string & {});
   /** true: only transactions logged by a recurring payment (REC-09). */
   recurring?: boolean;
+  /** "any" (on a trip), "none", or one trip id. */
+  trip?: string;
 }
 
 export const qk = {
@@ -31,9 +33,9 @@ export const qk = {
   activity: (f: ActivityFilters) => ["activity", f] as const,
   totals: (f: ActivityFilters) => ["activity-totals", f] as const,
   recent: ["recent"] as const,
-  spendByCategory: (from: ISODate, to: ISODate, parent: string | null, pool = false, level = "parent") => ["spend-by-category", from, to, parent, pool, level] as const,
-  dailySpend: (from: ISODate, to: ISODate, excludeFixed = false) => ["daily-spend", from, to, excludeFixed] as const,
-  monthlyTotals: (n: number) => ["monthly-totals", n] as const,
+  spendByCategory: (from: ISODate, to: ISODate, parent: string | null, pool = false, level = "parent", noTrips = false) => ["spend-by-category", from, to, parent, pool, level, noTrips] as const,
+  dailySpend: (from: ISODate, to: ISODate, excludeFixed = false, noTrips = false) => ["daily-spend", from, to, excludeFixed, noTrips] as const,
+  monthlyTotals: (n: number, noTrips = false) => ["monthly-totals", n, noTrips] as const,
   topPayees: (from: ISODate, to: ISODate) => ["top-payees", from, to] as const,
   categoryMonthly: (id: string, n: number, children = true) => ["category-monthly", id, n, children] as const,
   topPlaces: (from: ISODate, to: ISODate, limit: number, id: string, children = true) => ["top-places", from, to, limit, id, children] as const,
@@ -41,6 +43,18 @@ export const qk = {
   suggestHistory: ["suggest-history"] as const,
   lastIncomeAccount: ["last-income-account"] as const,
   pots: ["pots"] as const,
+  nonBalanceSpend: (from: ISODate, to: ISODate) => ["non-balance-spend", from, to] as const,
+  trips: ["trips"] as const,
+  tripStops: (id?: string) => ["trips", "stops", id ?? "all"] as const,
+  tripBudgets: (id: string) => ["trips", "budgets", id] as const,
+  tripsOverview: (asOf: ISODate) => ["trips", "overview", asOf] as const,
+  tripSummary: (id: string, asOf: ISODate) => ["trips", "summary", id, asOf] as const,
+  tripByDay: (id: string) => ["trips", "day", id] as const,
+  tripByStop: (id: string, asOf: ISODate) => ["trips", "stop", id, asOf] as const,
+  tripByCategory: (id: string, level: string) => ["trips", "category", id, level] as const,
+  tripInsights: (id: string) => ["trips", "insights", id] as const,
+  tripTxns: (id: string) => ["trips", "txns", id] as const,
+  tripCandidates: (id: string) => ["trips", "candidates", id] as const,
   recurring: ["recurring"] as const,
   recurringItems: ["recurring", "items"] as const,
   recurringOccurrences: (from: ISODate, to: ISODate) => ["recurring", "occurrences", from, to] as const,

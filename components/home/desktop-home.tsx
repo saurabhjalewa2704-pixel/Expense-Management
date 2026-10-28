@@ -5,7 +5,7 @@ import { useState } from "react";
 import { CategoryBars } from "@/components/charts/category-bars";
 import { BillsCard } from "@/components/home/bills-card";
 import { PaceChart } from "@/components/charts/pace-chart";
-import { Figure } from "@/components/money";
+import { Figure, cashLabel } from "@/components/money";
 import { InsightCard } from "@/components/insights/insight-card";
 import { recentWhen } from "@/components/activity/txn-row";
 import { useQuickAdd } from "@/components/capture/quick-add";
@@ -83,7 +83,7 @@ export function DesktopHome() {
 
       <section style={{ display: "grid", gridTemplateColumns: "400px minmax(0,1fr)", gap: 20, marginTop: 20 }}>
         <div className="card" style={{ padding: 28 }} aria-label="Available cash">
-          <Link href="/cash" className="hero-label">Available cash <UI.ChevronRight size={16} strokeWidth={1.75} className="chev" aria-hidden /></Link>
+          <Link href="/cash" className="hero-label">{cashLabel(cash)} <UI.ChevronRight size={16} strokeWidth={1.75} className="chev" aria-hidden /></Link>
           {cash === undefined ? <div className="skeleton" style={{ height: 76, marginTop: 10 }} aria-busy /> : (
             <Link href="/cash" data-testid="hero" aria-label={`Available cash ${formatGBP(f?.closing_pence ?? 0)}`}><Figure pence={cash} xl /></Link>
           )}

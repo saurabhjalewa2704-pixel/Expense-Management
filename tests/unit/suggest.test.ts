@@ -52,10 +52,10 @@ describe("suggestCategories", () => {
     expect(s.slice(0, 2).every((x) => x.parentLabel === "Eating out")).toBe(true);
   });
 
-  it("a category used directly (not a sub-category) has no parent label", () => {
+  it("a parent with no sub-categories is captioned General (EC-K5)", () => {
     const s = suggestCategories({ history: filler(25), categories: cats, now, today });
     expect(s[0]).toMatchObject({ label: "Groceries" });
-    expect(s[0]!.parentLabel).toBeUndefined();
+    expect(s[0]!.parentLabel).toBe("General");
   });
 
   it("ignores history older than 180 days", () => {
