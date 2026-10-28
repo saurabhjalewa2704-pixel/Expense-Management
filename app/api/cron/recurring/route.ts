@@ -3,7 +3,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { londonParts, type ISODate } from "@/lib/dates";
 import { cronSecret } from "@/lib/env";
 import { buildBillPushes, type LoggedBill } from "@/lib/bills-notify";
-import { planDue, shouldAct, type EngineItem } from "@/lib/recurring-engine";
+import { runDue, nameLookup, type RunItem } from "@/lib/recurring-run";
+import { shouldAct } from "@/lib/recurring-engine";
 import { sendPush } from "@/lib/push-send";
 import { supabaseService } from "@/lib/supabase/server";
 
@@ -12,9 +13,6 @@ export const maxDuration = 60;
 
 const GOV_UK = "https://www.gov.uk/bank-holidays.json";
 
-interface ItemRow extends EngineItem {
-  user_id: string; type: "expense" | "income" | "transfer"; payee_id: string | null; account_id: string; counter_account_id: string | null; amount_varies: boolean; auto_log: boolean;
-}
 
 /** England & Wales bank holidays, cached in `bank_holidays` and refreshed on the 1st of each month (or when empty). A failed fetch keeps the cache. */
 async function refreshHolidays(db: ReturnType<typeof supabaseService>, today: ISODate, force: boolean) {
@@ -39,6 +37,9 @@ async function refreshHolidays(db: ReturnType<typeof supabaseService>, today: IS
  * In test mode (STERLING_TEST_TODAY set) `?now=<ISO instant>` replaces the clock.
  */
 export async function GET(req: NextRequest) {
+  // say what is missing instead of crashing: Vercel only sends the bearer header when CRON_SECRET exists in the project's environment
+  if (!process.env.CRON_SECRET) return NextResponse.json({ error: "CRON_SECRET is not set in this deployment's environment variables." }, { status: 500 });
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return NextResponse.json({ error: "SUPABASE_SERVICE_ROLE_KEY is not set in this deployment's environment variables." }, { status: 500 });
   if (req.headers.get("authorization") !== `Bearer ${cronSecret()}`) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
   const override = process.env.STERLING_TEST_TODAY ? req.nextUrl.searchParams.get("now") : null;
   const now = londonParts(override ? new Date(override) : Date.now());
@@ -53,28 +54,14 @@ export async function GET(req: NextRequest) {
   const { data: items, error } = await db.from("recurring_items").select("*").is("ended_at", null).is("paused_at", null).lte("next_due_on", today);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+  const due = (items ?? []) as RunItem[];
+  const run = await runDue(db, "recurring_log", due, today, holidaySet, await nameLookup(db, due));
+  const results = run.logged.map((l) => ({ item: l.bill.itemId, due_on: l.bill.due_on, status: l.bill.status }));
+  const finished = run.finished;
   const byUser = new Map<string, LoggedBill[]>();
-  const names = await nameLookup(db, (items ?? []) as ItemRow[]);
-  const results: { item: string; due_on: string; status: string }[] = [];
-  let finished = 0;
-
-  for (const it of (items ?? []) as ItemRow[]) {
-    const { planned, finished: done } = planDue(it, today, holidaySet);
-    if (done) { await db.from("recurring_items").update({ ended_at: new Date().toISOString() }).eq("id", it.id); finished++; continue; }
-    for (const p of planned) {
-      const { data, error: e } = await db.rpc("recurring_log", { p_item: it.id, p_scheduled: p.scheduled_on, p_due: p.due_on, p_next: p.next });
-      if (e) { console.error("[recurring] log failed", it.id, e.message); break; }
-      const row = (data as { occurrence_id: string; transaction_id: string | null; status: LoggedBill["status"]; amount_pence: number }[] | null)?.[0];
-      if (!row) continue;                                              // already there: nothing new to say
-      results.push({ item: it.id, due_on: p.due_on, status: row.status });
-      const list = byUser.get(it.user_id) ?? [];
-      list.push({
-        occurrenceId: row.occurrence_id, itemId: it.id, transactionId: row.transaction_id, name: names.get(it.id) ?? "Payment", type: it.type,
-        amount: Number(row.amount_pence), due_on: p.due_on, status: row.status, blocked: row.status === "pending" && it.auto_log,   // meant to log itself, could not
-      });
-      byUser.set(it.user_id, list);
-    }
-  }
+  for (const l of run.logged) byUser.set(l.user, [...(byUser.get(l.user) ?? []), l.bill]);
+  // note that the scheduled job is alive, so the app can tell the owner (Bills shows "last ran …")
+  await db.from("profiles").update({ bills_cron_at: new Date().toISOString() }).not("id", "is", null);
 
   let sent = 0;
   for (const [user, rows] of byUser) {
@@ -91,19 +78,5 @@ export async function GET(req: NextRequest) {
       }
     }
   }
-  return NextResponse.json({ london: now, acted: true, holidays, logged: results, finished, sent });
-}
-
-/** A readable name for each rule: the payee, or "To <account>" for a transfer. */
-async function nameLookup(db: ReturnType<typeof supabaseService>, items: ItemRow[]) {
-  const names = new Map<string, string>();
-  if (!items.length) return names;
-  const [{ data: payees }, { data: accts }] = await Promise.all([
-    db.from("payees").select("id, name").in("id", items.map((i) => i.payee_id).filter(Boolean) as string[]),
-    db.from("accounts").select("id, name").in("id", items.map((i) => i.counter_account_id).filter(Boolean) as string[]),
-  ]);
-  const p = new Map((payees ?? []).map((x: { id: string; name: string }) => [x.id, x.name]));
-  const a = new Map((accts ?? []).map((x: { id: string; name: string }) => [x.id, x.name]));
-  for (const i of items) names.set(i.id, i.type === "transfer" ? `To ${a.get(i.counter_account_id ?? "") ?? "savings"}` : p.get(i.payee_id ?? "") ?? "Payment");
-  return names;
+  return NextResponse.json({ london: now, acted: true, holidays, logged: results, finished, sent, errors: run.errors });
 }

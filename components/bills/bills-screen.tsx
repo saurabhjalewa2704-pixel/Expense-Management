@@ -13,6 +13,7 @@ import { fetchTxnRow } from "@/lib/queries/fetchers";
 import { useBankHolidays, useRecurringItems, useRecurringOccurrences, useToday } from "@/lib/queries/hooks";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { BillTile, useBillLabels } from "./shared";
+import { SchedulerStatus } from "./scheduler-status";
 import { Suggestions } from "./suggestions";
 
 const DOW = ["M", "T", "W", "T", "F", "S", "S"];
@@ -201,6 +202,7 @@ export function BillsScreen() {
 
       <Suggestions heading={empty ? "Looks like these repeat" : "Add these too?"} />
 
+      {!empty && <SchedulerStatus />}
       {!empty && <p className="bill-note">Logged bills are ordinary transactions: they appear in Activity, count towards available cash and show up in Analytics.</p>}
     </div>
   );
