@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { UI } from "@/lib/icons";
 import { applyUpdate, watchForUpdate } from "@/lib/sw-update";
+import { useBannerSpace } from "./banner-space";
 
 const CHECK_EVERY_MS = 15 * 60_000;
 
@@ -14,6 +15,8 @@ export function UpdateBanner() {
   const [dismissed, setDismissed] = useState(false);
   const [busy, setBusy] = useState(false);
   const reg = useRef<ServiceWorkerRegistration | null>(null);
+  const box = useRef<HTMLDivElement>(null);
+  useBannerSpace(box, !!waiting && !dismissed);
 
   useEffect(() => {
     if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
@@ -34,7 +37,7 @@ export function UpdateBanner() {
 
   if (!waiting || dismissed) return null;
   return (
-    <div role="status" className="update-banner" data-testid="update-banner">
+    <div ref={box} role="status" className="update-banner" data-testid="update-banner">
       <UI.RefreshCw size={16} strokeWidth={2} aria-hidden />
       <span className="msg">A new version of Sterling is ready.</span>
       <button className="go" disabled={busy} onClick={() => { setBusy(true); if (!applyUpdate(waiting, navigator.serviceWorker, () => window.location.reload())) setBusy(false); }}>{busy ? "Updating…" : "Refresh"}</button>
