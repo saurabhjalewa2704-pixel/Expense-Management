@@ -15,7 +15,7 @@ input,textarea,select{font:inherit;color:inherit}
 .cau{color:var(--caution)}
 .muted{color:var(--ink-2)}
 .faint{color:var(--ink-3)}
-.scroll{padding:calc(var(--safe-top) + 12px) var(--gutter) calc(var(--tabbar-h) + 40px)}
+.scroll{padding:calc(var(--banner-top, var(--safe-top)) + 12px) var(--gutter) calc(var(--tabbar-h) + 40px)}
 .row-between{display:flex;justify-content:space-between;align-items:center;gap:12px}
 
 /* ---------- type ---------- */

@@ -30,6 +30,9 @@ test.describe("new version banner (PWA)", () => {
     const banner = page.getByTestId("update-banner");
     await expect(banner).toBeVisible({ timeout: 20_000 });
     await expect(banner).toContainText("A new version of Sterling is ready.");
+    // the banner pushes the page down instead of covering its header
+    const h = (await banner.boundingBox())!.height;
+    expect(await page.locator(".scroll").first().evaluate((el) => parseFloat(getComputedStyle(el).paddingTop))).toBeGreaterThanOrEqual(h);
     expect(await page.evaluate(() => (window as unknown as { __marker?: number }).__marker)).toBe(1);        // the page was not reloaded behind the user's back
 
     await banner.getByRole("button", { name: "Refresh" }).click();
