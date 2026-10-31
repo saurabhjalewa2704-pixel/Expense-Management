@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { explainAiError } from "@/lib/ai/diagnose";
 import { ADHOC_PER_DAY, adhocRunsToday, runDigest } from "@/lib/ai/server";
 import { supabaseServer } from "@/lib/supabase/server";
 
@@ -20,6 +21,6 @@ export async function POST() {
     return NextResponse.json({ run });
   } catch (e) {
     console.error("[insights]", e);
-    return NextResponse.json({ error: "We couldn't refresh your insights. Please try again." }, { status: 500 });
+    return NextResponse.json({ error: `We couldn't refresh your insights. ${explainAiError(e)}` }, { status: 500 });
   }
 }

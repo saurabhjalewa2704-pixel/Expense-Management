@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
+import { explainAiError } from "@/lib/ai/diagnose";
 import { anthropicAsk } from "@/lib/ai/ask/anthropic";
 import { answerQuestion, type PriorTurn } from "@/lib/ai/ask/run";
 import { stubModel } from "@/lib/ai/ask/stub";
@@ -55,6 +56,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ turn });
   } catch (e) {
     console.error("[ask]", e);
-    return NextResponse.json({ error: "I couldn't answer that just now. Please try again." }, { status: 500 });
+    return NextResponse.json({ error: `I couldn't answer that just now. ${explainAiError(e)}` }, { status: 500 });
   }
 }
