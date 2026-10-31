@@ -14,7 +14,7 @@ type Tab = "weekly" | "monthly" | "adhoc";
 const TABS: { id: Tab; label: string }[] = [{ id: "weekly", label: "Last week" }, { id: "monthly", label: "Last month" }, { id: "adhoc", label: "So far" }];
 
 const stamp = (iso: string) =>
-  new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(iso)).replace(/,\s*/g, " ").replace(/(\d{2}:\d{2})$/, ", $1");
+  new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(iso)).replace(/,\s*/g, " ").replace(/\s+at\s+/, " ").replace(/(\d{2}:\d{2})$/, ", $1");
 
 export function InsightsScreen() {
   const runs = useInsightRuns(), fb = useInsightFeedback(), profile = useProfile(), count = useTransactionCount();
@@ -27,7 +27,7 @@ export function InsightsScreen() {
   const byScope = (s: Tab): InsightRunRow | undefined => runs.data?.find((r) => r.scope === s);
   const tab: Tab = picked ?? (runs.data?.[0]?.scope as Tab | undefined) ?? "adhoc";
   const run = byScope(tab);
-  const dismissed = new Set((fb.data ?? []).filter((f) => f.action === "dismissed").map((f) => f.card_key));
+  const dismissed = new Set((fb.data ?? []).filter((f) => f.action === "dismissed" && f.run_id === run?.id).map((f) => f.card_key));
   const cards = run ? [...run.cards].sort((a, b) => a.rank - b.rank).filter((c) => !dismissed.has(c.key)) : [];
   const off = profile.data?.ai_enabled === false;
 
@@ -64,7 +64,7 @@ export function InsightsScreen() {
         ) : !run ? (
           <div className="card"><h3 style={{ fontWeight: 600 }}>Nothing here yet</h3><p className="sub" style={{ marginTop: 6 }}>Digests arrive on Monday mornings and on the 1st. Tap refresh to see where you stand now.</p></div>
         ) : cards.length === 0 ? (
-          <p className="sub">You&rsquo;ve dismissed everything here. Refresh for a new look.</p>
+          <p className="sub" data-testid="insights-none">{run && run.cards.length === 0 ? "This run had nothing to say yet. Keep logging and refresh again." : "You\u2019ve dismissed everything here. Refresh for a new look."}</p>
         ) : (
           cards.map((c) => <InsightCardView key={c.key} run={run} card={c} onFeedback={(a) => feedback(run, c, a)} />)
         )}

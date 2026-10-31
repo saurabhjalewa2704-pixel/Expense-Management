@@ -75,7 +75,8 @@ export function useCardFeedback() {
 export function useVisibleCards() {
   const runs = useInsightRuns(), fb = useInsightFeedback();
   const run = runs.data?.[0];
-  const dismissed = new Set((fb.data ?? []).filter((f) => f.action === "dismissed").map((f) => f.card_key));
+  // dismissed means "not this card in this run": a refresh starts with a clean slate (the model is told what you dismissed before)
+  const dismissed = new Set((fb.data ?? []).filter((f) => f.action === "dismissed" && f.run_id === run?.id).map((f) => f.card_key));
   const cards = run ? [...run.cards].sort((a, b) => a.rank - b.rank).filter((c) => !dismissed.has(c.key)) : [];
   return { run, cards, loading: runs.isLoading };
 }
