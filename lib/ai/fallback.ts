@@ -14,7 +14,7 @@ export function fallbackCards(facts: Facts): Card[] {
 
   // pace
   const spend = get("spend_mtd"), prev = get("spend_prev_same_point"), gap = get("pace_gap"), dir = get("pace_dir"), prevName = get("prev_month_name")?.display ?? "last month";
-  if (spend && prev && gap && dir && dir.display !== "level") {
+  if (spend && prev && gap && dir && dir.display !== "level" && (prev.value_pence ?? 0) > 0) {            // never compare with an empty month
     const under = dir.display === "under";
     const projected = get("projected_spend");
     add({
