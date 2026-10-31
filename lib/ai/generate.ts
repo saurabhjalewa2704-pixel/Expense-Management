@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ISODate } from "@/lib/dates";
 import { buildFacts, periodFor } from "./facts";
 import { fallbackCards, fallbackTripCards } from "./fallback";
+import { explainAiError } from "./explain";
 import { buildTripFacts } from "./trip-facts";
 import { Card, type Facts } from "./types";
 import { failureList, validateCards, type Dropped } from "./validator";
@@ -18,6 +19,8 @@ export interface Narration {
   outputTokens: number;
   usedFallback: boolean;
   dropped: Dropped[];
+  /** Why the model's cards were not used: the call failed (in words), or its figures failed the check. */
+  reason?: string;
 }
 
 type Log = (message: string, data?: unknown) => void;
@@ -53,11 +56,13 @@ export async function narrate(facts: Facts, writer: CardWriter | null, log: Log 
         if (bad.length + dropped.length) log("cards dropped by the grounding validator", { attempt, dropped: [...bad, ...dropped].map((d) => ({ key: d.card.key, reasons: d.reasons })) });
       } catch (e) {
         log("the model call failed", String(e));
+        out.reason = explainAiError(e);
         break;
       }
     }
   }
   if (out.cards.length < min) {
+    if (writer && !out.reason) out.reason = out.dropped.length ? `The AI's wording was rejected by the figure check (${out.dropped[0]!.reasons[0] ?? "an unmatched number"}).` : "The AI returned too few cards.";
     // fewer than the minimum survived (even after the retry): top up from the deterministic cards, grounded by construction
     for (const f of fallback(facts)) {
       if (out.cards.length >= min && writer) break;
@@ -87,6 +92,7 @@ export interface InsightRunRow {
   input_tokens: number | null; output_tokens: number | null; used_fallback: boolean; created_at: string;
   /** A transaction was back-dated into this period after the run (EC-D4). */
   stale?: boolean;
+  validation?: { reason?: string | null };
 }
 
 export async function generateInsights(o: GenerateOptions): Promise<InsightRunRow> {
@@ -99,7 +105,7 @@ export async function generateInsights(o: GenerateOptions): Promise<InsightRunRo
   const { data, error } = await o.db.from("insight_runs").insert({
     user_id: o.userId, scope: o.scope, period_start: period.from, period_end: period.to, facts, cards: n.cards, model: capped ? "template (token cap)" : n.model,
     input_tokens: n.inputTokens, output_tokens: n.outputTokens, used_fallback: n.usedFallback,
-    validation: { dropped: n.dropped.map((d) => ({ key: d.card.key, reasons: d.reasons })) },
+    validation: { dropped: n.dropped.map((d) => ({ key: d.card.key, reasons: d.reasons })), reason: n.reason ?? null },
   }).select().single();
   if (error) throw new Error(`could not store the insight run: ${error.message}`);
   return data as InsightRunRow;
@@ -117,7 +123,7 @@ export async function generateTripInsights(o: TripGenerateOptions): Promise<Insi
   const { data, error } = await o.db.from("insight_runs").insert({
     user_id: o.userId, scope: "trip", trip_id: o.tripId, period_start: facts.period.from, period_end: facts.period.to, facts, cards: n.cards,
     model: capped ? "template (token cap)" : n.model, input_tokens: n.inputTokens, output_tokens: n.outputTokens, used_fallback: n.usedFallback,
-    validation: { dropped: n.dropped.map((d) => ({ key: d.card.key, reasons: d.reasons })) },
+    validation: { dropped: n.dropped.map((d) => ({ key: d.card.key, reasons: d.reasons })), reason: n.reason ?? null },
   }).select().single();
   if (error) throw new Error(`could not store the trip insight run: ${error.message}`);
   return data as InsightRunRow;

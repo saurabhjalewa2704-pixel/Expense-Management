@@ -70,7 +70,7 @@ export function InsightsScreen() {
         )}
       </div>
       {run?.stale && <p className="sub" data-testid="insights-stale" style={{ marginTop: 12, textAlign: "center" }}>You added something to this period afterwards. These cards may be out of date; the next refresh updates them.</p>}
-      {run && (run.model.startsWith("template") || run.used_fallback) && <p className="sub" data-testid="insights-paused" style={{ marginTop: 8, textAlign: "center" }}>AI summary paused. These cards are written from your numbers directly.</p>}
+      {run && (run.model.startsWith("template") || run.used_fallback) && <p className="sub" data-testid="insights-paused" style={{ marginTop: 8, textAlign: "center" }}>{run.validation?.reason ? `AI summary paused: ${run.validation.reason}` : run.model.startsWith("template") ? "AI summary paused: no API key on the server, or this month\u2019s allowance is used." : "AI summary paused."} These cards are written from your numbers directly.</p>}
       {run && <p className="sub" style={{ marginTop: 20, textAlign: "center" }}>Generated from your data · {run.period_start === run.period_end ? run.period_start : `${run.period_start} to ${run.period_end}`}</p>}
       {!off && <AskDock />}
     </div>
