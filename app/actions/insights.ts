@@ -1,4 +1,5 @@
 "use server";
+import { checkAnthropic } from "@/lib/ai/diagnose";
 import { z } from "zod";
 import { fail, friendlyDbError, ok, type ActionResult } from "@/lib/action";
 import { tokenCap, tokensUsedThisMonth } from "@/lib/ai/server";
@@ -32,4 +33,12 @@ export async function getAiUsage(): Promise<ActionResult<{ used: number; cap: nu
   const { data: u } = await db.auth.getUser();
   if (!u.user) return fail("Please sign in again.");
   return ok({ used: await tokensUsedThisMonth(db, u.user.id), cap: tokenCap(), live: !!process.env.ANTHROPIC_API_KEY });
+}
+
+/** Settings → AI: "Check the connection": is the key set, and does each model answer? */
+export async function checkAiConnection(): Promise<ActionResult<Awaited<ReturnType<typeof checkAnthropic>>>> {
+  const db = await supabaseServer();
+  const { data: u } = await db.auth.getUser();
+  if (!u.user) return fail("Please sign in again.");
+  return ok(await checkAnthropic());
 }

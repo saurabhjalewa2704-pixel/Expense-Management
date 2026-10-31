@@ -1,7 +1,7 @@
 "use client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { clearAiHistory, getAiUsage } from "@/app/actions/insights";
+import { checkAiConnection, clearAiHistory, getAiUsage } from "@/app/actions/insights";
 import { updateProfile } from "@/app/actions/profile";
 import { Switch } from "@/components/ui/switch";
 import { PageHeader } from "@/components/ui/page-header";
@@ -18,6 +18,8 @@ export function AiScreen() {
   const toast = useToast();
   const usage = useQuery({ queryKey: ["ai-usage"], queryFn: async () => { const r = await getAiUsage(); if (!r.ok) throw new Error(r.error); return r.data; } });
   const [confirmClear, setConfirmClear] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [check, setCheck] = useState<{ key: boolean; models: { id: string; ok: boolean; message?: string }[] } | null>(null);
   const set = async (patch: Record<string, boolean>) => {
     const r = await updateProfile(patch);
     if (!r.ok) toast({ message: r.error, tone: "error" });
@@ -37,6 +39,17 @@ export function AiScreen() {
       </div>
       <div className="section-h"><h2>What is sent</h2></div>
       <p className="sub">Category totals, comparisons and payee names for the period, never account numbers, balances you didn&rsquo;t ask about, or your e-mail address.{usage.data && !usage.data.live ? " No API key is configured on this server, so insights are written from templates." : ""}</p>
+      <div className="section-h"><h2>Check the connection</h2></div>
+      <div className="card" style={{ marginTop: 10 }} data-testid="ai-check">
+        <p className="sub">Sends one tiny request to Anthropic for each model Sterling uses, and says what is wrong if one fails.</p>
+        <button className="btn secondary" style={{ height: 44, marginTop: 12 }} disabled={checking} onClick={async () => { setChecking(true); const r = await checkAiConnection(); setChecking(false); if (!r.ok) return toast({ message: r.error, tone: "error" }); setCheck(r.data); }} data-testid="ai-check-run">{checking ? "Checking…" : "Check now"}</button>
+        {check && (
+          <div style={{ marginTop: 12 }} data-testid="ai-check-result">
+            {!check.key ? <p style={{ color: "var(--caution)" }}>No ANTHROPIC_API_KEY is set on the server, so insights use templates and Ask Sterling can&rsquo;t answer. Add it in Vercel → Settings → Environment Variables, then redeploy.</p>
+              : check.models.map((m) => <p key={m.id} style={{ marginTop: 6, color: m.ok ? "var(--positive)" : "var(--caution)" }}>{m.ok ? "✓" : "✕"} {m.id}{m.message ? `: ${m.message}` : " answers"}</p>)}
+          </div>
+        )}
+      </div>
       <div className="section-h"><h2>This month&rsquo;s usage</h2></div>
       <div className="card" style={{ marginTop: 10 }}>
         <div className="row-between"><span data-testid="ai-usage">{usage.data ? `${n(usage.data.used)} of ${n(usage.data.cap)} tokens` : "…"}</span><span className="sub">{pct}%</span></div>
