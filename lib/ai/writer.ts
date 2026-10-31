@@ -22,7 +22,7 @@ export function anthropicWriter(apiKey: string, model: string = MODELS.digest): 
         max_tokens: 2000,
         system: SYSTEM_PROMPT,
         tools: [{ name: "emit_cards", description: "Emit the insight cards for the user.", input_schema: cardsSchema as Anthropic.Tool.InputSchema }],
-        tool_choice: { type: "tool", name: "emit_cards" },
+        tool_choice: { type: "auto" },                       // some models refuse a forced tool; the prompt tells it to call emit_cards and a missing call is handled below
         messages: [{ role: "user", content: userMessage(facts, retryFailures) }],
       });
       const block = res.content.find((b) => b.type === "tool_use" && b.name === "emit_cards");

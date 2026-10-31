@@ -12,7 +12,7 @@ Rules:
 - Prefer insight over description: say what changed, by how much, and why it might matter.
 - Prioritise: (1) things that change the month's outcome, (2) unusual changes, (3) wins.
 - Respect feedback: do not repeat card types or topics the user dismissed recently.
-- Output 3–6 cards by calling emit_cards. Titles ≤ 70 characters, bodies ≤ 220 characters.`;
+- Output 3–6 cards by calling the emit_cards tool. Always call it; do not answer in plain text. Titles ≤ 70 characters, bodies ≤ 220 characters.`;
 
 const GUIDE = `How to fill the cards:
 - type: pace (this month against last month), anomaly (a category well above its usual), trend (rising for several months), subscription, new_payee (first time at a payee), win (something went well), suggestion (a behavioural idea).
