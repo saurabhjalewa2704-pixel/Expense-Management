@@ -6,7 +6,6 @@ import { generateInsights, type InsightRunRow } from "./generate";
 import type { Facts } from "./types";
 import { anthropicWriter, type CardWriter } from "./writer";
 
-export const ADHOC_PER_DAY = 10;
 export const ASK_PER_DAY = 30;
 
 /** The real writer when ANTHROPIC_API_KEY is set; otherwise null, and digests use the deterministic template cards. */
@@ -38,11 +37,6 @@ export async function tokensUsedThisMonth(db: SupabaseClient, userId: string, to
 
 export async function askedToday(db: SupabaseClient, userId: string, today: ISODate = serverToday()): Promise<number> {
   const { count } = await db.from("ask_turns").select("id", { count: "exact", head: true }).eq("user_id", userId).gte("created_at", londonMidnight(today));
-  return count ?? 0;
-}
-
-export async function adhocRunsToday(db: SupabaseClient, userId: string, today: ISODate = serverToday()): Promise<number> {
-  const { count } = await db.from("insight_runs").select("id", { count: "exact", head: true }).eq("user_id", userId).eq("scope", "adhoc").gte("created_at", londonMidnight(today));
   return count ?? 0;
 }
 

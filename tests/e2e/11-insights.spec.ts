@@ -90,13 +90,12 @@ test.describe("AI insights (M4)", () => {
     expect(res.status()).toBe(403);
   });
 
-  test("the refresh is limited to 10 a day, and the cron route needs its secret", async ({ page, request }) => {
+  test("refreshing has no daily limit, and the cron route needs its secret", async ({ page, request }) => {
     await startDemo(page);
     await sql(`insert into insight_runs (user_id, scope, period_start, period_end, facts, cards, model)
                select p.id, 'adhoc', '2026-10-01', '2026-10-18', '{"facts":[],"entities":[]}', '[]', 'template' from profiles p, generate_series(1,10)`);
-    const res = await page.request.post("/api/insights");
-    expect(res.status()).toBe(429);
-    expect((await res.json()).error).toMatch(/10 refreshes/);
+    const res = await page.request.post("/api/insights");                      // an eleventh refresh in a day still works
+    expect(res.status()).toBe(200);
 
     expect((await request.get("/api/cron/digest")).status()).toBe(401);
     expect((await request.get("/api/cron/maintenance")).status()).toBe(401);
