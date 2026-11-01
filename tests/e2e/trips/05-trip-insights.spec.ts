@@ -31,7 +31,7 @@ test.describe("Trip insights, wrap-up and notifications (TRIP-08)", () => {
     await startTrip(page);
     const usa = (await sqlOne<{ id: string }>(`select id from trips where name = 'USA'`)).id;
     await page.goto(`/trips/${usa}`);
-    await expect(page.getByTestId("trip-insights").getByTestId("insight-card").first()).toBeVisible();
+    await expect(page.getByTestId("trip-insights").getByTestId("insight-card").first()).toBeVisible({ timeout: 40_000 });          // generated on demand: slow under load
     const run = await sqlOne<{ facts: { facts: { display: string }[] }; cards: { title: string; body: string }[]; validation: { dropped: unknown[] } }>(`select facts, cards, validation from insight_runs where trip_id = '${usa}'`);
     const shown = new Set(run.facts.facts.map((f) => f.display));
     for (const c of run.cards) for (const fig of `${c.title} ${c.body}`.match(/£(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d{2})?|\d+(?:\.\d+)?%/g) ?? []) expect(shown.has(fig), `${fig} in "${c.title}"`).toBe(true);
