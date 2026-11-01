@@ -14,6 +14,7 @@ const OTP = process.env.FAKE_OTP ?? "123456";
 const ALLOW_SIGNUPS = process.env.ALLOW_SIGNUPS === "true";
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL ?? "postgres://postgres@127.0.0.1:54322/sterling_dev", max: 4 });
 const SEED_FILE = path.resolve(path.dirname(new URL(import.meta.url).pathname), "../../supabase/seed.sql");
+const BUDGET_SEED_FILE = path.resolve(path.dirname(new URL(import.meta.url).pathname), "../../supabase/seed_budget.sql");
 const TRIP_SEED_FILE = path.resolve(path.dirname(new URL(import.meta.url).pathname), "../../supabase/seed_trip.sql");
 
 const b64 = (b) => Buffer.from(b).toString("base64url");
@@ -120,6 +121,7 @@ async function auth(req, res, url) {
 
 // Test hooks. POST /__test/reset wipes every user (cascading), creates the owner, and can load the demo data.
 //   ?seed=demo      run supabase/seed.sql for the owner
+//   ?seed=budget    run supabase/seed.sql and then supabase/seed_budget.sql (PRD Appendix A.3)
 //   ?seed=trip      run supabase/seed_trip.sql (the USA trip) for the owner
 //   ?onboarded=1    mark first-run setup as done
 //   ?user=none      leave the database without any user
@@ -131,6 +133,9 @@ async function testHook(req, res, url) {
     if (url.searchParams.get("user") !== "none") user = await createUser(email, { display_name: "Saurabh" });
     if (url.searchParams.get("seed") === "demo") {
       await pool.query(fs.readFileSync(SEED_FILE, "utf8"));
+    } else if (url.searchParams.get("seed") === "budget") {
+      await pool.query(fs.readFileSync(SEED_FILE, "utf8"));
+      await pool.query(fs.readFileSync(BUDGET_SEED_FILE, "utf8"));     // PRD Appendix A.3: the budget, five limits and the designed history
     } else if (url.searchParams.get("seed") === "trip") {
       await pool.query(fs.readFileSync(TRIP_SEED_FILE, "utf8"));       // PRD Appendix A.2, the USA trip, viewed on 12 March 2027
     } else if (user && url.searchParams.get("onboarded") === "1") {

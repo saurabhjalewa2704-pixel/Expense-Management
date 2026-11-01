@@ -1,7 +1,9 @@
 // The facts engine (PRD §12.2): everything a card may say is computed here, deterministically. The model narrates these
 // numbers; it never calculates its own. Each fact pairs a raw value with a pre-formatted `display` the model quotes verbatim.
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { average, projectMonth, weekdayAverages, WEEKDAY_NAMES, deltaFlag } from "@/lib/analytics";
+import { average, weekdayAverages, WEEKDAY_NAMES, deltaFlag } from "@/lib/analytics";
+import { loadBudgetView, loadMonthForecast } from "@/lib/forecast-data";
+import { budgetFacts } from "./budget-facts";
 import { addDays, addMonths, formatDayMonth, formatMonth, formatShort, monthEnd, monthStart, weekdayIndex, type ISODate } from "@/lib/dates";
 import { formatGBP, medianPence, pctChange, type Pence } from "@/lib/money";
 import { fetchDailySpend, fetchMonthlyTotals, fetchPace } from "@/lib/queries/fetchers";
@@ -17,12 +19,16 @@ export interface FactsInput {
   scope: Facts["scope"];
   period: Facts["period"];
   pace: MonthPace;
-  projected: Pence | null;
+  /** The month's forecast from the one engine (lib/forecast.ts), when it has one to give. */
+  forecast: { pence: Pence; low: Pence | null; high: Pence | null } | null;
   monthAvg: Pence;
   history: HistoryRow[];
   /** Full-month totals per category id, oldest first, ending at the period's month. */
   trends: Record<string, MonthTotal[]>;
   streaming?: { id: string; name: string; months: MonthTotal[] };
+  /** BUD-12: this month's budget as the forecast engine sees it (when a budget exists), and any limit changes worth proposing. */
+  budget?: import("@/lib/budget").BudgetView | null;
+  budgetSuggestions?: import("./budget-facts").BudgetSuggestion[];
   newPayees: { payee_id: string; name: string; amount_pence: number; occurred_on: ISODate }[];
   big: { id: string; payee_name: string | null; category_name: string | null; amount_pence: number; occurred_on: ISODate; note?: string | null }[];
   weekdayAvg: Pence[];
@@ -48,7 +54,13 @@ export function assembleFacts(i: FactsInput): Facts {
   add({ key: "pace_gap", label: `Difference from ${prevMonth}'s pace`, value_pence: gap, display: whole(gap) });
   add({ key: "pace_dir", label: "Whether this month is under or over last month's pace", display: gap < 100 ? "level" : spend < prev ? "under" : "over" });
   add({ key: "prev_month_name", label: "Last month", display: prevMonth });
-  if (i.projected !== null) add({ key: "projected_spend", label: "About what this month's spending will reach", value_pence: i.projected, display: whole(i.projected) });
+  if (i.forecast) {
+    add({ key: "month_forecast", label: "About what this month's spending will reach", value_pence: i.forecast.pence, display: whole(i.forecast.pence) });
+    if (i.forecast.low !== null && i.forecast.high !== null) {
+      add({ key: "month_forecast_low", label: "The low end of the forecast range", value_pence: i.forecast.low, display: whole(i.forecast.low) });
+      add({ key: "month_forecast_high", label: "The high end of the forecast range", value_pence: i.forecast.high, display: whole(i.forecast.high) });
+    }
+  }
   if (i.monthAvg > 0) add({ key: "month_avg", label: "Average monthly spend", value_pence: i.monthAvg, display: whole(i.monthAvg) });
 
   // ---- categories in the period, against their usual ----
@@ -90,6 +102,9 @@ export function assembleFacts(i: FactsInput): Facts {
       add({ key: "streaming_since", label: formatMonth(then.month), display: formatMonth(then.month) });
     }
   }
+
+  // ---- the budget (BUD-12) ----
+  if (i.budget && (i.scope === "adhoc" || i.scope === "weekly" || i.scope === "monthly")) budgetFacts(i.budget, i.budgetSuggestions ?? [], add, entities);
 
   // ---- first-time payees and the biggest single spends ----
   for (const p of i.newPayees.slice(0, 2)) {
@@ -160,8 +175,9 @@ export async function buildFacts(db: SupabaseClient, o: { scope: Facts["scope"];
   const pace = partial(addMonths(monthStart(o.today), -1)) ? { ...pace0, prev_spend_pence: 0, prev_total_pence: 0 } : pace0;
 
   const thisMonth = monthStart(o.today);
-  const monthSpend = monthlyTotals.find((t) => t.month === thisMonth)?.spend_pence ?? 0;
-  const projected = o.scope === "adhoc" || o.scope === "weekly" ? projectMonth(daily6 as DailySpend[], o.today, monthSpend) : null;
+  // BUD-05a rule 7: the same forecast as the trend chart, the Budget card and Available cash; missing history is excluded, never £0
+  const mf = o.scope === "adhoc" || o.scope === "weekly" ? await loadMonthForecast(db, thisMonth, o.today) : null;
+  const forecast = mf && mf.forecast.available && !mf.forecast.closed ? { pence: mf.forecast.forecast, low: mf.forecast.low, high: mf.forecast.high } : null;
   const complete = monthlyTotals.filter((t) => t.month < thisMonth && t.spend_pence > 0 && !partial(t.month)).map((t) => t.spend_pence);
 
   // monthly history for the top categories and the streaming sub-category, full months only
@@ -179,9 +195,24 @@ export async function buildFacts(db: SupabaseClient, o: { scope: Facts["scope"];
     notes = Object.fromEntries(((data ?? []) as { id: string; note: string | null }[]).map((r) => [r.id, r.note]));
   }
 
+  // BUD-12: the budget as the one engine sees it, and (monthly digest only) limits missed or beaten three months running
+  const budget = await loadBudgetView(db, thisMonth, o.today).catch(() => null);
+  const budgetSuggestions: import("./budget-facts").BudgetSuggestion[] = [];
+  if (budget && o.scope === "monthly") {
+    for (const l of budget.limits) {
+      if (!l.categoryId) continue;
+      const prior = (await monthly(l.categoryId)).filter((m) => m.month < thisMonth && !partial(m.month)).slice(-3);
+      if (prior.length < 3) continue;
+      const med = medianPence(prior.map((m) => m.total_pence));
+      const round10 = (p: Pence) => Math.max(1000, Math.round(p / 1000) * 1000);
+      if (prior.every((m) => m.total_pence > l.amount)) budgetSuggestions.push({ categoryId: l.categoryId, name: l.name, current: l.amount, proposed: round10(med), kind: "missed" });
+      else if (prior.every((m) => m.total_pence * 10 < l.amount * 7)) budgetSuggestions.push({ categoryId: l.categoryId, name: l.name, current: l.amount, proposed: round10(med * 1.1), kind: "beaten" });
+    }
+  }
+
   const series = (await rpc<DailySpend[]>("daily_spend", { p_from: thisMonth, p_to: o.today, p_exclude_fixed: false })).map((d) => d.cumulative_pence);
   return assembleFacts({
-    today: o.today, scope: o.scope, period, pace, projected, monthAvg: average(complete),
+    today: o.today, scope: o.scope, period, pace, forecast, budget, budgetSuggestions, monthAvg: average(complete),
     history, trends: Object.fromEntries(trendRows), streaming: stream ? { id: stream.id, name: stream.name, months: await monthly(stream.id) } : undefined,
     newPayees: newPayeesRaw, big: big.map((b) => ({ ...b, note: notes[b.id] ?? null })),
     weekdayAvg: weekdayAverages((periodDaily as DailySpend[]).filter((d) => d.day <= o.today)), series, feedback,

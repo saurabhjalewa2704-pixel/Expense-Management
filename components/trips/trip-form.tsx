@@ -217,7 +217,7 @@ export function TripForm({ id }: { id?: string }) {
           </div>
         )}
 
-        <div className="section-h"><h2>Stops</h2><span className="sub">Optional · {stops.length}/8</span></div>
+        <div className="eyebrow" style={{ margin: "22px 4px 8px" }}>Stops <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 400 }}>· optional, for spend by city · {stops.length}/8</span></div>
         <div className="list" data-testid="trip-stops">
           {stops.map((s, i) => (
             <div key={i} className="row" style={{ flexWrap: "wrap", gap: 8 }}>
@@ -234,7 +234,7 @@ export function TripForm({ id }: { id?: string }) {
           </button>
         </div>
 
-        <div className="section-h"><h2>Budget</h2><span className="sub">Optional</span></div>
+        <div style={{ height: 14 }} />
         <div className="list">
           <label className="row"><div className="row-main"><div className="row-t" style={{ fontWeight: 400 }}>Trip budget</div></div>
             <span className="muted">£</span>
@@ -249,7 +249,7 @@ export function TripForm({ id }: { id?: string }) {
           <div className="row"><div className="row-main"><div className="row-t" style={{ fontWeight: 400 }}>Add expenses automatically</div><div className="row-s">Anything you spend during these dates is tagged to the trip</div></div>
             <Switch label="Add expenses automatically" checked={auto} onChange={setAuto} /></div>
         </div>
-        {!id && <p className="f-note"><UI.Info size={16} strokeWidth={1.75} aria-hidden style={{ flex: "none", marginTop: 2 }} /><span>After you create the trip, Sterling looks through the last 12 months for flights and hotels you’ve already paid for, so you can add them.</span></p>}
+        {!id && <p className="f-note"><UI.MapPin size={16} strokeWidth={1.75} aria-hidden style={{ flex: "none", marginTop: 2 }} /><span>After you create the trip, Sterling looks through the last 12 months for flights and hotels you’ve already paid for, so you can add them.</span></p>}
 
         {error && <p role="alert" className="callout" style={{ color: "var(--caution)", margin: "10px 4px" }} data-testid="trip-error">{error}</p>}
         {hint && !error && !clash && <p className="sub" style={{ margin: "6px 4px" }} data-testid="trip-hint">{hint}</p>}

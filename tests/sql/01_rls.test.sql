@@ -18,7 +18,11 @@ begin
   insert into accounts (name, type, opening_balance_pence, opening_date) values ('A current', 'current', 100000, '2026-01-01') returning id into acc;
   select id into cat from categories where name = 'Groceries' and parent_id is null;
   perform create_transaction(gen_random_uuid(), 'expense', 1250, acc, null, cat, 'Tesco', null, '{}', '2026-02-01');
-  insert into budgets (category_id, amount_pence, starts_on) values (cat, 50000, '2026-02-01');
+  insert into budgets (category_id, amount_pence, effective_from) values (cat, 50000, '2026-02-01');
+  insert into budgets (category_id, amount_pence, effective_from) values (null, 200000, '2026-02-01');
+  insert into budget_overrides (category_id, month, amount_pence) values (cat, '2026-03-01', 60000);
+  insert into budget_forecast_log (month, day, category_id, spent_pence, forecast_pence) values ('2026-02-01', 10, null, 100, 300);
+  insert into budget_alerts_sent (month, category_id, kind, last_value_pence) values ('2026-02-01', cat, 'pct80', 40000);
   insert into recurring_items (type, amount_pence, account_id, category_id, frequency, day_of_month, starts_on, next_due_on)
     values ('expense', 5000, acc, cat, 'monthly', 1, '2026-03-01', '2026-03-01') returning id into rec;
   insert into recurring_occurrences (item_id, due_on, scheduled_on, status, amount_pence) values (rec, '2026-03-01', '2026-03-01', 'skipped', 5000);
@@ -44,7 +48,7 @@ begin
   -- user B sees nothing, anywhere
   perform set_config('request.jwt.claims', json_build_object('sub', ub, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  foreach t in array array['accounts','payees','transactions','recurring_items','recurring_occurrences','recurring_dismissed','trips','trip_stops','trip_category_budgets','category_redirects','budgets','insight_runs',
+  foreach t in array array['accounts','payees','transactions','recurring_items','recurring_occurrences','recurring_dismissed','trips','trip_stops','trip_category_budgets','category_redirects','budgets','budget_overrides','budget_forecast_log','budget_alerts_sent','insight_runs',
                            'insight_feedback','api_tokens','push_subscriptions','no_spend_days','pots','ask_turns'] loop
     execute format('select count(*) from %I', t) into n;
     assert n = 0, 'B can read ' || t;
@@ -56,6 +60,9 @@ begin
   assert (select count(*) from account_balances()) = 0, 'balances ignore other users';
   assert (select count(*) from list_transactions()) = 0, 'activity list ignores other users';
   assert (select count(*) from spend_by_category('2026-01-01', '2026-12-31')) = 0, 'analytics ignore other users';
+  assert (select count(*) from budget_for_month('2026-02-01')) = 0, 'budget_for_month ignores other users';
+  assert (select spent_pence from forecast_inputs('2026-02-01', null, '2026-02-28')) = 0, 'forecast_inputs ignore other users';
+  assert (select count(*) from budget_history(6, '2026-02-15') where budget_pence is not null) = 0, 'budget_history ignores other users';
 
   -- B cannot change or delete A's rows
   update accounts set name = 'hacked' where id = acc; get diagnostics n = row_count; assert n = 0, 'B updated A account';

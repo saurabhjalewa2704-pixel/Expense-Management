@@ -3,7 +3,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { CategoryBars } from "@/components/charts/category-bars";
+import { MonthOutlook } from "@/components/budget/month-outlook";
 import { BillsCard } from "@/components/home/bills-card";
+import { BudgetCard, BudgetPrompt, LimitsCard, useHasBudget } from "@/components/home/budget-cards";
 import { PaceChart } from "@/components/charts/pace-chart";
 import { Figure, cashLabel } from "@/components/money";
 import { InsightCard } from "@/components/insights/insight-card";
@@ -154,8 +156,15 @@ export function DesktopHome() {
           {recent.length === 0 && <p className="sub" style={{ padding: "24px 0" }}>Nothing logged yet. Press <kbd>N</kbd> to add your first transaction.</p>}
         </div>
 
-        <aside aria-label="Insights" className="stack"><InsightCard variant="list" /></aside>
+        <aside aria-label="Insights" className="stack"><DesktopBudget /><MonthOutlook /><InsightCard variant="list" /></aside>
       </section>
     </div>
   );
+}
+
+/** BUD-12: the budget card and the limits card sit in the right rail of the desktop dashboard. */
+function DesktopBudget() {
+  const { loading, view } = useHasBudget();
+  if (loading) return null;
+  return view ? <><BudgetCard /><LimitsCard /></> : <BudgetPrompt />;
 }

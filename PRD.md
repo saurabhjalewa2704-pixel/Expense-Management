@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| Version | 1.6 (balance anchors for past-dated entries; full edge-case register §18) |
+| Version | 1.7.1 (forecast robustness: BUD-05a, FC-1 to FC-10, "Why this forecast?") |
 | Date | 18 October 2026 |
 | Owner | Saurabh (product owner and only user) |
 | Builder | Claude Code |
@@ -101,6 +101,7 @@ Priority key: **P0** = MVP (must ship), **P1** = v1.1 (next), **P2** = later or 
 | Analytics | Pace chart, category breakdown with drill-down, cash-flow waterfall, 12-month trend, daily heatmap, top payees, period compare | Budget vs actual, savings rate | PDF monthly statement |
 | AI insights | Weekly and monthly digests (structured cards), on-demand refresh, feedback (helpful / dismiss) | "Ask Sterling" chat over your data; anomaly push alerts | Goal coaching |
 | Bills & recurring | Recurring payments by day of month, auto-logged at 06:00 on the due day; bills calendar; detection suggestions (§6.9) | n/a | n/a |
+| Budgets | Monthly overall budget, optional L1 category limits, plan line, forecast with range, safe-to-spend, what-ifs, Home cards, Analytics › Budgets, alerts (§6.13) | n/a | Envelope-style transfers between limits |
 | Trips | Trips with dates, stops and an optional budget; automatic tagging; earlier bookings; foreign-currency entry with conversion; trip overview, expenses, analytics and AI insights; "Exclude trips" in Analytics (§6.12) | Split trip costs with a companion | Shared trips |
 | Platform | Installable PWA, dark-only UI, desktop layouts, email-code sign-in, **evening reminder notification** (NOT-01) | Face ID app lock (WebAuthn), other push notifications (NOT-02 to NOT-04), privacy blur | Capacitor iOS wrapper, widgets |
 | Data | Export CSV / JSON | Scheduled backup e-mail | n/a |
@@ -170,6 +171,13 @@ max-width 1360 px. Quick Add opens as a centred modal (480 px) rather than a she
 | S23 | Attach earlier bookings | `23-trip-bookings.html` |
 | S24 | Add a past expense (before tracking began) | `24-past-expense.html` |
 | S25 | Expense dated before a reconcile: question sheet | `25-reconciled-question.html` |
+| S26 | Home with budget + limits cards | `26-home-budget.html` |
+| S27 | Budget detail | `27-budget-detail.html` |
+| S28 | Set up budgets | `28-budget-setup.html` |
+| S29 | Edit one category limit (sheet) | `29-category-limit.html` |
+| S30 | Analytics › Budgets | `30-analytics-budgets.html` |
+| S31 | Budget alerts (lock screen) | `31-budget-alerts.html` |
+| S32 | Why this forecast? (breakdown sheet) | `32-forecast-why.html` |
 
 ---
 
@@ -502,7 +510,7 @@ Why this handles the awkward cases correctly:
 
 **CASH-05 Pace (P0).** "£367 less than this point in September." This compares month-to-date spend with the previous month's spend up to the same day-of-month (or the last day, if that month is shorter). It is shown as a slim bar on Home: the filled track is this month's spend, and a tick marks where last month was.
 
-**CASH-06 Month-end projection (P1).** Projected close = available now − projected remaining spend + expected recurring income before month end. Projected remaining discretionary spend = the median of the last 3 months' spend for the remaining days of month, *excluding* categories already "done" this month (rent, council tax and anything else flagged `fixed` by recurring detection). Show it as a dashed line on S7: "On track to close at about £2,940."
+**CASH-06 Month-end projection (P0).** Calculated by the shared forecast engine (§6.13 BUD-05): projected close = available now − remaining forecast spend from pool accounts − recurring transfers out of the pool + recurring income into the pool. Show it as a dashed line on S7: "On track to close at about £3,139."
 
 **CASH-07 Pay-cycle months (P2).** Setting `month_start_day` (1–28). Every "month" across the app then runs from that day. This is in the schema now; it is exposed in the UI later.
 
@@ -541,7 +549,7 @@ Period control at the top: **Month · Quarter · Year · Custom**, with arrows t
 | AN-07 | **Category detail** | "Within Eating out, where did it go?" | Opened from any category row. Total vs usual, three stat tiles, a sub-category share bar and ranked list, a 6-month trend with sub-category filter chips, and top places. Full spec in §6.7.1. |
 | AN-08 | **Compare periods** (P0) | "Oct vs Sep" or "2026 vs 2025" | A side-by-side table by category with absolute and percentage deltas, sorted by the largest absolute change. |
 | AN-09 | **Savings rate** (P1) | "How much of my income do I keep?" | Monthly (income − spend) / income as a line, with a 3-month moving average. |
-| AN-10 | **Budget vs actual** (P1) | "Am I inside my budgets?" | For each budgeted category: a progress bar plus pace marker; over-budget shown in caution colour. |
+| AN-10 | **Budget vs actual** (P0) | "Am I inside my budgets?" | Now the **Analytics › Budgets** tab, §6.13 BUD-11. |
 
 ### 6.7.1 Sub-category analytics (P0)
 
@@ -630,7 +638,7 @@ Card types:
 
 | Type | Example (it must cite computed facts) |
 |---|---|
-| `pace` | "You're £367 behind September's pace. On track to close October at about £2,940." |
+| `pace` | "You're £367 behind September's pace. On track to close October at about £3,139." |
 | `anomaly` | "Eating out is running 38% above your 6-month norm: £312.60 so far vs about £226 by this point." |
 | `trend` | "Groceries have risen for 4 months in a row, from £512 in June to £604 in September." |
 | `subscription` | "Streaming & apps now total £41.97 a month, up £3.00 since July." |
@@ -838,9 +846,9 @@ create table bank_holidays (day date primary key, title text not null);   -- Eng
 9. Stopping a rule keeps its past transactions; Activity still shows them with the repeat glyph.
 10. Unit tests for `nextOccurrences` cover month-ends, leap years, quarterly, yearly on 29 Feb (→ 28 Feb in non-leap years), weekly, and the 29 Mar / 25 Oct 2026 clock changes.
 
-### 6.9a Budgets (P1)
+### 6.9a Budgets
 
-**BUD-01 Category budgets.** A monthly amount per parent category, with optional rollover of the unspent amount. Budget progress appears in AN-10 and on the category's deep dive, with a 90% warning in Insights.
+Superseded by **§6.13 Budgets (P0)**.
 
 ### 6.10 Settings, privacy, data
 
@@ -1115,6 +1123,285 @@ create table fx_rates (on_date date, currency char(3), gbp_per_unit numeric(18,8
 8. Every trip insight passes the grounding validator. The wrap-up arrives the day after the end date.
 9. Deleting the trip leaves all 24 transactions intact, with `trip_id = null`.
 10. Offline, a $ expense uses the last cached rate. After reconnecting, it's recalculated with the day's rate unless £ was edited.
+
+### 6.13 Budgets (P0)
+
+**Owner's brief (31 Oct 2026):**
+- Set a monthly overall budget, plus optional monthly limits on chosen L1 categories (only the ones at risk of spilling over).
+- Spending is tracked as usual.
+- Home shows how the month is going against the budget and against each limit, as sophisticated as possible: % left, forecast and so on, to support decisions.
+- Analytics gains budget views.
+
+Mock-ups:
+- `26-home-budget.html`: Home with the budget and limits cards
+- `27-budget-detail.html`: Budget detail
+- `28-budget-setup.html`: Set up budgets
+- `29-category-limit.html`: Edit one category limit
+- `30-analytics-budgets.html`: Analytics › Budgets
+- `31-budget-alerts.html`: Alerts
+
+All figures come from Appendix A.3. The example is a budget of £4,400 with five limits, on day 18 of 31.
+
+**Design intent.** A budget screen that only says "74% spent" misleads in a month that front-loads rent. Sterling answers three questions instead:
+1. **Am I where I should be today?** Compared against a *plan*, not a straight line.
+2. **Where will I end up?** A forecast with a likely range.
+3. **What do I need to do?** A safe daily amount, and what-ifs.
+
+Every number comes from **one forecast engine** (BUD-05). That engine is also used by available-cash projection (CASH-06, now P0), the Analytics trend chart and AI insights, so the app never shows two different forecasts for the same month.
+
+**BUD-01 What a budget is.**
+- **Overall monthly budget:** one amount that applies to every calendar month until changed (pay-cycle months follow CASH-07 when they ship).
+- **Covers** setting:
+  - *All spending, including bills and trips* (default, and the owner's stated wish for trips);
+  - *Exclude bills*: everything recurring in §6.9 is left out of both the budget and the spend;
+  - *Exclude trips*.
+- **Category limits (optional):** a monthly amount on any **L1 category**. All of its sub-categories count, including spend assigned to the parent directly. Limits are set only where the user wants them; categories without a limit are grouped as **"Everything else"**.
+  - "Everything else" allowance = overall budget − Σ limits.
+  - If Σ limits exceeds the overall budget, Setup shows the inline warning "Your limits add up to £X more than your monthly budget". Saving is still allowed; "Everything else" then shows £0 and turns caution-coloured.
+- **What counts as spend:** every expense dated in the month, regardless of `counts_in_balance` (a July booking counts in July; §6.2a), with transfers and adjustments excluded.
+  - Refunds reduce spend only when the refund (income, category Refunds) is linked to an expense category via `refund_category_id`. Add expense offers "Refund for…" when the Refunds income category is chosen.
+  - Linked refunds reduce both the category and the overall spend; unlinked refunds don't.
+- **Budget only, no money movement.** Budgets never change balances or available cash.
+
+**BUD-02 Changing budgets.**
+- Amounts are **effective-dated**. Editing asks "From this month" (default) or "From next month".
+- Past months keep the budget that applied at the time, so history stays honest.
+- **Adjust this month only** sets a one-month override, for example December at £5,500, without changing the default.
+- **Mid-month creation:** a budget created on the 18th applies to the whole month, including spending already logged. The forecast and plan treat it normally.
+- **Rollover (per limit, off by default):**
+  - when on, the unspent amount carries into next month's limit, and so does overspend (as a reduction);
+  - capped at ±100% of the base limit;
+  - shown as "£400 + £37 carried".
+- **Removing a limit** keeps its history; that category moves to "Everything else" from the chosen month.
+
+**BUD-03 Plan (the "where should I be today" line).**
+- Plan to date = (recurring expenses scheduled on or before today, from §6.9) + (budget − all recurring expenses scheduled this month) × days elapsed ÷ days in month.
+- **Bills sit on their due days and the rest is spread evenly.** With rent on the 1st, the plan jumps on day 1, and 74% spent on day 18 can still be **£131.70 under plan**.
+- A category's plan uses the recurring payments in that category in the same way.
+- With "Exclude bills", the plan is a straight line.
+
+**BUD-04 Headline measures** (overall and per limit):
+
+| Measure | Definition | Seed (overall) |
+|---|---|---|
+| Spent | Σ counted spend month-to-date | £3,236.85 |
+| Left | budget − spent (negative = over) | £1,163.15 |
+| % left / % spent | left ÷ budget | 26% / 74% |
+| % of month gone | day ÷ days in month (London date) | 58% |
+| Against plan | plan to date − spent (positive = under) | £131.70 under |
+| Bills to come | recurring expenses scheduled after today this month | £34.97 |
+| **Safe to spend per day** | (budget − spent − bills to come) ÷ days left including today, floored at £0 | £80.58 |
+| **Forecast** | BUD-05 | £4,363.02 |
+| Forecast range | BUD-05, low–high | £4,105–£4,735 |
+| Headroom | budget − forecast | £36.98 |
+| **Status** | **Over** if forecast > budget; **Tight** if forecast > 95% of budget; otherwise **On track**. Day 1–6: a status is shown only once spent passes plan by more than 10%; before that, "Early days". | Tight |
+
+**BUD-05 The forecast engine** (`/lib/forecast.ts`, mirrored in SQL as `month_forecast(p_month, p_category default null)`):
+
+```
+forecast = spent_so_far
+         + Σ recurring expenses scheduled after today this month (exact amounts; "varies" uses the last confirmed amount)
+         + expected_discretionary × days_left_including_today − discretionary already logged today (floored at 0)
+
+expected_discretionary per day = 0.6 × this month's discretionary daily average   (spent − recurring, ÷ days elapsed)
+                               + 0.4 × median daily discretionary for the same remaining day-range over the prior 3 complete months
+```
+
+- **Discretionary** means spend that wasn't logged by Bills. The calculation excludes trip-tagged spend (TRIP-09), one-off expenses larger than 5× the category's median ticket (marked "one-off" automatically, overridable), and partial months before tracking start (BAL-07). Trip spend still counts in *spent* when the budget covers trips.
+- **Weights shift with the month:** use 0.3/0.7 on days 1–7, 0.6/0.4 on days 8–21, and 0.8/0.2 from day 22.
+- **Range:** the same formula with the 25th and 75th percentile daily discretionary from the prior 3 months in place of the blend.
+- **Cold start:** with fewer than 2 prior complete months, use this month's average only, and label the forecast "Low confidence".
+- **The overall forecast is the sum of the category forecasts**, so every view adds up exactly. "Everything else" is the overall forecast minus the budgeted categories.
+- **CASH-06** (now P0): projected close = available now − remaining forecast spend (pool accounts) − recurring transfers out of the pool + recurring income into the pool. Seed: **≈ £3,139**.
+- **Forecast accuracy:** stored each night (`budget_forecast_log`) and shown in Analytics as the mean absolute error at the same day-of-month over the last 3 months.
+
+**BUD-05a Forecast robustness (P0, owner bug report 31 Oct 2026).**
+
+*Reported symptom:* the forecast always equals what has already been spent ("October is heading for £X", where £X is the month-to-date spend).
+
+*Likely causes in the old build* (check all three):
+- **(a) History treated as zero.** Months with no data were treated as £0 rather than excluded, so the history term was £0 for a new user.
+- **(b) Pace diluted.** The daily pace was divided by every day of the month, not by the days actually tracked.
+- **(c) Missing remaining-days term.** The "remaining days" term was missing or always zero.
+
+The rules below are mandatory. Each has a test (FC-1 to FC-10).
+
+1. **Never treat missing history as zero.** A prior month contributes to the history term only if it was fully tracked: `tracking_started_on` on or before its first day, and not a partial back-filled month (BAL-07). Months that don't qualify are **excluded**, never counted as £0.
+2. **Use tracked days for the pace.** `days_elapsed = today − max(month_start, tracking_started_on) + 1`, in London dates. *Example:* tracking started 18 Oct. On 25 Oct, `days_elapsed = 8`, not 25. This month's pace = discretionary spend since `max(month_start, tracking_started_on)` ÷ `days_elapsed`.
+3. **Weights when history is missing.** With 0 qualifying prior months the history weight is 0, so pace = this month's pace. With 1 qualifying month, use weights 0.8/0.2. With 2 or more, use the standard BUD-05 weights.
+4. **Minimum data.** If `days_elapsed < 3` **and** there are no qualifying prior months, don't show a number. Show **"Forecast available after 3 days of logging"** (and the same on the trend chart's hatched bar). With the budget's Setup amount known, Home may instead show "Plan: £X/day" from the budget.
+5. **The remaining-days term is explicit:** `remaining = round_half_even(pace × days_left) − discretionary_logged_today`, floored at 0. `days_left = month_end − today + 1`, which is **1 on the last day**, not 0. The month is "closed" only from the 1st of the next month. From then on, the past month shows **Actual**, not Forecast.
+6. **Sanity guard.** If `days_left ≥ 2`, pace > 0, and the computed forecast equals spent + bills to come, it is a bug. Log `forecast_degenerate` with the inputs to `budget_forecast_log.notes` and show the "Why this forecast?" breakdown instead of the bare number. This guard must never fire in tests.
+7. **One place.** The trend chart (AN-04), available-cash projection (CASH-06), Budgets (BUD-04 to BUD-07), Category detail and AI facts all call `month_forecast()`. Grep for any other projection code and delete it.
+8. **"Why this forecast?" sheet** (`32-forecast-why.html`). Tapping any forecast figure opens a breakdown:
+   - spent so far;
+   - bills still to come (listed);
+   - your daily pace, showing this month's pace and history pace with their weights, and stating which months were used (or "no full months yet");
+   - days left;
+   - the expected spend for the rest of the month;
+   - the forecast and its range.
+   This makes the number auditable, in the same way as the available-cash equation.
+9. **Debug endpoint (owner only).** `GET /api/debug/forecast?month=2026-10[&category=…]` returns every input and intermediate value as JSON. It requires the signed-in owner and is disabled in production unless `DEBUG_FORECAST=1`.
+
+*Tests* (fixtures use integer pence, London dates and `tracking_started_on = 2026-10-18` unless stated):
+
+| ID | Setup | Expected |
+|---|---|---|
+| FC-1 | Today 25 Oct; discretionary since 18 Oct £560.00; nothing logged yet today; no bills to come; no prior months | days_elapsed 8 → pace £70.00/day; days_left 7 → remaining £490.00; forecast = spent + £490.00, **strictly greater than spent** |
+| FC-2 | As FC-1, but today 19 Oct (days_elapsed 2) | No figure; shows "Forecast available after 3 days of logging" |
+| FC-3 | Today 31 Oct; pace £70.00; £20.00 logged today | days_left 1 → remaining £50.00; forecast = spent + £50.00 |
+| FC-4 | Today 1 Nov | October shows **Actual** = total spent; November forecast follows FC-1/FC-2 logic, with October now a qualifying month only if fully tracked (it isn't: started 18 Oct) → still history weight 0 |
+| FC-5 | Today 10 Dec; November fully tracked; October partial | Exactly 1 qualifying prior month (Nov) → weights 0.8/0.2 |
+| FC-6 | Appendix A.3 seed (3 qualifying months, day 18) | Forecast £4,363.02, range £4,105.42–£4,735.42 (unchanged) |
+| FC-7 | Prior month with £0 spend but fully tracked | Counts as a genuine £0 month (it qualifies); not confused with missing data |
+| FC-8 | Bills to come £34.97; pace 0 (nothing discretionary yet, day 5, history present) | forecast = spent + £34.97 + history-weighted remainder > spent |
+| FC-9 | Trend chart, Available cash, Budget card and AI facts on the same day | All show the identical forecast (to the penny) |
+| FC-10 | Degenerate guard | No test fixture triggers `forecast_degenerate` |
+
+**BUD-06 Home cards** (`26-home-budget.html`).
+- When a budget exists, the **October budget card replaces the pace card** below the available-cash hero. The pace comparison with last month moves to Analytics › Spending.
+- **Card contents:**
+  1. Title "‹Month› budget" with the status pill.
+  2. **Left** in 36 px, then "left of £4,400".
+  3. One sentence: "74% spent · 58% of the month gone · £132 under plan".
+  4. **The budget meter:**
+     - solid = spent;
+     - hatched = bills to come;
+     - outlined = forecast discretionary;
+     - a white tick = the budget end;
+     - a green tick = plan by today.
+     - The scale is max(budget, forecast) + 4%, so overspend is visible beyond the budget tick.
+  5. Two tiles: **Safe to spend** "£80.58/day for 14 days, after bills", and **Forecast · 31 Oct** "£4,363", with the headroom or overspend in status colour.
+- **Category limits card** directly below:
+  - the 3 limits **most at risk** (highest forecast ÷ limit), with "All ›" leading to Budget detail;
+  - each row: icon, name, "spent / limit", a bar (spent solid, forecast outlined, limit tick), "£87.40 left · £6.24/day", and "Forecast £142 over" or "under" in status colour;
+  - bars turn caution-coloured when the status is Tight or Over.
+- **No budget yet:** a one-time card "Set a monthly budget. Sterling suggests £5,235 from your last 11 months", with *Set up* and *Not now*. Hidden after dismissal; available again from Settings.
+- Tapping the budget card opens Budget detail; tapping a limit row opens Budget detail scrolled to that limit.
+
+**BUD-07 Budget detail** (`27-budget-detail.html`).
+- **Header:** month switcher (‹ ›; past months are read-only), status pill, **Left** in 52 px, and "left of £4,400.00 · 26% remaining · day 18 of 31".
+- **Forecast chart:**
+  - cumulative actual spend (solid ink) from day 1 to today;
+  - the forecast (dashed) from today to month end, through scheduled bills, with a shaded likely-range band;
+  - the plan line (positive green);
+  - the budget as a dashed horizontal line, labelled on the left;
+  - the forecast end point labelled;
+  - title, for example "On course to finish £37 under budget" or "Heading £X over budget by the 27th" (the day the forecast crosses the budget).
+- **Four tiles:** Safe to spend/day · Your usual pace/day · Against plan · Bills to come (naming the payees).
+- **What-if table:** month-end result and difference for 4 daily spends: £60, the **stay-on-budget amount** (highlighted), **your usual pace**, and £100. Values are rounded to the nearest £10, plus the two exact rows.
+- **Category limits:** every limit, most at risk first, then **Everything else** ("No limits set"), with the same row design as the Home card.
+- **One AI "Watch" card** for the riskiest limit (§12 pipeline, type `budget_risk`). Hidden when everything is On track; then a `budget_win` card is shown if available.
+- The edit (pencil) icon opens Setup.
+
+**BUD-08 Setup** (`28-budget-setup.html`, opened from Budget detail, Settings → Budgets or the Home prompt).
+- **Monthly budget:** a large amount field.
+  - **Covers** (BUD-01) and **Adjust this month only** (BUD-02).
+  - A helper line: "You've spent £5,235 a month on average over the last 11 months. Your bills come to £2,024, which leaves £2,376 for everything else."
+  - **Suggestion:** the median of the last 3 complete months (excluding trips if covered = exclude), rounded to £50.
+- **Category limits:** the 12 L1 categories. Each shows its usual monthly spend (median of the last 3 complete months).
+  - Set limits show their amount and a chevron; the rest show **Add limit**.
+  - Fixed-cost categories (all sub-categories fixed) are marked "fixed bills". They can have a limit, but sit at the bottom.
+  - "4 more categories" expands the rest.
+- **Summary:** limits set (Σ) and "left for everything else".
+- **Alerts:** three toggles, all on by default (BUD-10).
+- **Save:** all changes apply from this month unless the user chose otherwise.
+
+**BUD-09 Edit one limit** (`29-category-limit.html`, a sheet).
+- The amount, in large type.
+- Quick chips: usual, and +15%, +50% and +90% of usual rounded to £50 (for example £260 usual, £300, £400, £500).
+- A 6-month bar chart of the category with the limit as a dashed line and October's forecast hatched. The finding is "Under £400 in each of the last 5 months", or "Over £X in N of the last 6 months".
+- **Applies from** (this month / next month), **Roll over unspent** (BUD-02), and **Remove limit**.
+
+**BUD-10 Alerts** (Web Push via NOT-01; `31-budget-alerts.html`). Each alert fires at most once per limit per month, is evaluated after every write and in the 07:00 job, and respects the toggles.
+- **Forecast to go over:** from day 7, when a limit's or the overall forecast exceeds it by more than 5% **and** by more than £10. Copy: "Eating out may go £142 over. £87.40 left for 14 days. Keeping to £6.24 a day lands it on £400." It re-fires only if the forecast overspend grows by a further 50%.
+- **80% used** and **Limit reached:** simple thresholds on spent.
+- **Weekly budget check:** Monday 07:00, the overall status in one line (off by default; it can be combined with the weekly digest).
+- Tapping an alert opens Budget detail at that limit.
+
+**BUD-11 Analytics › Budgets** (`30-analytics-budgets.html`).
+- Analytics gets a top-level two-way switch: **Spending · Budgets**. It defaults to Spending and is remembered.
+- The Budgets tab follows the Analytics period control; Month is the main view (BUD-12).
+1. **Variance chart:** a diverging bar per limit plus Everything else, showing forecast − limit at month end. Overspend goes right in caution colour; headroom goes left in positive green. Sorted by variance. The footer shows the net (= forecast − budget). The title names the main risk.
+2. **Budget vs actual vs forecast table:** Category · Limit · Spent · Forecast, with forecast cells caution-coloured when Tight or Over, and an Everything else row and a Total row. A past month shows **Actual** in place of Forecast, plus a ✓/✗ against the limit.
+3. **History:** the last 6 months against the budget in force each month. If no budget existed then, the current budget is used, shown dashed, with the caption "against today's budget". Bars over budget are caution-tinted, and the current month is split into actual and hatched forecast. The title reports the hit rate or a milestone ("October could be your first month within £4,400").
+4. **Budget health tiles:** limits on track (n of N, naming the at-risk ones) · forecast accuracy (BUD-05) · unbudgeted share of spend · biggest saving vs its limit.
+- **Quarter and Year views:** budgets are summed across the months (overrides and rollovers included); the variance chart uses actual for completed months plus the forecast for the current one.
+
+**BUD-12 Insights and the rest of the app.**
+- **New AI card types:**
+  - `budget_risk`: the riskiest limit, with its safe-per-day vs usual pace;
+  - `budget_win`: a limit well under, or a streak of months within budget;
+  - `budget_pace`: overall status and what-if;
+  - `budget_suggest`: monthly, when a limit was missed 3 months running or beaten by more than 30% 3 months running, propose a new amount. The user accepts in one tap; nothing changes without that tap.
+- All of them use facts from `month_forecast` and pass the grounding validator.
+- **Category detail (AN-07):** when a category has a limit, its header shows "£312.60 of £400 · forecast £542". The monthly trend chart draws the limit as a dashed line.
+- **Trips:** trip budgets (TRIP-03) are separate from monthly budgets. Trip spend counts towards monthly limits when the budget covers trips, and the trip's overview footer says so.
+- **Desktop:** the budget card and limits card sit in the right rail of the desktop dashboard; Budget detail uses a two-column layout (chart and tiles left, limits right).
+
+**Data model.**
+```sql
+create table budgets (                         -- replaces the earlier P1 'budgets' table
+  id              uuid primary key default gen_random_uuid(),
+  user_id         uuid not null default auth.uid() references auth.users on delete cascade,
+  category_id     uuid references categories,          -- null = overall budget; else an L1 category
+  amount_pence    bigint not null check (amount_pence > 0),
+  effective_from  date not null,                       -- first day of a month
+  effective_to    date,                                -- null = open-ended; set when superseded
+  rollover        boolean not null default false,      -- category limits only
+  covers          text not null default 'all' check (covers in ('all','exclude_bills','exclude_trips','exclude_both')),  -- overall only
+  created_at      timestamptz not null default now(),
+  check (date_trunc('month', effective_from) = effective_from)
+);
+create unique index budgets_one_active on budgets (user_id, coalesce(category_id, '00000000-0000-0000-0000-000000000000'::uuid), effective_from);
+-- trigger: category_id must be a parent (L1) category of kind 'expense'
+
+create table budget_overrides (                -- "adjust this month only"
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null default auth.uid() references auth.users on delete cascade,
+  category_id uuid references categories,      -- null = overall
+  month date not null, amount_pence bigint not null check (amount_pence > 0)
+);
+create unique index budget_overrides_one on budget_overrides (user_id, coalesce(category_id, '00000000-0000-0000-0000-000000000000'::uuid), month);
+
+create table budget_forecast_log (             -- nightly snapshot for accuracy + history
+  user_id uuid not null references auth.users on delete cascade,
+  month date not null, day smallint not null, category_id uuid,
+  spent_pence bigint not null, forecast_pence bigint not null, low_pence bigint, high_pence bigint,
+  primary key (user_id, month, day, category_id)   -- use a surrogate key + unique index on coalesce(category_id, nil-uuid), as for overrides
+);
+
+create table budget_alerts_sent (
+  user_id uuid not null references auth.users on delete cascade,
+  month date not null, category_id uuid, kind text not null check (kind in ('forecast_over','pct80','reached')),
+  last_value_pence bigint, sent_at timestamptz not null default now(),
+  primary key (user_id, month, category_id, kind)   -- same note: category_id is nullable, use a unique index with coalesce
+);
+
+alter table transactions add column refund_category_id uuid references categories;   -- BUD-01 linked refunds
+alter table transactions add column is_one_off boolean;                                -- BUD-05 (null = auto)
+```
+
+- **New SQL functions** (security invoker):
+  - `budget_for_month(p_month)`: resolves the effective amounts, overrides and rollovers, per category and overall.
+  - `budget_status(p_month)`: every BUD-04 measure, per limit, for Everything else and overall.
+  - `month_forecast(p_month, p_category)`: BUD-05.
+  - `budget_history(p_months int default 6)`.
+- RLS: the standard four policies on every new table.
+- **Invariant 10:** Σ category forecasts + Everything else = overall forecast, and Σ variances = forecast − budget, to the penny.
+
+**Acceptance criteria** (seed: Appendix A.3, today = Sun 18 Oct 2026).
+1. Home shows £1,163.15 left of £4,400, 74% spent, 58% of the month gone, £132 under plan, Safe to spend £80.58/day for 14 days, Forecast £4,363, £37 headroom, and status **Tight**.
+2. The limits card lists Eating out (Forecast £142 over), Entertainment (£8 over) and Groceries (£38 under), in that order.
+3. Budget detail: the forecast range is £4,105–£4,735. The what-if row at £81/day ends at £4,394 (+£6), and the £78/day row at £4,363 (+£37).
+4. Analytics › Budgets: variances +£141.68, +£7.54, −£37.26, −£37.83, −£50.96 and −£60.15, net −£36.98. Totals: Limit £4,400, Spent £3,237, Forecast £4,363.
+5. Available cash projected close (S7, Insights, Desktop) = £3,139.38, from the same engine.
+6. Changing the overall budget "from next month" leaves October's figures unchanged.
+7. A refund linked to Eating out of £20 reduces Eating out spent to £292.60 and its forecast by £20. An unlinked refund changes nothing.
+8. Limits adding up to more than the budget show the warning, and Everything else shows £0 in caution colour.
+9. The forecast-to-go-over alert for Eating out fires once (day ≥ 7, > 5% and > £10 over) and doesn't re-fire unless the overspend grows by 50%.
+10. With "Exclude bills", the budget, spend, plan and forecast all exclude recurring payments, and the plan is a straight line.
+11. Invariant 10 passes for random fixture months.
 
 ---
 
@@ -1714,9 +2001,15 @@ Work in this order. Commit at the end of each milestone, with all tests green, a
 - Migration (§6.12 data model, `btree_gist`), FX cron, auto-tagging in every capture path, the trip chip in Add expense and the transaction editor, Trips list, New/Edit trip, Trip overview and Expenses, the earlier-bookings sheet, trip insights and wrap-up, the Home trip card, "Exclude trips" in Analytics, and norm exclusion.
 - **Done when:** all ten TRIP acceptance criteria pass against the Appendix A trip seed.
 
+### M4e: Budgets (3–4 days)
+- `/lib/forecast.ts` and SQL `month_forecast` first, with unit tests for the weights, range, cold start, one-offs and trip exclusion. Then switch CASH-06, the Analytics trend chart and the AI facts to this engine.
+- Migration (§6.13 data model), `budget_for_month`, `budget_status`, `budget_history` and invariant 10.
+- Home budget + limits cards, Budget detail, Setup, the limit sheet, Analytics › Budgets, alerts, and the AI card types.
+- **Done when:** all eleven BUD acceptance criteria, **FC-1 to FC-10 (BUD-05a)** and EC-G1 to EC-G14 pass against Appendix A.3.
+
 ### M5: v1.1 (P1 backlog)
-Natural-language entry, favourites, Shortcuts endpoint, budgets,
-other push notifications (NOT-02 to NOT-04), Face ID lock, privacy blur, Ask Sterling, month-end projection.
+Natural-language entry, favourites, Shortcuts endpoint,
+other push notifications (NOT-02 to NOT-04), Face ID lock, privacy blur, Ask Sterling.
 
 **MVP = M0–M4b**, which covers all six mandatory capabilities plus the evening reminder:
 
@@ -1912,6 +2205,25 @@ This is the single checklist of awkward situations and how Sterling must behave 
 | EC-P7 | Second user tries to sign in | Blocked by `ALLOWED_EMAIL`; RLS proves isolation in tests. | AUTH-01 |
 | EC-P8 | "Delete all data" | Cascades every user table, including push subscriptions, trips, bills, FX overrides and AI runs; signs out everywhere. | SET-05 |
 
+### 18.10 Budgets and forecasting
+
+| ID | Situation | Expected behaviour | Ref |
+|---|---|---|---|
+| EC-G1 | Budget created mid-month | Applies to the whole month, including spend already logged; plan and forecast work as normal. | BUD-02 |
+| EC-G2 | Budget changed mid-month | Asks "From this month" or "From next month"; past months keep the amount in force at the time. | BUD-02 |
+| EC-G3 | Limits add up to more than the overall budget | Inline warning; saving allowed; Everything else shows £0 in caution colour. | BUD-01 |
+| EC-G4 | Limit on a fixed-cost category (Home) | Allowed. The plan places its bills on their due days, so the limit isn't flagged early. | BUD-03 |
+| EC-G5 | Days 1–6 of the month | Status reads "Early days" unless spend is more than 10% over plan. The forecast is labelled "Low confidence" and uses 0.3/0.7 weights. | BUD-04/05 |
+| EC-G6 | Fewer than 2 prior complete months (new user) | The forecast uses this month only, labelled "Low confidence"; usual amounts in Setup show "–". | BUD-05 |
+| EC-G7 | One large one-off (for example, a £900 sofa) | Excluded from the run-rate if more than 5× the category's median ticket (auto-marked one-off, user can override); still counted in spent. | BUD-05 |
+| EC-G8 | Refunds | Reduce spend only when linked via `refund_category_id`; a refund can make a category's spent negative for the month, shown as £0 with "net refund". | BUD-01 |
+| EC-G9 | Trip in the month | Counts in spent when covered (default); excluded from the run-rate and norms. Trip budgets stay separate. | BUD-01, BUD-05 |
+| EC-G10 | Back-filled expense from before tracking began | Counts in its own month's spent and limits (§6.2a); it never moves balances. That month is partial and excluded from forecasts. | BAL-07 |
+| EC-G11 | Over budget already | Left shows as negative ("£120 over"); safe-to-spend shows £0 with "Over budget: anything more adds to the overspend"; status Over. | BUD-04 |
+| EC-G12 | Rollover | Carries unspent amounts (or overspend) into next month, capped at ±100% of the base limit; shown as "£400 + £37 carried". | BUD-02 |
+| EC-G13 | Category merged or archived while it has a limit | A merge moves the limit to the target (amounts summed if both had limits, with a notice); archiving keeps the limit until its month ends, then ends it. | BUD-02 (new) |
+| EC-G14 | Alert flapping (forecast crosses the threshold back and forth) | At most one alert per limit per kind per month; re-fires only if the overspend grows by 50% or more. | BUD-10 |
+
 ---
 
 ## Appendix A: Sample data used in the mock-ups (Sun 18 Oct 2026)
@@ -1926,7 +2238,7 @@ This is the single checklist of awkward situations and how Sterling must behave 
 | Pool accounts | Monzo £3,214.08 · HSBC £2,486.20 · Cash £250.00 · Amex −£1,184.73 (sum £4,765.55) |
 | Outside pool | Marcus savings £12,400.00 |
 | Categories MTD | Home £1,812.40 · Groceries £386.25 · Eating out £312.60 · Transport £214.80 · Shopping £178.90 · Bills £118.43 · Health £96.00 · Entertainment £74.97 · Family & giving £42.50 |
-| Projected close | ≈ £2,940 (before salary) |
+| Projected close | ≈ £3,139.38 (before salary; after the £500 Marcus transfer on the 26th) — from the BUD-05 engine |
 | Sub-categories MTD (seed) | Home: Rent & mortgage £1,600.00 (fixed), Council tax £142.00 (fixed), Energy £48.40 (fixed), Broadband & TV £22.00 (fixed) · Groceries: Supermarket £314.70, Specialist shops £48.90, Household supplies £22.65 · Eating out: Restaurants £142.50, Coffee & snacks £76.80, Takeaway & delivery £58.30, Work lunches £28.60, Drinks £6.40 · Transport: TfL & rail £142.60, Taxis £57.20, Parking & tolls £15.00 · Shopping: Online & general £98.40, Clothing & shoes £65.50, Homeware £15.00 · Bills: Mobile £36.00 (fixed), Insurance £62.43 (fixed), Bank fees & interest £20.00 · Health: Gym & fitness £75.00, Pharmacy £21.00 · Entertainment: Streaming & apps £41.97, Events & culture £33.00 · Family & giving: Gifts £42.50 |
 | Sub-category usual by day 18 (seed) | Supermarket £298.00 · Specialist shops £43.00 · Household supplies £20.00 · Restaurants £105.00 · Coffee & snacks £54.00 · Takeaway & delivery £43.00 · Work lunches £19.00 · Drinks £5.00 · TfL & rail £178.00 · Taxis £58.00 · Parking & tolls £15.00 · Online & general £90.00 · Clothing & shoes £94.00 · Homeware £20.00 · Bank fees & interest £19.57 · Gym & fitness £75.00 · Pharmacy £13.00 · Streaming & apps £38.97 · Events & culture £32.03 · Gifts £55.00 (fixed sub-categories: usual = this month) |
 | Eating out by month (seed) | May £218.40 · Jun £243.10 · Jul £331.20 · Aug £287.60 · Sep £264.10 · Oct £312.60 to date |
@@ -1945,3 +2257,26 @@ Use these exact figures in `supabase/seed.sql` so that visual tests can compare 
 | On the trip (USD → GBP) | 2027-03-06 Uber (Taxis) $58.40 → £46.14; 2027-03-06 Au Cheval (Restaurants) $96.20 → £76.00; 2027-03-07 Art Institute of Chicago (Events & culture) $64.00 → £50.56; 2027-03-07 Lou Malnati's (Restaurants) $72.30 → £57.12; 2027-03-07 CTA Ventra (Other transport) $20.00 → £15.80; 2027-03-08 Gift for hosts (Gifts) $85.00 → £67.15; 2027-03-08 Intelligentsia (Coffee & snacks) $12.40 → £9.80; 2027-03-09 Uber (Taxis) $46.80 → £36.97; 2027-03-09 O'Hare Terminal 1 (Coffee & snacks) $24.50 → £19.36; 2027-03-09 Uber (Taxis) $68.90 → £54.43; 2027-03-10 Joe's Pizza (Restaurants) $18.00 → £14.22; 2027-03-10 MoMA (Events & culture) $60.00 → £47.40; 2027-03-10 OMNY (Other transport) $34.00 → £26.86; 2027-03-10 Carbone (Restaurants) $210.00 → £165.90; 2027-03-11 Russ & Daughters (Restaurants) $58.75 → £46.41; 2027-03-11 Uniqlo Fifth Avenue (Clothing & shoes) $142.60 → £112.65; 2027-03-11 Hamilton · Broadway (Events & culture) $289.00 → £228.31; 2027-03-12 Blue Bottle (Coffee & snacks) $11.80 → £9.32; 2027-03-12 Ess-a-Bagel (Restaurants) $21.40 → £16.91 |
 | Totals | Booked £2,460.20 · on trip £1,101.31 ($1,394.05) · spent £3,561.51 · left £1,438.49 · plan £169.32/day · actual £157.33/day · allowance £159.83/day · projected £4,820.15 |
 | Past trips (list only) | Lisbon Jun 2026 £1,240.80 · Edinburgh Aug 2025 £684.20 · Goa Dec 2024 £2,315.60 |
+
+### Appendix A.3: Budget seed (used by the Budgets mock-ups and BUD acceptance criteria; today = Sun 18 Oct 2026)
+
+| Item | Value |
+|---|---|
+| Overall budget | £4,400.00 · covers all spending |
+| Recurring expenses in October | £2,023.79 total · £1,988.82 logged by the 18th · £34.97 to come (Spotify 22nd £12.99, Disney+ 24th £8.99, Netflix 27th £12.99) |
+| Plan to date | £3,368.55 → £131.70 under plan |
+| Engine inputs | discretionary so far £1,248.03 over 18 days; prior-3-month late-month median £92.00/day; weights 0.6/0.4 → £78.40/day; today's discretionary so far £6.40; days left incl. today 14 |
+| Overall forecast | £4,363.02 (range £4,105.42–£4,735.42, using £60.00 and £105.00/day) · headroom £36.98 · status Tight |
+| Safe to spend | £80.58/day |
+| Projected close (CASH-06) | £3,139.38 |
+
+| Limit | Budget | Spent | Expected/day | Forecast | Variance | Status |
+|---|---|---|---|---|---|---|
+| Groceries | £750.00 | £386.25 | £23.28/day | £712.17 | −£37.83 | On track |
+| Eating out | £400.00 | £312.60 | £16.82/day | £541.68 | +£141.68 | Over |
+| Transport | £450.00 | £214.80 | £13.16/day | £399.04 | −£50.96 | On track |
+| Shopping | £350.00 | £178.90 | £9.56/day | £312.74 | −£37.26 | On track |
+| Entertainment | £150.00 | £74.97 | £3.40/day | £157.54 | +£7.54 | Over |
+| Everything else | £2,300.00 | £2,069.33 | n/a | £2,239.85 | −£60.15 | On track |
+
+Category prior-3-month late-month medians (per day): Groceries £26.00, Eating out £16.00, Transport £15.00, Shopping £9.00, Entertainment £2.50. Entertainment includes £2.99 of bills logged and £34.97 to come. Eating out's £6.40 today is already logged.

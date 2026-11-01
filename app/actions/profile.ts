@@ -13,6 +13,10 @@ const Patch = z.object({
   reminder_prompted: z.boolean(),
   bills_notify: z.boolean(),
   trip_notify: z.boolean(),
+  budget_alert_forecast: z.boolean(),
+  budget_alert_pct80: z.boolean(),
+  budget_alert_reached: z.boolean(),
+  budget_alert_weekly: z.boolean(),
   lock_after_min: z.number().int().min(0).max(60).nullable(),
 }).partial();
 

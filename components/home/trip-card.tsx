@@ -4,7 +4,7 @@ import { formatGBP } from "@/lib/money";
 import { UI } from "@/lib/icons";
 import { useToday, useTripStops, useTrips, useTripsOverview } from "@/lib/queries/hooks";
 import { homeTripKind, tripClock, tripFigures } from "@/lib/tripMath";
-import { BudgetBar, plural, stopOn } from "@/components/trips/shared";
+import { plural, stopOn } from "@/components/trips/shared";
 
 /**
  * TRIP-01: between the hero and the pace card. During a trip: day N of M, the stop, what is left to spend today and spent vs budget.
@@ -28,17 +28,19 @@ export function TripCard() {
 
   if (kind === "now") {
     return (
-      <Link href={`/trips/${t.id}`} className="tr-hero" style={{ display: "block", padding: "16px 16px 14px" }} data-testid="home-trip-card" data-kind="now">
-        <div className="tr-head"><span className="lbl"><i />On a trip · day {c.day} of {c.length}</span></div>
-        <div className="row-between" style={{ alignItems: "baseline", marginTop: 6 }}>
-          <div className="tr-name" style={{ marginTop: 0, fontSize: 24 }}>{t.name}</div>
-          {here && <span className="sub">{here}</span>}
+      <Link href={`/trips/${t.id}`} className="tr-hero" style={{ display: "block", padding: "16px 16px 16px" }} data-testid="home-trip-card" data-kind="now">
+        <div className="tr-head row-between"><span className="lbl"><i />On a trip · day {c.day} of {c.length}</span><UI.ChevronRight size={16} strokeWidth={2} aria-hidden className="faint" /></div>
+        <div className="tr-name" style={{ marginTop: 6, fontSize: 24 }}>{t.name}</div>
+        <div className="row-between" style={{ alignItems: "flex-start", gap: 12, marginTop: 6 }}>
+          <div className="sub" style={{ fontSize: 15, lineHeight: 1.35 }}>
+            {here ? `${here} today` : "Today"}
+            {figs.allowance !== null && <> · <span data-testid="home-trip-allowance" style={{ color: figs.allowance < 0 ? "var(--caution)" : undefined }}>{formatGBP(Math.max(0, figs.allowance))} a day</span> {figs.over ? "over budget" : "left to spend"}</>}
+          </div>
+          <div style={{ textAlign: "right", flex: "none" }}>
+            <div className="num" style={{ fontSize: 24, fontWeight: 600, letterSpacing: "-.02em" }} data-testid="home-trip-spent">{formatGBP(figs.spent)}</div>
+            <div className="sub" style={{ fontSize: 15 }}>{figs.budget !== null ? `of ${formatGBP(figs.budget, { whole: figs.budget % 100 === 0 })}` : "spent so far"}</div>
+          </div>
         </div>
-        <div className="tr-figs" style={{ marginTop: 14 }}>
-          <div><div className="big num" style={{ fontSize: 24 }} data-testid="home-trip-spent">{formatGBP(figs.spent)}</div><div className="of">{figs.budget !== null ? `of ${formatGBP(figs.budget, { whole: figs.budget % 100 === 0 })}` : "spent so far"}</div></div>
-          {figs.allowance !== null && <div style={{ textAlign: "right" }}><div className="num" style={{ fontSize: 17, fontWeight: 600, color: figs.allowance < 0 ? "var(--caution)" : undefined }} data-testid="home-trip-allowance">{formatGBP(Math.max(0, figs.allowance))} a day</div><div className="of">{figs.over ? "over budget" : "left to spend"}</div></div>}
-        </div>
-        <BudgetBar figs={figs} />
       </Link>
     );
   }

@@ -1,7 +1,7 @@
 "use client";
 import { keepPreviousData, useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { monthStart, todayLondon, type ISODate } from "@/lib/dates";
+import { monthEnd, monthStart, todayLondon, type ISODate } from "@/lib/dates";
 import { buildTree } from "@/lib/categories";
 import { watchOutbox, type OutboxItem } from "@/lib/outbox";
 import { applyBalances, applyFlow, applyPace, livePending, mergePending, pendingRow } from "@/lib/overlay";
@@ -9,10 +9,13 @@ import { supabaseBrowser } from "@/lib/supabase/client";
 import type { AccountBalance, TxnRow } from "@/lib/types";
 import {
   fetchAccounts, fetchAccountSeries, fetchActivityPage, fetchBalances, fetchCashFlow, fetchCashSeries, fetchCategories,
-  fetchCategoryMonthly, fetchCategoryRemaining, fetchNonBalanceSpend, fetchTrips, fetchTripStops, fetchTripBudgets, fetchTripsOverview, fetchTripSummary, fetchTripByDay, fetchTripByStop, fetchTripByCategory, fetchTripCandidates, fetchTripInsightRun, fetchTripTxns, fetchRecurringItems, fetchRecurringOccurrences, fetchItemOccurrences, fetchBankHolidays, fetchRecurringSuggestions, fetchTopPlaces, fetchDailySpend, fetchMonthlyTotals, fetchPace, fetchPayees, fetchProfile, fetchSpendByCategory,
+  fetchCategoryMonthly, fetchNonBalanceSpend, fetchTrips, fetchTripStops, fetchTripBudgets, fetchTripsOverview, fetchTripSummary, fetchTripByDay, fetchTripByStop, fetchTripByCategory, fetchTripCandidates, fetchTripInsightRun, fetchTripTxns, fetchRecurringItems, fetchRecurringOccurrences, fetchItemOccurrences, fetchBankHolidays, fetchRecurringSuggestions, fetchTopPlaces, fetchDailySpend, fetchMonthlyTotals, fetchPace, fetchPayees, fetchProfile, fetchSpendByCategory,
   fetchAskTurns, fetchPotCategories, fetchPots, fetchTransactionCount, fetchWeekActivity, fetchInsightFeedback, fetchInsightRuns, fetchLastIncomeAccount, fetchSuggestHistory, fetchTopPayees, fetchTotals, PAGE_SIZE, type ActivityCursor,
 } from "./fetchers";
 import { qk, type ActivityFilters } from "./keys";
+import { poolFlowsToCome } from "@/lib/budget";
+import { projectedClose } from "@/lib/forecast";
+import { fetchBudgetHistory, fetchBudgetRows, loadBudgetView, loadMonthForecast } from "@/lib/forecast-data";
 
 const db = () => supabaseBrowser();
 
@@ -175,8 +178,6 @@ export const useCategoryMonthly = (id: string, months = 12, children = true) =>
   useQuery({ queryKey: qk.categoryMonthly(id, months, children), queryFn: () => fetchCategoryMonthly(db(), id, months, children), placeholderData: keepPreviousData });
 export const useTopPlaces = (from: ISODate, to: ISODate, limit: number, id: string, children = true) =>
   useQuery({ queryKey: qk.topPlaces(from, to, limit, id, children), queryFn: () => fetchTopPlaces(db(), from, to, limit, id, children), placeholderData: keepPreviousData });
-export const useCategoryRemaining = (id: string, asOf: ISODate, children = true, enabled = true) =>
-  useQuery({ queryKey: qk.categoryRemaining(id, asOf, children), queryFn: () => fetchCategoryRemaining(db(), id, asOf, children), enabled });
 
 /** Refresh everything after a write that happened outside the outbox (edits, deletes, account changes). */
 export function useInvalidateAll() {
@@ -217,3 +218,40 @@ export const usePots = () => useQuery({ queryKey: qk.pots, queryFn: () => fetchP
 export const usePotCategories = (id: string) => useQuery({ queryKey: qk.potCategories(id), queryFn: () => fetchPotCategories(db(), id) });
 
 export const useAskTurns = () => useQuery({ queryKey: qk.ask, queryFn: () => fetchAskTurns(db()) });
+
+// ── Budgets and the forecast (PRD §6.13): every figure comes from lib/forecast.ts through loadMonthForecast / loadBudgetView ──
+/** The one forecast for a month and scope (null = the whole month, else an L1 category id). */
+export const useMonthForecast = (month: ISODate, scope: string | null = null, enabled = true) => {
+  const today = useToday();
+  return useQuery({ queryKey: qk.forecast(monthStart(month), today, scope), queryFn: () => loadMonthForecast(db(), month, today, scope), enabled, placeholderData: keepPreviousData });
+};
+/** The Budget view for a month (null data = no budget applies). */
+export const useBudgetView = (month: ISODate) => {
+  const today = useToday();
+  return useQuery({ queryKey: qk.budgetView(monthStart(month), today), queryFn: () => loadBudgetView(db(), month, today), placeholderData: keepPreviousData });
+};
+export const useBudgetRows = (month: ISODate) => useQuery({ queryKey: qk.budgetRows(monthStart(month)), queryFn: () => fetchBudgetRows(db(), month) });
+export const useBudgetHistory = (months = 6) => {
+  const today = useToday();
+  return useQuery({ queryKey: qk.budgetHistory(months, today), queryFn: () => fetchBudgetHistory(db(), months, today) });
+};
+
+/** CASH-06: the projected close of this month, from the one forecast engine. Null until it has a forecast to give. */
+export function useProjectedClose() {
+  const today = useToday();
+  const month = monthStart(today);
+  const forecast = useMonthForecast(month);
+  const flow = useCashFlow(month, today);
+  const items = useRecurringItems();
+  const occ = useRecurringOccurrences(month, monthEnd(month));
+  const holidays = useBankHolidays();
+  const accounts = useAccounts();
+  const ready = !!forecast.data && !!flow.data && !!items.data && !!occ.data && !!accounts.data;
+  const value = useMemo(() => {
+    if (!ready) return null;
+    const pool = new Set(accounts.data!.filter((a) => a.counts_as_cash).map((a) => a.id));
+    const flows = poolFlowsToCome(items.data!, occ.data!, pool, month, holidays.data);
+    return projectedClose(flow.data!.closing_pence, forecast.data!.forecast, flows.transfersOut, flows.incomeIn);
+  }, [ready, forecast.data, flow.data, items.data, occ.data, accounts.data, holidays.data, month]);
+  return { value, month, today, forecast: forecast.data?.forecast ?? null, loading: !ready };
+}

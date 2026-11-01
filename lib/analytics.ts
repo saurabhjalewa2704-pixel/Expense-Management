@@ -77,23 +77,6 @@ export function buildWaterfall(flow: CashFlow, cats: readonly Pick<CategorySpend
 export const waterfallFinding = (flow: CashFlow) =>
   `${formatGBP(flow.closing_pence)} left after ${formatGBP(flow.spend_pence)} of spending`;
 
-/** AN-04: what this month is heading for: spend so far, plus the median of what previous months spent after this day. */
-export function projectMonth(daily: readonly DailySpend[], today: ISODate, spendSoFar: Pence, monthsBack = 6): Pence {
-  const dom = dayOfMonth(today);
-  const afters: Pence[] = [];
-  for (let k = 1; k <= monthsBack; k++) {
-    const m = monthStart(addMonths(monthStart(today), -k));
-    const dim = daysInMonth(m);
-    const from = m.slice(0, 8) + String(Math.min(dom, dim)).padStart(2, "0");
-    const end = m.slice(0, 8) + String(dim).padStart(2, "0");
-    const rows = daily.filter((d) => d.day > from && d.day <= end);
-    const monthRows = daily.filter((d) => d.day >= m && d.day <= end);
-    if (monthRows.length === 0 || monthRows.reduce((s, d) => s + d.total_pence, 0) === 0) continue;
-    afters.push(rows.reduce((s, d) => s + d.total_pence, 0));
-  }
-  return spendSoFar + medianPence(afters);
-}
-
 export function trendFinding(monthLabel: string, projected: Pence, average: Pence): string {
   if (average <= 0) return `${monthLabel} is heading for ${pounds(projected)}`;
   const pct = ((projected - average) * 100) / average;

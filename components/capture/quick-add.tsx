@@ -137,6 +137,8 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
   const [accountId, setAccountId] = useState<string | null>(null);
   const [accountManual, setAccountManual] = useState(false);
   const [potId, setPotId] = useState<string | null>(null);
+  const [refundCat, setRefundCat] = useState<string | null>(null);        // BUD-01 "Refund for…"
+  const [refundTouched, setRefundTouched] = useState(false);
   const [counterId, setCounterId] = useState<string | null>(null);
   const [date, setDate] = useState<ISODate>(deviceToday());
   const [note, setNote] = useState("");
@@ -271,6 +273,7 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
 
   // a category picked from the full list leads the cards, with its parent beside it
   const picked = categoryId ? tree.byId.get(categoryId) : undefined;
+  const isRefundCat = mode === "income" && picked?.name === "Refunds";
   const chipList: Suggestion[] = picked && !baseChips.some((c) => c.categoryId === picked.id)
     ? [{ categoryId: picked.id, label: picked.name, parentLabel: picked.parent_id ? tree.byId.get(picked.parent_id)?.name : undefined }, ...baseChips.slice(0, 5)] : baseChips;
 
@@ -341,6 +344,7 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
     trip_id: mode === "transfer" ? null : selTrip?.id ?? null, trip_origin: selTrip ? tripOrigin : null,
     trip_untag: !editing && !selTrip && tripPick?.id === null ? true : undefined,
     trip_set: editing ? mode !== "transfer" : undefined,
+    refund_category_id: mode === "income" && isRefundCat ? refundCat : null, refund_set: editing && refundTouched ? true : undefined,
     ...(mode === "transfer" || (editing && !fxDirty) ? { fx_set: editing ? false : undefined } : { ...fxFields(), fx_set: editing ? true : undefined }),
   });
 
@@ -479,7 +483,7 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
         </div>
         {mode !== "transfer" && (tripCur || foreign) && (
           <div className="ae-fx" data-testid="fx-line" style={{ marginBottom: 8, flexWrap: "wrap" }}>
-            <button className="cur-chip" onClick={() => setPicker("currency")} aria-label={`Currency ${foreign ? effCur : "pounds"}. Tap to change`} data-testid="currency-chip">{foreign ? effCur : "£ GBP"}<UI.ChevronDown size={14} strokeWidth={2} aria-hidden /></button>
+            <button className="cur-chip" onClick={() => setPicker("currency")} aria-label={`Currency ${foreign ? effCur : "pounds"}. Tap to change`} data-testid="currency-chip">{foreign ? `${currencySymbol(effCur)} ${effCur}`.trim() : "£ GBP"}<UI.ChevronDown size={14} strokeWidth={2} aria-hidden /></button>
             {foreign && minor !== null && minor > 0 && (fxPence !== null || savedFx) && (
               <span data-testid="fx-conversion">≈ <button className="link num" style={{ color: "var(--ink)", fontWeight: 600 }} onClick={() => setPicker("pounds")} aria-label={`About ${formatGBP(pence)}. Tap to enter the amount in pounds`} data-testid="fx-pounds">{formatGBP(pence)}</button>
                 {" · "}{manualFx ? `effective ${effectiveRate(pence, minor, effCur)}` : `1 ${effCur} = ${rateLabel(rateNow ?? "0")} GBP`}
@@ -541,6 +545,15 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
           </div>
         )}
 
+        {!typing && mode === "income" && isRefundCat && (
+          <label className="payee" style={{ width: "100%" }} data-testid="refund-for">
+            <span className="learned" style={{ width: 90 }}>Refund for…</span>
+            <select value={refundCat ?? ""} aria-label="Refund for" onChange={(e) => { setRefundCat(e.target.value || null); setRefundTouched(true); }} style={{ flex: 1, background: "transparent", color: "var(--ink)", border: 0, font: "inherit", textAlign: "right" }}>
+              <option value="">Not linked</option>
+              {tree.parents("expense").map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </label>
+        )}
         {!typing && (
           <>
             <div className="meta">

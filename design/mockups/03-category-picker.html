@@ -1,4 +1,4 @@
-<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=390"><title>Sterling · Category picker</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"><style>/* Sterling design tokens — the single source for Tailwind theme + components.
+<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=390"><title>Sterling · Choose category</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"><style>/* Sterling design tokens — the single source for Tailwind theme + components.
    Sterling is dark-only: there is no light theme. */
 :root {
   color-scheme: dark;
@@ -243,14 +243,73 @@ a{color:inherit;text-decoration:none}
 .fixed-row{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;margin-top:12px;border-radius:12px;background:var(--surface-2);font-size:14px}
 section > .card.card,.stack > .card.card{margin-top:0}
 td + td{padding-left:14px}
-</style></head><body><div class="screen phone" style="background:#0A0A09">
-<div class="behind" style="transform:scale(.94);opacity:.5"></div>
-<div class="sheet" style="top:64px">
-  <div class="grabber"></div>
-  <div class="sheet-head"><span class="txt">Cancel</span><span class="t">Category</span><span class="txt" style="color:var(--ink);font-weight:600">New</span></div>
-  <div class="field" style="height:44px"><svg class="i faint" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span class="ph">Search 61 categories</span></div>
-  <div class="cat-grid" style="margin-top:20px"><button class="cat"><span class="sq"><svg class="i " width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10.2 12 3.5l8.5 6.7V19a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19z"/><path d="M9.5 20.5v-5.5h5v5.5"/></svg></span>Home</button><button class="cat"><span class="sq"><svg class="i " width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5h2.2l2.1 10.1a1 1 0 0 0 1 .8h8.6a1 1 0 0 0 1-.78L19.8 8H6"/><circle cx="9" cy="19.25" r="1.25"/><circle cx="17" cy="19.25" r="1.25"/></svg></span>Groceries</button><button class="cat sel"><span class="sq"><svg class="i " width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3.5v17M4.5 3.5v4.5a2.5 2.5 0 0 0 5 0V3.5M17.5 20.5v-17c-2.2.9-3.5 3.6-3.5 7v3.5h3.5"/></svg></span>Eating out</button><button class="cat"><span class="sq"><svg class="i " width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5.5" y="3.5" width="13" height="13" rx="3"/><path d="M5.5 10h13M9 20.5l1-3M15 20.5l-1-3"/><circle cx="9" cy="13.4" r=".9" fill="currentColor" stroke="none"/><circle cx="15" cy="13.4" r=".9" fill="currentColor" stroke="none"/></svg></span>Transport</button><button class="cat"><span class="sq"><svg class="i " width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 8h13l-.9 11.6a1.5 1.5 0 0 1-1.5 1.4H7.9a1.5 1.5 0 0 1-1.5-1.4z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/></svg></span>Shopping</button><button class="cat"><span class="sq"><svg class="i " width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7.5-4.6-7.5-10.2A4.2 4.2 0 0 1 12 7.3a4.2 4.2 0 0 1 7.5 2.5C19.5 15.4 12 20 12 20z"/></svg></span>Health</button><button class="cat"><span class="sq"><svg class="i " width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 7.5h17V10a2 2 0 0 0 0 4v2.5h-17V14a2 2 0 0 0 0-4z"/><path d="M14.5 7.5v1.5M14.5 11.25v1.5M14.5 15v1.5"/></svg></span>Entertainment</button><button class="cat"><span class="sq"><svg class="i " width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="7.5" width="17" height="12.5" rx="2"/><path d="M9 7.5V5.5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M8 7.5V20M16 7.5V20"/></svg></span>Travel</button><button class="cat"><span class="sq"><svg class="i " width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5h12v17l-2-1.25-2 1.25-2-1.25-2 1.25-2-1.25-2 1.25z"/><path d="M9 8.5h6M9 12h6M9 15.5h3.5"/></svg></span>Bills</button><button class="cat"><span class="sq"><svg class="i " width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="8.5" width="17" height="4" rx="1"/><path d="M5 12.5v8h14v-8M12 8.5v12M12 8.5c-1.6-.1-4.6-.9-4.6-2.8 0-1.3 1.1-2 2.2-1.7C11.3 4.4 12 6.7 12 8.5zM12 8.5c1.6-.1 4.6-.9 4.6-2.8 0-1.3-1.1-2-2.2-1.7-1.7.4-2.4 2.7-2.4 4.5z"/></svg></span>Family &amp; giving</button><button class="cat"><span class="sq"><svg class="i " width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 5.5a2 2 0 0 1 2-2h13v14h-13a2 2 0 0 0-2 2z"/><path d="M4.5 19.5a2 2 0 0 0 2 2h13v-4M9 7.5h6"/></svg></span>Learning</button><button class="cat"><span class="sq"><svg class="i " width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="18" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg></span>Other</button></div>
-  <div class="row-between" style="margin:22px 4px 8px"><span class="eyebrow">In Eating out</span><span class="sub">or tap the tile again for all</span></div>
-  <div class="subs" style="margin-top:0"><div class="row"><div class="row-main"><div class="row-t">Restaurants</div></div><span class="radio"></span></div><div class="row"><div class="row-main"><div class="row-t">Takeaway &amp; delivery</div></div><span class="radio"></span></div><div class="row"><div class="row-main"><div class="row-t">Coffee &amp; snacks</div></div><span class="radio on"><svg class="i " width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span></div><div class="row"><div class="row-main"><div class="row-t">Work lunches</div></div><span class="radio"></span></div><div class="row"><div class="row-main"><div class="row-t">Drinks</div></div><span class="radio"></span></div></div>
-</div>
+
+.view-seg{display:grid;grid-template-columns:1fr 1fr;background:var(--surface-3);border-radius:10px;padding:2px;height:34px;margin-top:14px}
+.view-seg span{display:grid;place-items:center;font-size:13.5px;font-weight:500;color:var(--ink-2);border-radius:8px}
+.view-seg span.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.3),0 0 0 .5px var(--rule-strong)}
+</style></head><body><div class="screen phone"><style>
+.ae-top{position:absolute;left:0;right:0;top:0;height:98px;padding:50px 12px 0;display:grid;grid-template-columns:44px 1fr 44px;align-items:center;z-index:3;background:var(--bg)}
+.ae-top .t{text-align:center;font-size:var(--t-headline);font-weight:600;letter-spacing:-.01em}
+.round{width:44px;height:44px;display:grid;place-items:center;border-radius:50%}
+.round span{width:34px;height:34px;border-radius:50%;background:var(--surface-2);display:grid;place-items:center;color:var(--ink)}
+.ae-body{position:absolute;left:0;right:0;top:98px;bottom:0;padding:0 16px 34px;display:flex;flex-direction:column}
+.ae-amount{display:flex;justify-content:center;align-items:flex-start;font-weight:600;letter-spacing:-.045em;line-height:1;margin:16px 0 14px;font-variant-numeric:tabular-nums}
+.ae-amount .cur{font-size:28px;margin:7px 3px 0 0;font-weight:500;letter-spacing:0;color:var(--ink-2)}
+.ae-amount .v{font-size:56px}
+.ae-amount .caret{width:3px;height:50px;background:var(--ink);border-radius:2px;margin:3px 0 0 4px;opacity:.85}
+.ae-label{display:flex;justify-content:space-between;align-items:center;height:36px;margin-top:6px}
+.ae-label .eyebrow{color:var(--ink-3)}
+.ae-label a{display:flex;align-items:center;gap:2px;font-size:15px;font-weight:500;color:var(--ink);height:44px}
+.freq{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.ftile{min-width:0;display:flex;align-items:center;gap:9px;height:50px;padding:0 8px 0 11px;border-radius:14px;background:var(--surface);text-align:left;box-shadow:inset 0 0 0 1px var(--rule)}
+.ftile .ic{width:20px;display:grid;place-items:center;flex:none;color:var(--ink-2)}
+.ftile .tx{min-width:0;display:flex;flex-direction:column;gap:1px}
+.ftile .l{font-size:14px;font-weight:500;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
+.ftile .p{font-size:12px;color:var(--ink-3);white-space:nowrap}
+.ftile.sel{background:var(--ink);box-shadow:none}
+.ftile.sel .l{color:var(--on-ink)} .ftile.sel .p{color:rgba(12,13,12,.6)}
+.ftile.sel .ic{color:var(--on-ink)}
+.ae-meta{display:flex;gap:8px;margin-top:12px}
+.ae-meta .chip{height:34px;font-size:13px;padding:0 12px 0 10px}
+.ae-keys{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:12px}
+.ae-keys .key{height:44px;font-size:24px;border-radius:12px}
+.ae-save{margin-top:12px;height:52px}
+/* picker */
+.pk-top{position:absolute;left:0;right:0;top:0;padding:50px 8px 0;background:var(--bg);z-index:3}
+.pk-nav{display:grid;grid-template-columns:88px 1fr 88px;align-items:center;height:44px}
+.pk-nav .t{text-align:center;font-size:var(--t-headline);font-weight:600}
+.pk-nav a{display:flex;align-items:center;gap:2px;font-size:17px;height:44px;padding:0 8px}
+.pk-nav a.r{justify-content:flex-end;font-weight:600}
+.pk-search{margin:6px 12px 0}
+.jump{display:flex;gap:6px;overflow:hidden;padding:12px 12px 12px;-webkit-mask-image:linear-gradient(to right,#000 85%,transparent);mask-image:linear-gradient(to right,#000 85%,transparent)}
+.jump .chip{height:32px;font-size:13px;padding:0 12px;flex:none}
+.pk-list{position:absolute;left:0;right:0;top:206px;bottom:0;padding:4px var(--gutter) 40px;overflow:hidden}
+.pk-sec{display:flex;align-items:center;gap:10px;margin:18px 4px 8px}
+.pk-sec .ic{width:26px;height:26px;border-radius:8px;background:var(--surface-2);display:grid;place-items:center;color:var(--ink)}
+.pk-sec .n{font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+.pk-sec .c{margin-left:auto;font-size:12px;color:var(--ink-3)}
+.pk-card{background:var(--surface);border-radius:var(--r-card);overflow:hidden}
+.pk-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:48px;padding:0 16px;position:relative;font-size:16px;width:100%;text-align:left}
+.pk-row + .pk-row::before{content:"";position:absolute;top:0;left:16px;right:0;height:1px;background:var(--rule)}
+.pk-row.gen{color:var(--ink-2)}
+.pk-row.on{font-weight:600}
+.pk-row .meta{font-size:12px;color:var(--ink-3);font-weight:400}
+.pk-fade{position:absolute;left:0;right:0;bottom:0;height:90px;background:linear-gradient(to bottom,transparent,var(--bg));pointer-events:none}
+.res-row{display:flex;align-items:center;gap:12px;min-height:58px;padding:8px 16px;position:relative;width:100%;text-align:left}
+.res-row + .res-row::before{content:"";position:absolute;top:0;left:58px;right:0;height:1px;background:var(--rule)}
+.res-row .ic{width:30px;height:30px;border-radius:9px;background:var(--surface-2);display:grid;place-items:center;flex:none}
+.res-row .l{font-size:16px} .res-row .l b{font-weight:600;color:var(--ink)}
+.res-row .path{font-size:13px;color:var(--ink-3);margin-top:2px;display:flex;align-items:center;gap:4px}
+/* action sheet */
+.as{position:absolute;left:8px;right:8px;bottom:34px;z-index:8;display:flex;flex-direction:column;gap:8px}
+.as .grp{background:#2A2B2D;border-radius:14px;overflow:hidden}
+.as .msg{padding:14px 16px;text-align:center;font-size:13px;color:var(--ink-2);line-height:1.35}
+.as .msg b{display:block;color:var(--ink);font-size:13px;font-weight:600;margin-bottom:2px}
+.as button{display:block;width:100%;height:56px;font-size:19px;border-top:1px solid var(--rule-strong)}
+.as .danger{color:var(--danger)}
+.as .cancel{background:#2A2B2D;border-radius:14px;border:0;font-weight:600}
+</style>
+<div class="pk-top"><div class="pk-nav"><a href="#"><svg class="i " width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg>Back</a><div class="t">Choose category</div><a class="r" href="#"><svg class="i " width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New</a></div><div class="field pk-search" style="height:40px;background:var(--surface-2)"><svg class="i faint" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span class="ph">Search all 62 categories</span></div><div class="jump"><span class="chip">Home</span><span class="chip">Groceries</span><span class="chip sel">Eating out</span><span class="chip">Transport</span><span class="chip">Shopping</span><span class="chip">Health</span><span class="chip">Entertainment</span><span class="chip">Travel</span><span class="chip">Bills</span><span class="chip">Family &amp; giving</span><span class="chip">Learning</span><span class="chip">Other</span></div></div>
+<div class="pk-list" style="top:200px"><div class="pk-sec"><span class="ic"><svg class="i " width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5h2.2l2.1 10.1a1 1 0 0 0 1 .8h8.6a1 1 0 0 0 1-.78L19.8 8H6"/><circle cx="9" cy="19.25" r="1.25"/><circle cx="17" cy="19.25" r="1.25"/></svg></span><span class="n">Groceries</span><span class="c">4</span></div><div class="pk-card"><button class="pk-row">Supermarket</button><button class="pk-row">Specialist shops</button><button class="pk-row">Household supplies</button><button class="pk-row gen">Other groceries</button></div><div class="pk-sec"><span class="ic"><svg class="i " width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3.5v17M4.5 3.5v4.5a2.5 2.5 0 0 0 5 0V3.5M17.5 20.5v-17c-2.2.9-3.5 3.6-3.5 7v3.5h3.5"/></svg></span><span class="n">Eating out</span><span class="c">6</span></div><div class="pk-card"><button class="pk-row">Restaurants</button><button class="pk-row">Takeaway &amp; delivery</button><button class="pk-row on">Coffee &amp; snacks<svg class="i " width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></button><button class="pk-row">Work lunches</button><button class="pk-row">Drinks</button><button class="pk-row gen">Other eating out</button></div><div class="pk-sec"><span class="ic"><svg class="i " width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5.5" y="3.5" width="13" height="13" rx="3"/><path d="M5.5 10h13M9 20.5l1-3M15 20.5l-1-3"/><circle cx="9" cy="13.4" r=".9" fill="currentColor" stroke="none"/><circle cx="15" cy="13.4" r=".9" fill="currentColor" stroke="none"/></svg></span><span class="n">Transport</span><span class="c">6</span></div><div class="pk-card"><button class="pk-row">TfL &amp; rail</button><button class="pk-row">Taxis</button><button class="pk-row">Fuel &amp; charging</button><button class="pk-row">Parking &amp; tolls</button><button class="pk-row">Car costs</button><button class="pk-row gen">Other transport</button></div></div>
+<div class="pk-fade"></div>
 </div></body></html>

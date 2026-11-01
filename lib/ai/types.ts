@@ -27,7 +27,7 @@ export interface Facts {
   preferences: string[];
 }
 
-export const CARD_TYPES = ["pace", "anomaly", "trend", "subscription", "new_payee", "win", "suggestion", "trip_pace", "trip_mix", "trip_stop", "trip_compare", "trip_big", "trip_fx"] as const;
+export const CARD_TYPES = ["pace", "anomaly", "trend", "subscription", "new_payee", "win", "suggestion", "trip_pace", "trip_mix", "trip_stop", "trip_compare", "trip_big", "trip_fx", "budget_risk", "budget_win", "budget_pace", "budget_suggest"] as const;
 export type CardType = (typeof CARD_TYPES)[number];
 
 export const Card = z.object({

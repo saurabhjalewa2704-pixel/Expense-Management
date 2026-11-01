@@ -14,6 +14,7 @@ import { formatGBP } from "@/lib/money";
 const TAG: Record<CardT["type"], string> = {
   pace: "Pace", anomaly: "Unusual", trend: "Trend", subscription: "Subscriptions", new_payee: "New payee", win: "Going well", suggestion: "Suggestion",
   trip_pace: "Trip pace", trip_mix: "Where it's going", trip_stop: "By stop", trip_compare: "Past trips", trip_big: "Biggest expense", trip_fx: "Card fees",
+  budget_risk: "Watch", budget_win: "Going well", budget_pace: "Budget", budget_suggest: "Budget suggestion",
 };
 
 function href(card: CardT): string | null {

@@ -4,7 +4,7 @@ const GATEWAY = "http://127.0.0.1:54321";
 export const OWNER = "owner@sterling.local";
 
 /** Wipe the database and recreate the owner. seed: "demo" loads supabase/seed.sql; onboarded skips first-run setup. */
-export async function resetDb(opts: { seed?: "demo" | "trip"; onboarded?: boolean } = {}) {
+export async function resetDb(opts: { seed?: "demo" | "budget" | "trip"; onboarded?: boolean } = {}) {
   const q = new URLSearchParams();
   if (opts.seed) q.set("seed", opts.seed);
   if (opts.onboarded) q.set("onboarded", "1");
@@ -41,6 +41,15 @@ export async function fixClock(ctx: BrowserContext) {
 /** Load the demo data (PRD Appendix A), pin the clock and sign in. */
 export async function startDemo(page: P) {
   await resetDb({ seed: "demo" });
+  await fixClock(page.context());
+  await signIn(page);
+  await page.clock.resume();
+  await expect(page.getByTestId("hero")).toBeVisible();
+}
+
+/** The budget data (PRD Appendix A.3): the demo ledger with a £4,400 budget and five limits, on Sunday 18 October 2026. */
+export async function startBudget(page: P) {
+  await resetDb({ seed: "budget" });
   await fixClock(page.context());
   await signIn(page);
   await page.clock.resume();

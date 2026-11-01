@@ -1,6 +1,7 @@
 // Deterministic cards rendered straight from the facts, used when there is no model, the token cap is reached, or the
 // model's cards fail validation twice. Every figure is a fact's own `display`, so these are grounded by construction
 // (and still go through the validator in tests).
+import { budgetCards } from "./budget-facts";
 import type { Card, Fact, Facts } from "./types";
 
 const clip = (s: string, n: number) => (s.length <= n ? s : `${s.slice(0, n - 1).trimEnd()}…`);
@@ -16,11 +17,11 @@ export function fallbackCards(facts: Facts): Card[] {
   const spend = get("spend_mtd"), prev = get("spend_prev_same_point"), gap = get("pace_gap"), dir = get("pace_dir"), prevName = get("prev_month_name")?.display ?? "last month";
   if (spend && prev && gap && dir && dir.display !== "level" && (prev.value_pence ?? 0) > 0) {            // never compare with an empty month
     const under = dir.display === "under";
-    const projected = get("projected_spend");
+    const projected = get("month_forecast");
     add({
       key: `pace:${facts.period.to.slice(0, 7)}`, type: "pace", severity: under ? "positive" : "caution",
       title: clip(`You're ${gap.display} ${dir.display} ${prevName}'s pace`, 70),
-      body: clip(`${spend.display} spent so far this month, against ${prev.display} at the same point in ${prevName}.${projected ? ` On track to spend about ${projected.display} this month.` : ""}`, 220),
+      body: clip(`${spend.display} spent so far this month, against ${prev.display} at the same point in ${prevName}.${projected ? ` This month is heading for about ${projected.display}.` : ""}`, 220),
       metric: { fact_key: "spend_mtd", delta_fact_key: "spend_prev_same_point" }, viz: "bar_compare", link: { kind: "screen", id: "/analytics" },
     });
   }
@@ -86,6 +87,8 @@ export function fallbackCards(facts: Facts): Card[] {
       metric: { fact_key: f.key }, link: payee ? { kind: "payee", id: payee.id } : undefined,
     });
   }
+
+  for (const b of budgetCards(facts.facts, facts.entities, facts.period.to.slice(0, 7))) add(b);
 
   if (cards.length === 0) {
     add({ key: `info:start:${facts.generated_on}`, type: "suggestion", severity: "info", title: "Keep logging and patterns will appear", body: "Insights need a few weeks of entries to say anything useful. Log what you spend and they will start to appear here.", link: { kind: "screen", id: "/activity" } });

@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { AccountIcon } from "@/components/accounts/accounts-screen";
 import { CashChart } from "@/components/charts/cash-chart";
+import { ForecastWhySheet } from "@/components/budget/forecast-why";
 import { Figure, cashLabel } from "@/components/money";
 import { PageHeader } from "@/components/ui/page-header";
 import { Sheet } from "@/components/ui/sheet";
@@ -9,7 +10,7 @@ import { accountTypeLabel } from "@/lib/accounts";
 import { addMonths, formatDayMonth, formatLong, formatShort, londonTime, monthEnd, monthStart, yearEnd, yearStart, type ISODate } from "@/lib/dates";
 import { UI } from "@/lib/icons";
 import { formatGBP } from "@/lib/money";
-import { useAccounts, useBalances, useCashFlow, useCashSeries, useNonBalanceSpend, useNow, useProfile, useToday, useTotals } from "@/lib/queries/hooks";
+import { useAccounts, useBalances, useCashFlow, useCashSeries, useNonBalanceSpend, useNow, useProfile, useProjectedClose, useToday, useTotals } from "@/lib/queries/hooks";
 import { useAnimatedNumber } from "@/lib/use-animated-number";
 
 type Span = "month" | "year";
@@ -40,6 +41,10 @@ export function CashScreen() {
   const balances = useBalances(at).data;
   const cash = useAnimatedNumber(flow.data?.closing_pence);
   const nonBal = useNonBalanceSpend(eqFrom, at).data;
+  // CASH-06: the projected close, from the one forecast engine, shown while looking at the current month
+  const proj = useProjectedClose();
+  const showProj = span === "month" && monthStart(at) === monthStart(today) && proj.value !== null;
+  const [why, setWhy] = useState(false);
 
   const f = flow.data;
   const pool = (balances ?? []).filter((b) => b.counts_as_cash);
@@ -69,10 +74,17 @@ export function CashScreen() {
           </span>
         </div>
         <div style={{ marginTop: 6 }}>
-          {series.data ? <CashChart points={series.data.map((p) => ({ day: p.day, cash_pence: p.cash_pence }))} selected={at} onSelect={(d) => setAsAt(d)} label="Available cash by day" /> : <div className="skeleton" style={{ height: 190 }} aria-busy />}
+          {series.data ? <CashChart points={series.data.map((p) => ({ day: p.day, cash_pence: p.cash_pence }))} selected={at} onSelect={(d) => setAsAt(d)} label="Available cash by day" projection={showProj ? { day: monthEnd(today), cash_pence: proj.value! } : null} /> : <div className="skeleton" style={{ height: 190 }} aria-busy />}
         </div>
+        {showProj && (
+          <button className="row-between" data-testid="projected-close" onClick={() => setWhy(true)} style={{ width: "100%", margin: "12px 0 0", fontSize: 13, color: "var(--ink-2)", textAlign: "left" }} aria-label="Why this projection?">
+            <span>Projected close, {formatDayMonth(monthEnd(today))}</span>
+            <span className="num">≈ {formatGBP(proj.value!, { whole: true })}</span>
+          </button>
+        )}
         <div className="sub" style={{ marginTop: 10 }}>Drag across the line to see your cash on any day.</div>
       </div>
+      <ForecastWhySheet open={why} onOpenChange={setWhy} month={monthStart(today)} />
 
       <div className="card" style={{ marginTop: 12, paddingBottom: 6 }} data-testid="adds-up">
         <div className="headline" style={{ marginBottom: 6 }}>How it adds up</div>

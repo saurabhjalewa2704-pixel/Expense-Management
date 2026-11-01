@@ -9,14 +9,16 @@ import { PaceChart } from "@/components/charts/pace-chart";
 import { TrendChart } from "@/components/charts/trend-chart";
 import { WaterfallChart } from "@/components/charts/waterfall-chart";
 import { PeriodControl } from "./period-control";
-import { average, buildWaterfall, categoryFinding, subcategoryFinding, paceFinding, projectMonth, rhythmFinding, trendBars, trendFinding, waterfallFinding, weekdayAverages, WEEKDAY_NAMES } from "@/lib/analytics";
+import { average, buildWaterfall, categoryFinding, subcategoryFinding, paceFinding, rhythmFinding, trendBars, trendFinding, waterfallFinding, weekdayAverages, WEEKDAY_NAMES } from "@/lib/analytics";
 import { addMonths, formatDayMonth, formatMonthYear, monthStart, type ISODate } from "@/lib/dates";
 import { CategoryIcon, UI } from "@/lib/icons";
 import { formatGBP, pctChange } from "@/lib/money";
 import { resolvePeriod } from "@/lib/periods";
 import { periodQuery, useSharedPeriod } from "@/lib/period-url";
 import type { Category } from "@/lib/types";
-import { useCashFlow, useCategories, useDailySpend, useMonthlyTotals, usePayees, useProfile, useSpendByCategory, useToday, useTopPayees, useTotals, useTrips } from "@/lib/queries/hooks";
+import { AnalyticsBudgets } from "@/components/budget/analytics-budgets";
+import { ForecastWhySheet } from "@/components/budget/forecast-why";
+import { useCashFlow, useCategories, useDailySpend, useMonthForecast, useMonthlyTotals, usePayees, useProfile, useSpendByCategory, useToday, useTopPayees, useTotals, useTrips } from "@/lib/queries/hooks";
 import { Switch } from "@/components/ui/switch";
 
 const NO_CATEGORIES: Category[] = [];
@@ -54,7 +56,20 @@ function GroupSwitch({ value, onChange, children }: { value: GroupBy; onChange: 
 }
 
 /** S5: the long scroll of finding-titled charts (AN-01..06, AN-08). */
+/** Spending · Budgets (BUD-11): the budget views are a second tab under the same title. */
 export function AnalyticsScreen() {
+  const [tab, setTab] = useState<"spending" | "budgets">("spending");
+  const seg = (
+    <div className="seg view-seg" role="tablist" aria-label="Analytics view" data-testid="analytics-tabs" style={{ marginTop: 10 }}>
+      <button role="tab" aria-selected={tab === "spending"} className={tab === "spending" ? "on" : ""} onClick={() => setTab("spending")}>Spending</button>
+      <button role="tab" aria-selected={tab === "budgets"} className={tab === "budgets" ? "on" : ""} onClick={() => setTab("budgets")} data-testid="tab-budgets">Budgets</button>
+    </div>
+  );
+  if (tab === "budgets") return <div className="scroll" style={{ paddingBottom: 48 }}><div className="topbar" style={{ justifyContent: "flex-end" }} /><h1 className="large-title">Analytics</h1>{seg}<AnalyticsBudgets /></div>;
+  return <SpendingScreen tabs={seg} />;
+}
+
+function SpendingScreen({ tabs }: { tabs: React.ReactNode }) {
   const today = useToday();
   const [sel, setSel] = useSharedPeriod(today);
   const [groupBy, setGroupBy] = useGroupBy();
@@ -70,7 +85,6 @@ export function AnalyticsScreen() {
   const poolCats = useSpendByCategory(p.from, p.to, null, true);
   const flow = useCashFlow(p.from, p.to);
   const totals = useMonthlyTotals(12, noTrips);
-  const history = useDailySpend(monthStart(addMonths(monthStart(today), -6)), today, false, noTrips);
   const tripTotals = useTotals({ from: p.from, to: p.to, trip: "any", types: ["expense"] });
   const tripList = useTrips().data ?? [];
   const tripsHere = tripList.filter((t) => t.start_on <= p.to && t.end_on >= p.from).map((t) => t.name);
@@ -109,7 +123,11 @@ export function AnalyticsScreen() {
   // 12-month trend with the current month projected
   const thisMonth = monthStart(today);
   const monthSpendSoFar = totals.data?.find((t) => t.month === thisMonth)?.spend_pence ?? 0;
-  const projected = p.kind === "month" && p.isCurrent && history.data ? projectMonth(trackStart ? history.data.filter((d) => d.day >= trackStart) : history.data, today, monthSpendSoFar) : null;
+  // AN-04: the hatched bar is the one forecast engine's answer (lib/forecast.ts); with too little data there is no bar, only a note
+  const monthForecast = useMonthForecast(thisMonth, null, p.kind === "month" && p.isCurrent);
+  const fc = p.kind === "month" && p.isCurrent ? monthForecast.data?.forecast : undefined;
+  const projected = fc && fc.available && !fc.closed ? fc.forecast : null;
+  const [why, setWhy] = useState(false);
   const bars = trendBars(totals.data ?? [], thisMonth, projected);
   const past = bars.filter((b) => !b.isCurrent && b.spend > 0 && !isPartial(b.month));
   const partialBars = bars.filter((b) => !b.isCurrent && b.spend > 0 && isPartial(b.month));
@@ -142,6 +160,7 @@ export function AnalyticsScreen() {
         <a className="icon-btn" aria-label="Export CSV for this period" href={exportHref} download><UI.Download size={18} strokeWidth={1.75} aria-hidden /></a>
       </div>
       <h1 className="large-title">Analytics</h1>
+      {tabs}
       <PeriodControl value={sel} today={today} onChange={setSel} />
       {tripList.length > 0 && (
         <div style={{ marginTop: 10 }}>
@@ -191,11 +210,15 @@ export function AnalyticsScreen() {
         </ChartCard>
 
         <ChartCard testId="chart-trend" loading={totals.isLoading} empty={past.length === 0 && monthSpendSoFar === 0}
-          finding={trendTitle} sub={first && lastBar ? `Monthly spend, ${formatMonthYear(first.month).replace(/(\w+) (\d+)/, "$1 $2").slice(0, 3)} ${first.month.slice(0, 4)} – ${formatMonthYear(lastBar.month).slice(0, 3)} ${lastBar.month.slice(0, 4)}${projected !== null ? " · hatched = projected" : ""}${partialBars.length ? " · Partial: before tracking" : ""}` : "Monthly spend"}
-          actions={<button className={`chip plain ${showIncome ? "sel" : ""}`} style={{ height: 30, fontSize: 12 }} aria-pressed={showIncome} onClick={() => setShowIncome((v) => !v)}>Income</button>}
-          table={{ columns: ["Month", "Spend", "Income"], rows: bars.map((b) => [formatMonthYear(b.month) + (isPartial(b.month) && !b.isCurrent ? " (partial: before tracking)" : ""), formatGBP(b.spend + b.projectedExtra) + (b.projectedExtra ? " (projected)" : ""), formatGBP(b.income)]) }}>
+          finding={trendTitle} sub={first && lastBar ? `Monthly spend, ${formatMonthYear(first.month).replace(/(\w+) (\d+)/, "$1 $2").slice(0, 3)} ${first.month.slice(0, 4)} – ${formatMonthYear(lastBar.month).slice(0, 3)} ${lastBar.month.slice(0, 4)}${projected !== null ? " · hatched = forecast" : fc && !fc.available ? ` · ${fc.unavailableReason}` : ""}${partialBars.length ? " · Partial: before tracking" : ""}` : "Monthly spend"}
+          actions={<>
+            {projected !== null && <button className="chip plain" style={{ height: 30, fontSize: 12 }} data-testid="trend-why" onClick={() => setWhy(true)}>Why?</button>}
+            <button className={`chip plain ${showIncome ? "sel" : ""}`} style={{ height: 30, fontSize: 12 }} aria-pressed={showIncome} onClick={() => setShowIncome((v) => !v)}>Income</button>
+          </>}
+          table={{ columns: ["Month", "Spend", "Income"], rows: bars.map((b) => [formatMonthYear(b.month) + (isPartial(b.month) && !b.isCurrent ? " (partial: before tracking)" : ""), formatGBP(b.spend + b.projectedExtra) + (b.projectedExtra ? " (forecast)" : ""), formatGBP(b.income)]) }}>
           <TrendChart bars={bars} avg={avg} showIncome={showIncome} />
         </ChartCard>
+        <ForecastWhySheet open={why} onOpenChange={setWhy} month={thisMonth} />
 
         <ChartCard testId="chart-rhythm" loading={heatDays.isLoading} empty={!rhythm}
           finding={rhythm?.text ?? "Daily rhythm"} sub={rhythm ? `Daily spend excluding fixed costs, ${formatMonthYear(heatMonth).split(" ")[0]} · ${WEEKDAY_NAMES[rhythm.weekday]!.toLowerCase().replace(/^./, (c) => c.toUpperCase())} average ${formatGBP(wk[rhythm.weekday]!)}` : undefined}

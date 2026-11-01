@@ -11,7 +11,7 @@ const input: FactsInput = {
   today: "2026-10-18", scope: "adhoc",
   period: { from: "2026-10-01", to: "2026-10-18", label: "October so far", compare_label: "earlier months at the same point" },
   pace: { month_start: "2026-10-01", day_of_month: 18, days_in_month: 31, spend_pence: 323685, prev_spend_pence: 360410, prev_label_day: 18, prev_total_pence: 531620 },
-  projected: 506200, monthAvg: 534926,
+  forecast: { pence: 506200, low: 480000, high: 530000 }, monthAvg: 534926,
   history: [
     { category_id: "c-home", name: "Home", icon: "house", parent_id: null, current_pence: 181240, prior_pence: [180800, 181420, 180360, 179880, 181140, 180520] },
     { category_id: "c-groc", name: "Groceries", icon: "shopping-cart", parent_id: null, current_pence: 38625, prior_pence: [37240, 35530, 36845, 35840, 35210, 36400] },
@@ -34,7 +34,7 @@ describe("facts engine", () => {
     expect(display("spend_prev_same_point")).toBe("£3,604.10");
     expect(display("pace_gap")).toBe("£367");
     expect(display("pace_dir")).toBe("under");
-    expect(display("projected_spend")).toBe("£5,062");
+    expect(display("month_forecast")).toBe("£5,062");
     expect(display("cat:eating_out:total")).toBe("£312.60");
     expect(display("cat:eating_out:usual")).toBe("£226");
     expect(display("cat:eating_out:pct_over")).toBe("38%");
