@@ -8,14 +8,14 @@ import { buildInput, fetchBillsData, fetchRawInput, spentFromFacts } from "./loa
 
 const endOfDay = (d: ISODate) => `${addDays(d, 1)}T00:00:00Z`;   // everything logged by the end of `d` (and the small hours after): created_at ≤ asOf + 1 day
 
-export async function runNightly(db: SupabaseClient, userId: string, today: ISODate): Promise<{ months: number; rows: number; tuned: boolean; z: number }> {
+export async function runNightly(db: SupabaseClient, userId: string, today: ISODate, monthsBack = 6): Promise<{ months: number; rows: number; tuned: boolean; z: number }> {
   const thisMonth = monthStart(today);
   const bills = await fetchBillsData(db, thisMonth);
   const { data: prof } = await db.from("profiles").select("tracking_started_on").eq("id", userId).single();
   const track = (prof as { tracking_started_on: ISODate | null } | null)?.tracking_started_on;
   const replays: Replay[] = [];
   const months: ISODate[] = [];
-  for (let k = 1; k <= 6; k++) {
+  for (let k = 1; k <= monthsBack; k++) {
     const m = monthStart(addMonths(thisMonth, -k));
     if (track && track > addDays(m, 10)) continue;                       // needs at least ~20 tracked days
     months.push(m);

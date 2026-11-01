@@ -7,13 +7,13 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/toast";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
-/** The ids of every one-off expense (a small set), so rows can show the chip without a new column on the Activity query. */
+/** The ids of every one-off expense (a short list), so rows can show the chip without a new column on the Activity query. */
 export function useOneOffIds() {
   return useQuery({
     queryKey: ["one-offs"],
     queryFn: async () => {
       const { data } = await supabaseBrowser().from("transactions").select("id").eq("is_one_off", true).is("deleted_at", null);
-      return new Set(((data ?? []) as { id: string }[]).map((r) => r.id));
+      return ((data ?? []) as { id: string }[]).map((r) => r.id);                  // a plain array: the query cache is persisted, and a Set would not survive it
     },
     staleTime: 30_000,
   });
@@ -21,7 +21,7 @@ export function useOneOffIds() {
 
 export function OneOffChip({ id }: { id: string }) {
   const q = useOneOffIds();
-  if (!q.data?.has(id)) return null;
+  if (!q.data?.includes(id)) return null;
   return <span className="pill" data-testid="one-off-chip" style={{ height: 20, fontSize: 11, marginLeft: 6, padding: "0 7px", verticalAlign: "1px" }}>One-off</span>;
 }
 

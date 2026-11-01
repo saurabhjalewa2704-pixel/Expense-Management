@@ -12,6 +12,6 @@ design/screenshots/*.png and design/tokens.css.
 - Dark-only: there is no light theme or theme toggle. Never add `dark:` variants or a light palette.
 - Mobile first: build and test at 390×844 before desktop.
 - Every new table gets RLS policies plus a SQL test proving cross-user isolation.
-- Every forecast or projection in the app comes from one function, month_forecast() / lib/forecast.ts (PRD §6.13 BUD-05, BUD-05a). Never write a second projection. Missing history is excluded, never treated as £0.
+- Every forecast or projection in the app comes from getForecast() in /lib/forecast/ (docs/FORECASTING-ENGINE-PRD.md). Never write a second projection. It must reproduce forecast/fixtures/*.expected.json to the penny.
 - AI copy must pass the grounding validator (PRD §12.4); never show unvalidated model text.
 - Record judgement calls in DECISIONS.md.

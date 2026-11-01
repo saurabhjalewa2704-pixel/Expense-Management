@@ -30,6 +30,8 @@ export function AnalyticsBudgets() {
         .map((r) => ({ month: r.month, day: r.day, point: r.point_pence, low: r.low_pence, high: r.high_pence, actual: r.actual_pence }));
     },
   });
+  const [checking, setChecking] = useState(false);
+  const runCheck = async () => { setChecking(true); try { await fetch("/api/forecast/check", { method: "POST" }); await acc.refetch(); } finally { setChecking(false); } };
   const v = q.data;
   const isCurrent = month === monthStart(today);
   const nav = (
@@ -132,7 +134,7 @@ export function AnalyticsBudgets() {
         <div style={{ fontSize: 19, fontWeight: 600, letterSpacing: "-.02em" }}>Budget health</div>
         <div className="kpis">
           <div className="kpi"><div className="k">Limits on track</div><div className="v" data-testid="health-track">{v.limits.length ? `${v.limits.filter((l) => l.variance <= 0).length} of ${v.limits.length}` : "–"}</div><div className="s">{atRisk.length ? `${atRisk.join(", ")} at risk` : "none at risk"}</div></div>
-          <div className="kpi"><div className="k">Forecast accuracy</div><div className="v" data-testid="health-accuracy">{accuracy === null ? "Learning" : `±${accuracy.pct}%`}</div><div className="s">{accuracy === null ? "2 full months needed" : `by mid-month, last ${accuracy.months} months`}{bias?.flag ? ` · Forecasts have been ${Math.abs(bias.pct)}% ${bias.pct < 0 ? "low" : "high"} recently` : ""}</div></div>
+          <div className="kpi"><div className="k">Forecast accuracy</div><div className="v" data-testid="health-accuracy">{accuracy === null ? "Learning" : `±${accuracy.pct}%`}</div><div className="s">{accuracy === null ? <>2 full months needed · <button className="link" data-testid="run-backtest" disabled={checking} onClick={runCheck}>{checking ? "Checking…" : "Check now"}</button></> : `by mid-month, last ${accuracy.months} months`}{bias?.flag ? ` · Forecasts have been ${Math.abs(bias.pct)}% ${bias.pct < 0 ? "low" : "high"} recently` : ""}</div></div>
           <div className="kpi"><div className="k">Unbudgeted share</div><div className="v">{unbudgeted}%</div><div className="s">of spending has no limit of its own</div></div>
           <div className="kpi"><div className="k">Biggest saving</div><div className="v" style={{ color: saving ? "var(--positive)" : undefined }}>{saving ? saving.name : "–"}</div><div className="s">{saving ? `${whole(-variance(saving))} under its limit` : "no limit is under yet"}</div></div>
         </div>
