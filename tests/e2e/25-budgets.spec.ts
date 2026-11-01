@@ -174,4 +174,44 @@ test.describe("budgets (BUD acceptance, FC-9, CASH-06)", () => {
     expect(again.sent).toEqual([]);
     expect((await sql("select 1 from budget_alerts_sent")).length).toBe(1);
   });
+
+  test("LAYOUT the budget screens fit the 390px screen and keep the mock-up's arrangement", async ({ page }) => {
+    await startBudget(page);
+    const overflow = async (name: string) => {
+      const bad = await page.evaluate(() => {
+        const w = document.documentElement.clientWidth;
+        return [...document.querySelectorAll<HTMLElement>("main *, .scroll *")].filter((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && (r.right > w + 1 || r.left < -1); }).map((e) => e.tagName + "." + e.className).slice(0, 5);
+      });
+      expect(bad, `${name}: elements outside the screen`).toEqual([]);
+    };
+    // Setup (mock-up 28): close button left, title centred, a pill-sized Save on the right; each limit is name + usual on the left and the amount or "Add limit" on the right
+    await page.goto("/budget/setup");
+    await expect(page.getByTestId("limits-setup")).toBeVisible();
+    const save = (await page.getByTestId("budget-save").boundingBox())!;
+    expect(save.width).toBeLessThan(110);
+    expect(save.x + save.width).toBeGreaterThan(330);
+    const title = (await page.getByText("Budgets", { exact: true }).first().boundingBox())!;
+    expect(Math.abs(title.x + title.width / 2 - 195)).toBeLessThan(20);
+    const row = page.getByTestId("setup-limit").filter({ hasText: "Home" });
+    const name = (await row.getByText("Home", { exact: true }).boundingBox())!;
+    const chip = (await row.getByText("Add limit").boundingBox())!;
+    expect(name.x).toBeLessThan(chip.x);
+    expect(Math.abs(name.y - chip.y)).toBeLessThan(40);
+    await overflow("setup");
+    await page.screenshot({ path: "tests/e2e/shots/budget-setup.png", fullPage: true });
+    await page.getByTestId("setup-limit").filter({ hasText: "Eating out" }).click();
+    await expect(page.getByTestId("limit-sheet")).toBeVisible();
+    await page.screenshot({ path: "tests/e2e/shots/budget-limit.png" });
+    await page.getByRole("button", { name: "Cancel" }).click();
+    // Home, detail, Analytics › Budgets
+    for (const [url, tid] of [["/", "budget-card"], ["/budget", "budget-screen"]] as const) {
+      await page.goto(url);
+      await expect(page.getByTestId(tid)).toBeVisible();
+      await overflow(url);
+    }
+    await page.goto("/analytics");
+    await page.getByTestId("tab-budgets").click();
+    await expect(page.getByTestId("budget-health")).toBeVisible();
+    await overflow("analytics budgets");
+  });
 });
