@@ -113,4 +113,18 @@ test.describe("analytics (AN-01..08)", () => {
     await expect(page.getByTestId("chart-rhythm")).toContainText("Nothing to show");
     await expect(page.getByText("No payees in this period.")).toBeVisible();
   });
+
+  test("AN-08 in the first days of a month the comparison is last month against the one before, with October's real spending", async ({ page }) => {
+    await resetDb({ seed: "demo" });
+    await page.context().clock.install({ time: new Date("2026-11-02T10:00:00Z") });
+    await signIn(page);
+    await page.clock.resume();
+    await page.goto("/analytics");
+    const card = page.getByTestId("compare");
+    await expect(card.getByRole("heading")).toHaveText("October 2026 vs September");
+    await expect(card).toContainText("the whole month");
+    await expect(card).toContainText("November has only just begun".replace("November", "November 2026"));
+    const eating = page.getByTestId("compare-table").locator("div", { hasText: "Eating out" }).first();
+    await expect(eating).toContainText("£313");
+  });
 });
