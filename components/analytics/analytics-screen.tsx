@@ -13,7 +13,7 @@ import { average, buildWaterfall, categoryFinding, subcategoryFinding, paceFindi
 import { addMonths, formatDayMonth, formatMonthYear, monthStart, type ISODate } from "@/lib/dates";
 import { CategoryIcon, UI } from "@/lib/icons";
 import { formatGBP, pctChange } from "@/lib/money";
-import { resolvePeriod } from "@/lib/periods";
+import { resolvePeriod, stepPeriod } from "@/lib/periods";
 import { periodQuery, useSharedPeriod } from "@/lib/period-url";
 import type { Category } from "@/lib/types";
 import { AnalyticsBudgets } from "@/components/budget/analytics-budgets";
@@ -81,7 +81,15 @@ function SpendingScreen({ tabs }: { tabs: React.ReactNode }) {
   const prev = useDailySpend(p.prevFrom, p.prevEnd, false, noTrips);
   const cats = useSpendByCategory(p.from, p.to, null, false, "parent", noTrips);
   const leaves = useSpendByCategory(p.from, p.to, null, false, "leaf", noTrips);
-  const prevCats = useSpendByCategory(p.prevFrom, p.prevTo, null, false, "parent", noTrips);
+  // AN-08: the first days of a period say almost nothing ("1 Nov vs 1 Oct"), so until a week has passed the comparison is the last
+  // completed period against the one before it (October vs September), and says so.
+  const earlyPeriod = p.isCurrent && p.kind !== "custom" && p.elapsed < 7;
+  const lastP = resolvePeriod(stepPeriod(sel, -1), today);
+  const cmpCurRange: [ISODate, ISODate] = earlyPeriod ? [lastP.from, lastP.end] : [p.from, p.to];
+  const cmpPrevRange: [ISODate, ISODate] = earlyPeriod ? [lastP.prevFrom, lastP.prevEnd] : [p.prevFrom, p.prevTo];
+  const cmpLabels = earlyPeriod ? { cur: lastP.label, prev: lastP.prevLabel } : { cur: p.label, prev: p.prevLabel };
+  const cmpCurCats = useSpendByCategory(cmpCurRange[0], cmpCurRange[1], null, false, "parent", noTrips);
+  const prevCats = useSpendByCategory(cmpPrevRange[0], cmpPrevRange[1], null, false, "parent", noTrips);
   const poolCats = useSpendByCategory(p.from, p.to, null, true);
   const flow = useCashFlow(p.from, p.to);
   const totals = useMonthlyTotals(12, noTrips);
@@ -146,10 +154,10 @@ function SpendingScreen({ tabs }: { tabs: React.ReactNode }) {
   // compare periods (AN-08): largest absolute change first
   const cmp = useMemo(() => {
     const m = new Map<string, { name: string; icon: string; cur: number; prev: number }>();
-    for (const r of cats.data ?? []) m.set(r.category_id, { name: r.name, icon: r.icon, cur: r.total_pence, prev: 0 });
+    for (const r of cmpCurCats.data ?? []) m.set(r.category_id, { name: r.name, icon: r.icon, cur: r.total_pence, prev: 0 });
     for (const r of prevCats.data ?? []) { const e = m.get(r.category_id); if (e) e.prev = r.total_pence; else m.set(r.category_id, { name: r.name, icon: r.icon, cur: 0, prev: r.total_pence }); }
     return [...m.entries()].map(([id, v]) => ({ id, ...v, delta: v.cur - v.prev })).sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
-  }, [cats.data, prevCats.data]);
+  }, [cmpCurCats.data, prevCats.data]);
 
   const loadingAll = cats.isLoading || cur.isLoading;
   const exportHref = `/api/export?format=csv&from=${p.from}&to=${p.end}`;
@@ -243,9 +251,9 @@ function SpendingScreen({ tabs }: { tabs: React.ReactNode }) {
       </div>
 
       <div style={{ marginTop: 12 }}>
-        <ChartCard testId="compare" loading={loadingAll || prevCats.isLoading} empty={cmp.length === 0}
-          finding={`${p.label} vs ${p.prevLabel}`} sub={`By category, to the same point · biggest change first`}
-          table={{ columns: ["Category", p.label, p.prevLabel, "Change"], rows: cmp.map((r) => [r.name, formatGBP(r.cur), formatGBP(r.prev), formatGBP(r.delta, { signed: true })]) }}>
+        <ChartCard testId="compare" loading={loadingAll || prevCats.isLoading || cmpCurCats.isLoading} empty={cmp.length === 0}
+          finding={`${cmpLabels.cur} vs ${cmpLabels.prev}`} sub={earlyPeriod ? `By category, the whole month · ${p.label} has only just begun · biggest change first` : `By category, to the same point · biggest change first`}
+          table={{ columns: ["Category", cmpLabels.cur, cmpLabels.prev, "Change"], rows: cmp.map((r) => [r.name, formatGBP(r.cur), formatGBP(r.prev), formatGBP(r.delta, { signed: true })]) }}>
           <div data-testid="compare-table" style={{ marginTop: 8 }}>
             {cmp.slice(0, 10).map((r) => {
               const pct = pctChange(r.cur, r.prev);
