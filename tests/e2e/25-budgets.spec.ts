@@ -137,7 +137,7 @@ test.describe("budgets (BUD acceptance, FC-9, CASH-06)", () => {
     await expect(table).toContainText("£3,237 spent, £4,363 forecast");
     await expect(table).toContainText("£2,300");
     await expect(table).toContainText("£2,240");
-    await expect(page.getByTestId("budget-history")).toContainText("of the last 5 months within budget");
+    await expect(page.getByTestId("budget-history")).toContainText("could be your first month within £4,400");
     await expect(page.getByTestId("health-track")).toHaveText("3 of 5");
     await page.screenshot({ path: "tests/e2e/shots/analytics-budgets.png", fullPage: true });
   });

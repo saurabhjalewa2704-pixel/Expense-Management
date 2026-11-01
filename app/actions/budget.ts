@@ -20,7 +20,7 @@ export async function saveBudgets(input: unknown): Promise<ActionResult> {
   const supabase = await supabaseServer();
   const { data: u } = await supabase.auth.getUser();
   if (!u.user) return fail("Please sign in again.");
-  const thisMonth = monthStart(todayLondon());
+  const thisMonth = monthStart((process.env.STERLING_TEST_TODAY as string | undefined) ?? todayLondon());   // the test seam pins the clock, as in the crons
   const from = p.data.from === "this" ? thisMonth : addMonths(thisMonth, 1);
   if (p.data.overall) {
     const { error } = await supabase.rpc("set_budget", { p_category: null, p_amount: p.data.overall.amount, p_from: from, p_rollover: false, p_covers: p.data.overall.covers });
