@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { saveBudgets, setBudgetOverride } from "@/app/actions/budget";
 import { updateProfile } from "@/app/actions/profile";
 import { LimitSheet, type LimitDraft } from "@/components/budget/limit-sheet";
+import { MoneyInput } from "@/components/budget/money-input";
 import { Sheet } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/toast";
@@ -111,10 +112,10 @@ export function BudgetSetup() {
   const editing = edit ? tree.byId.get(edit) : null;
   return (
     <div className="scroll" style={{ paddingBottom: 56 }} data-testid="budget-setup">
-      <div className="sheet-head" style={{ padding: "50px 16px 0" }}>
-        <Link className="icon-btn" href={hadBudget ? "/budget" : "/"} aria-label="Close"><UI.X size={18} strokeWidth={1.75} aria-hidden /></Link>
-        <span className="t">Budgets</span>
-        <button className="btn primary" data-testid="budget-save" disabled={busy || !amount} onClick={save} style={{ height: 34, padding: "0 16px", borderRadius: 17 }}>Save</button>
+      <div style={{ display: "grid", gridTemplateColumns: "72px 1fr 72px", alignItems: "center", padding: "50px 16px 4px" }}>
+        <Link className="icon-btn" href={hadBudget ? "/budget" : "/"} aria-label="Close" style={{ justifySelf: "start" }}><UI.X size={18} strokeWidth={1.75} aria-hidden /></Link>
+        <span style={{ textAlign: "center", fontSize: 17, fontWeight: 600 }}>Budgets</span>
+        <button data-testid="budget-save" disabled={busy || !amount} onClick={save} style={{ justifySelf: "end", height: 34, padding: "0 16px", borderRadius: 17, background: "var(--ink)", color: "var(--on-ink)", fontSize: 15, fontWeight: 600, opacity: !amount ? 0.4 : 1 }}>Save</button>
       </div>
 
       <div style={{ padding: "0 16px" }}>
@@ -122,9 +123,9 @@ export function BudgetSetup() {
         <div className="bg-card" style={{ padding: "0 16px" }}>
           <label className="row-between" style={{ minHeight: 76 }}>
             <span style={{ color: "var(--ink-2)", fontSize: 17 }}>Every month</span>
-            <span style={{ display: "inline-flex", alignItems: "baseline", fontSize: 30, fontWeight: 600, letterSpacing: "-.03em" }}>
-              <span style={{ fontSize: 18, color: "var(--ink-2)", marginRight: 2 }}>£</span>
-              <input data-testid="budget-amount" inputMode="decimal" value={amountText} placeholder="0" onChange={(e) => setAmountText(e.target.value)} aria-label="Monthly budget" style={{ width: `${Math.max(3, amountText.length + 0.5)}ch`, textAlign: "right", background: "transparent", border: 0, color: "var(--ink)", font: "inherit", outline: "none" }} />
+            <span style={{ display: "inline-flex", alignItems: "baseline", gap: 2 }}>
+              <span style={{ fontSize: 20, fontWeight: 600, color: "var(--ink-2)" }}>£</span>
+              <MoneyInput testId="budget-amount" label="Monthly budget" value={amountText} onChange={setAmountText} />
             </span>
           </label>
           <button className="row-between" style={{ minHeight: 56, width: "100%", borderTop: "1px solid var(--rule)", textAlign: "left" }} onClick={() => setCoversOpen(true)} data-testid="budget-covers">
@@ -137,10 +138,10 @@ export function BudgetSetup() {
           )}
           {hadBudget && (
             <div className="row-between" style={{ minHeight: 56, borderTop: "1px solid var(--rule)" }}>
-              <span style={{ fontSize: 17 }}>Applies from</span>
-              <span className="seg" style={{ width: 190, height: 32 }} role="tablist">
-                <button role="tab" aria-selected={from === "this"} className={from === "this" ? "on" : ""} onClick={() => setFrom("this")}>This month</button>
-                <button role="tab" aria-selected={from === "next"} className={from === "next" ? "on" : ""} onClick={() => setFrom("next")}>Next month</button>
+              <span style={{ fontSize: 17, whiteSpace: "nowrap" }}>Applies from</span>
+              <span className="seg" style={{ width: 176, height: 32, flex: "none", fontSize: 13 }} role="tablist">
+                <button role="tab" aria-selected={from === "this"} className={from === "this" ? "on" : ""} style={{ fontSize: 13 }} onClick={() => setFrom("this")}>This month</button>
+                <button role="tab" aria-selected={from === "next"} className={from === "next" ? "on" : ""} style={{ fontSize: 13 }} onClick={() => setFrom("next")}>Next month</button>
               </span>
             </div>
           )}
@@ -156,13 +157,15 @@ export function BudgetSetup() {
           {shown.map((c, i) => {
             const l = limits.get(c.id), u = usuals.get(c.id) ?? null;
             return (
-              <button key={c.id} onClick={() => setEdit(c.id)} className="cb" data-testid="setup-limit" data-limit={c.name} style={{ width: "100%", textAlign: "left", gridTemplateColumns: "36px minmax(0,1fr) auto", padding: "12px 0", borderTop: i ? "1px solid var(--rule)" : undefined }}>
-                <div className="tile" style={{ width: 36, height: 36, borderRadius: 10, gridRow: "1 / span 2" }}><CategoryIcon name={c.icon} size={18} /></div>
-                <div className="n" style={{ fontSize: 17 }}>{c.name}</div>
-                <div className="r" style={{ gridRow: "1 / span 2", display: "flex", alignItems: "center", gap: 6 }}>
-                  {l ? <>{whole(l.amount)}<UI.ChevronRight size={16} aria-hidden style={{ color: "var(--ink-3)" }} /></> : <span className="chip plain" style={{ height: 32, fontSize: 14 }}>Add limit</span>}
-                </div>
-                <div className="sub" style={{ gridColumn: 2, fontSize: 13 }}>{u ? `Usual ${whole(u)} a month${c.is_fixed ? " · fixed bills" : ""}` : "Usual –"}</div>
+              <button key={c.id} onClick={() => setEdit(c.id)} data-testid="setup-limit" data-limit={c.name}
+                style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", padding: "12px 0", borderTop: i ? "1px solid var(--rule)" : undefined }}>
+                <span className="tile" style={{ width: 36, height: 36, borderRadius: 10, display: "grid", placeItems: "center", flex: "none" }}><CategoryIcon name={c.icon} size={18} /></span>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ display: "block", fontSize: 17 }}>{c.name}</span>
+                  <span className="sub" style={{ display: "block", fontSize: 13, marginTop: 1 }}>{u ? `Usual ${whole(u)} a month${c.is_fixed ? " · fixed bills" : ""}` : "Usual –"}</span>
+                </span>
+                {l ? <span className="num" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 17 }}>{whole(l.amount)}<UI.ChevronRight size={16} aria-hidden style={{ color: "var(--ink-3)" }} /></span>
+                  : <span className="chip plain" style={{ height: 32, fontSize: 14, flex: "none" }}>Add limit</span>}
               </button>
             );
           })}
@@ -232,8 +235,8 @@ function OverrideSheet({ open, onOpenChange, month, current, onDone }: { open: b
       <div className="vaul-body" data-testid="override-sheet">
         <div className="sheet-head"><button className="txt" onClick={() => onOpenChange(false)}>Cancel</button><span className="t">{formatMonthYear(month)} only</span><button className="txt" data-testid="override-save" style={{ color: "var(--ink)", fontWeight: 600, opacity: p ? 1 : 0.4 }} disabled={!p} onClick={() => go(p)}>Save</button></div>
         <div style={{ textAlign: "center", marginTop: 8 }}>
-          <label style={{ display: "inline-flex", alignItems: "baseline", fontSize: 44, fontWeight: 600 }}><span style={{ fontSize: 22, color: "var(--ink-2)" }}>£</span>
-            <input data-testid="override-amount" inputMode="decimal" value={text} onChange={(e) => setText(e.target.value)} aria-label="This month's budget" style={{ width: `${Math.max(3, text.length + 0.5)}ch`, background: "transparent", border: 0, color: "var(--ink)", font: "inherit", textAlign: "center", outline: "none" }} />
+          <label style={{ display: "inline-flex", alignItems: "baseline", gap: 2 }}><span style={{ fontSize: 24, fontWeight: 600, color: "var(--ink-2)" }}>£</span>
+            <MoneyInput testId="override-amount" label="This month's budget" value={text} onChange={setText} size={48} align="center" />
           </label>
           <div className="sub">for {formatMonthYear(month)} only · the usual amount comes back after</div>
         </div>

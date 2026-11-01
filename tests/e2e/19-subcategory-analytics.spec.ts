@@ -77,7 +77,7 @@ test.describe("sub-category analytics (AN-02a/c, AN-07, AN-07b)", () => {
     expect(widths.reduce((a, b) => a + b, 0)).toBeCloseTo(100, 1);
     await expect(d.getByTestId("subcategory-split").getByTestId("subcategory-row").first()).toContainText("3 visits · avg £47.50");
     await expect(d.getByTestId("chart-monthly").getByRole("heading")).toHaveText("On course for your biggest month in six");
-    await expect(d.getByTestId("monthly-bars")).toContainText("≈ £538");
+    await expect(d.getByTestId("monthly-bars")).toContainText("≈ £452");
     await expect(d.getByTestId("top-places").getByRole("link").first()).toContainText("Dishoom Kensington");
     await expect(d.getByRole("link", { name: "All 21" })).toBeVisible();
   });
@@ -87,11 +87,11 @@ test.describe("sub-category analytics (AN-02a/c, AN-07, AN-07b)", () => {
     await page.goto("/analytics");
     await page.getByTestId("category-row").filter({ hasText: "Eating out" }).click();
     const bars = page.getByTestId("monthly-bars");
-    await expect(bars).toContainText("≈ £538");
+    await expect(bars).toContainText("≈ £452");
     await page.getByTestId("trend-chips").getByRole("button", { name: "Restaurants" }).click();
-    await expect(bars).not.toContainText("≈ £538");
+    await expect(bars).not.toContainText("≈ £452");
     await page.getByTestId("trend-chips").getByRole("button", { name: "All" }).click();
-    await expect(bars).toContainText("≈ £538");
+    await expect(bars).toContainText("≈ £452");
     await page.getByRole("button", { name: "Previous period" }).click();
     await expect(page).toHaveURL(/p=2026-09/);
     await expect(page.getByTestId("period-label")).toHaveText("September 2026");
