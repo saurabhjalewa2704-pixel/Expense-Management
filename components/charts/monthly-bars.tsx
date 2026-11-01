@@ -8,20 +8,21 @@ export interface MonthlyBar { month: string; spend: number; projectedExtra: numb
 const whole = (p: number) => `£${Math.round(p / 100).toLocaleString("en-GB")}`;
 
 /** AN-07: the last six months as bars with the value above each; the current month is actual plus a hatched projected part. */
-export function MonthlyBars({ bars, flagged, height = 170, ariaLabel, precise = false }: { bars: MonthlyBar[]; flagged: boolean; height?: number; ariaLabel: string; precise?: boolean }) {
+export function MonthlyBars({ bars, flagged, height = 170, ariaLabel, precise = false, limit }: { bars: MonthlyBar[]; flagged: boolean; height?: number; ariaLabel: string; precise?: boolean; limit?: number | null }) {
   const label = precise ? (p: number) => formatGBP(p) : whole;
   const [w, setW] = useState(320);
   const ro = useRef<ResizeObserver | null>(null);
   const setRef = (el: SVGSVGElement | null) => { ro.current?.disconnect(); if (el) { ro.current = new ResizeObserver(() => setW(Math.max(220, el.clientWidth))); ro.current.observe(el); setW(Math.max(220, el.clientWidth)); } };
   const padT = 26, padB = 22;
   const ih = height - padT - padB;
-  const top = Math.max(1, ...bars.map((b) => b.spend + b.projectedExtra));
+  const top = Math.max(1, ...bars.map((b) => b.spend + b.projectedExtra), limit ?? 0);
   const y = scaleLinear<number>({ domain: [0, top], range: [padT + ih, padT] });
   const slot = w / bars.length, bw = Math.min(54, slot * 0.8);
   const cx = (i: number) => slot * i + slot / 2;
   return (
     <svg ref={setRef} width="100%" height={height} data-testid="monthly-bars" role="img" aria-label={ariaLabel} style={{ display: "block", overflow: "visible" }}>
       <defs><pattern id="hatch-mb" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="var(--bg)" /><line x1="0" y1="0" x2="0" y2="6" stroke="var(--chart-ink)" strokeWidth="2.5" /></pattern></defs>
+      {limit ? <line data-testid="limit-line" x1={0} x2={w} y1={y(limit)} y2={y(limit)} stroke="var(--ink)" strokeDasharray="4 4" strokeWidth={1.25} /> : null}
       {bars.map((b, i) => {
         const fill = b.isCurrent ? (flagged ? "var(--caution)" : "var(--chart-ink)") : "var(--chart-context)";
         const total = b.spend + b.projectedExtra;

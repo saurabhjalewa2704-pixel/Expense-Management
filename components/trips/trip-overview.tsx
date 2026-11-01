@@ -6,7 +6,7 @@ import { TxnItem } from "@/components/activity/txn-row";
 import { formatLong, formatMonthYear, formatShort, type ISODate } from "@/lib/dates";
 import { CategoryIcon, UI } from "@/lib/icons";
 import { formatGBP, type Pence } from "@/lib/money";
-import { useTripBudgets, useTripByCategory, useTripByDay, useTripByStop, useTripSummary, useTripTxns } from "@/lib/queries/hooks";
+import { useBudgetRows, useTripBudgets, useTripByCategory, useTripByDay, useTripByStop, useTripSummary, useTripTxns } from "@/lib/queries/hooks";
 import { dailyChartMode, tripClock, tripDays, tripFigures, tripLength } from "@/lib/tripMath";
 import type { Trip, TripCategoryRow, TripStop } from "@/lib/types";
 import { BudgetBar, plural, stopOn, TripTimeline } from "./shared";
@@ -21,6 +21,9 @@ export function TripOverview({ trip, stops, today }: { trip: Trip; stops: TripSt
   const figs = tripFigures(trip, trip.budget_pence, summary?.booked_pence ?? 0, summary?.on_trip_pence ?? 0, today);
   const c = tripClock(trip, today);
   const txns = useTripTxns(trip.id).data;
+  // BUD-12: the footer says so when trip spend counts towards the monthly budget
+  const month = useBudgetRows(`${trip.start_on.slice(0, 8)}01`).data;
+  const budgetCoversTrips = !!month?.find((r) => r.category_id === null && (r.covers === "all" || r.covers === "exclude_bills"));
 
   return (
     <div data-testid="trip-overview">
@@ -46,6 +49,7 @@ export function TripOverview({ trip, stops, today }: { trip: Trip; stops: TripSt
         <div style={{ fontSize: 14, lineHeight: 1.45, color: "var(--ink-2)" }}>
           <b style={{ color: "var(--ink)", fontWeight: 600 }}>Also in your monthly spending.</b>{" "}
           <Explainer trip={trip} onTrip={figs.onTrip} booked={figs.booked} txns={txns} />
+          {budgetCoversTrips && <span data-testid="trip-budget-note"> Trip spending also counts towards your monthly budget and limits (this trip’s own budget stays separate).</span>}
         </div>
       </section>
     </div>

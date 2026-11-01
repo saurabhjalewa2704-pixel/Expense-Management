@@ -15,6 +15,10 @@
     {
       "path": "/api/cron/fx",
       "schedule": "15 5 * * *"
+    },
+    {
+      "path": "/api/cron/budget",
+      "schedule": "5 7 * * *"
     }
   ]
 }

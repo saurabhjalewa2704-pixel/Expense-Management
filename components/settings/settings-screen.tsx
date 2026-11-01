@@ -43,6 +43,7 @@ export function SettingsScreen() {
       <div className="list">
         <Row href="/settings/accounts" Icon={UI.Landmark} title="Accounts" sub={`${accounts.length} account${accounts.length === 1 ? "" : "s"}${accounts.find((a) => a.is_default) ? ` · default ${accounts.find((a) => a.is_default)!.name}` : ""}`} />
         <Row href="/settings/categories" Icon={UI.Tags} title="Categories" sub={`${categories.length} categories`} />
+        <Row href="/budget" Icon={UI.Target} title="Budgets" sub="A monthly amount, limits on categories, and alerts" />
         <Row href="/bills" Icon={UI.Repeat} title="Bills" sub="Rent, subscriptions and anything that repeats, logged for you" />
         <Row href="/trips" Icon={UI.Plane} title="Trips" sub="Budgets, foreign currency and insights for each trip" />
         <Row href="/settings/payees" Icon={UI.Tags} title="Payees" sub="Merge payees that were spelt differently" />

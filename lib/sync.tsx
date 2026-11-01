@@ -23,7 +23,7 @@ export function SyncEngine() {
       try {
         const r = await flushOutbox();
         if (r.confirmed > 0 || (refresh && !r.blocked)) await qc.invalidateQueries();
-        if (r.confirmed > 0) await purgeConfirmed();
+        if (r.confirmed > 0) { await purgeConfirmed(); void fetch("/api/budget/check", { method: "POST" }).catch(() => undefined); }   // BUD-10: alerts after writes
       } catch {
         /* offline: the next trigger retries */
       } finally {

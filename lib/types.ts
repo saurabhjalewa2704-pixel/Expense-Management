@@ -22,6 +22,11 @@ export interface Profile {
   bills_notify: boolean;
   /** "‹trip› wrap-up ready" (TRIP-08). */
   trip_notify?: boolean;
+  /** BUD-10 alert choices. */
+  budget_alert_forecast?: boolean;
+  budget_alert_pct80?: boolean;
+  budget_alert_reached?: boolean;
+  budget_alert_weekly?: boolean;
   /** The earliest opening date of a live account; months before it are "Partial: before tracking" (BAL-07). */
   tracking_started_on?: ISODate | null;
   last_reminder_on: ISODate | null;

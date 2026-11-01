@@ -39,7 +39,6 @@ export const qk = {
   topPayees: (from: ISODate, to: ISODate) => ["top-payees", from, to] as const,
   categoryMonthly: (id: string, n: number, children = true) => ["category-monthly", id, n, children] as const,
   topPlaces: (from: ISODate, to: ISODate, limit: number, id: string, children = true) => ["top-places", from, to, limit, id, children] as const,
-  categoryRemaining: (id: string, asOf: ISODate, children = true) => ["category-remaining", id, asOf, children] as const,
   suggestHistory: ["suggest-history"] as const,
   lastIncomeAccount: ["last-income-account"] as const,
   pots: ["pots"] as const,
@@ -64,4 +63,9 @@ export const qk = {
   ask: ["ask"] as const,
   potCategories: (id: string) => ["pot-categories", id] as const,
   insights: ["insights"] as const,
+  budget: ["budget"] as const,
+  budgetView: (month: ISODate, today: ISODate) => ["budget", "view", month, today] as const,
+  budgetRows: (month: ISODate) => ["budget", "rows", month] as const,
+  budgetHistory: (months: number, today: ISODate) => ["budget", "history", months, today] as const,
+  forecast: (month: ISODate, today: ISODate, scope: string | null) => ["forecast", month, today, scope] as const,
 };

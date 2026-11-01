@@ -407,3 +407,60 @@ td + td{padding-left:14px}
 @keyframes shake{20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
 .shake{animation:shake 320ms ease-in-out}
 @media (prefers-reduced-motion:reduce){.shake{animation:none}}
+
+/* ── Budgets (PRD §6.13, mock-ups 26–31) ───────────────────────────────────────────────────────────────────────────── */
+.bg-card{background:var(--surface);border-radius:var(--r-card);padding:18px 16px 16px;display:block}
+.bg-top{display:flex;justify-content:space-between;align-items:center}
+.pill{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:12px;font-size:12px;font-weight:600;background:var(--surface-3);color:var(--ink-2)}
+.pill.cau{background:var(--caution-tint);color:var(--caution)}
+.pill.pos{background:var(--positive-tint);color:var(--positive)}
+.pill.over{background:rgba(240,100,90,.14);color:var(--danger)}
+.bg-big{display:flex;align-items:baseline;gap:8px;margin-top:10px;flex-wrap:wrap}
+.bg-big .v{font-size:36px;font-weight:600;letter-spacing:-.035em;line-height:1;font-variant-numeric:tabular-nums}
+.bg-big .u{font-size:15px;color:var(--ink-2)}
+.bg-sub{font-size:14px;color:var(--ink-2);margin-top:6px}
+.bg-sub .pos,.pos-t{color:var(--positive)}
+.bg-sub .cau,.cau-t{color:var(--caution)}
+.meter{position:relative;height:14px;margin:18px 0 8px;border-radius:7px;background:var(--surface-3)}
+.meter .seg{position:absolute;top:0;height:14px;display:block}
+.meter .ms{background:var(--ink);border-radius:7px 0 0 7px}
+.meter .mc{background:repeating-linear-gradient(45deg,var(--ink-2) 0 2px,transparent 2px 5px)}
+.meter .mf{box-shadow:inset 0 0 0 1.5px var(--ink-2);border-radius:0 7px 7px 0;background:var(--surface-2)}
+.meter .mk{position:absolute;top:-6px;bottom:-6px;width:2px;border-radius:1px;background:var(--ink)}
+.meter .mk.plan{background:var(--positive)}
+.meter-lab{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-3)}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.kpi{background:var(--surface-2);border-radius:12px;padding:11px 12px;text-align:left;display:block;width:100%}
+.kpi .k{font-size:12px;color:var(--ink-3)}
+.kpi .v{font-size:17px;font-weight:600;letter-spacing:-.01em;margin-top:3px;font-variant-numeric:tabular-nums}
+.kpi .s{font-size:12px;color:var(--ink-2);margin-top:2px}
+.cb{display:grid;grid-template-columns:28px minmax(0,1fr) auto;column-gap:12px;row-gap:4px;align-items:center;padding:12px 0}
+.cb + .cb{border-top:1px solid var(--rule)}
+.cb .tile{width:28px;height:28px;border-radius:8px;grid-row:1/span 3;align-self:start}
+.cb .n{font-size:15px;font-weight:500;display:flex;align-items:center;gap:8px}
+.cb .r{font-size:15px;font-weight:500;text-align:right;font-variant-numeric:tabular-nums}
+.cb .bar{grid-column:2/4;position:relative;height:6px;border-radius:3px;background:var(--surface-3);margin-top:4px}
+.cb .bar .s{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:var(--ink)}
+.cb .bar .f{position:absolute;top:0;bottom:0;box-shadow:inset 0 0 0 1px var(--ink-3);border-radius:0 3px 3px 0}
+.cb .bar .end{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink-2);border-radius:1px}
+.cb .cap{grid-column:2/4;display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--ink-3);margin-top:2px}
+.cb .cap .w{font-weight:600;white-space:nowrap}
+.cb .cap > span:first-child{min-width:0}
+.wi{width:100%;border-collapse:collapse;font-size:14px;margin-top:10px}
+.wi td{padding:10px 0;border-top:1px solid var(--rule);font-variant-numeric:tabular-nums}
+.wi td:nth-child(2),.wi td:nth-child(3){text-align:right}
+.wi tr.hl td{font-weight:600}
+.vtab{width:100%;border-collapse:collapse;margin-top:12px;font-size:13.5px}
+.vtab th{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);text-align:right;padding:0 0 8px}
+.vtab th:first-child{text-align:left}
+.vtab td{padding:10px 0;border-top:1px solid var(--rule);text-align:right;font-variant-numeric:tabular-nums}
+.vtab td:first-child{text-align:left;font-weight:500}
+.vtab tr.tot td{border-top:1.5px solid var(--ink);font-weight:600}
+.var-row{display:grid;grid-template-columns:96px 1fr 72px;gap:10px;align-items:center;height:34px}
+.var-row .n{font-size:13px;font-weight:500}
+.var-row .axis{position:relative;height:16px}
+.var-row .axis::before{content:"";position:absolute;left:50%;top:-6px;bottom:-6px;width:1px;background:var(--rule-strong)}
+.var-row .axis i{position:absolute;top:2px;bottom:2px;border-radius:3px}
+.var-row .v{font-size:13px;text-align:right;font-variant-numeric:tabular-nums;font-weight:500}
+.bm-two{display:block}
+@media (min-width:1024px){.bm-two{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;align-items:start}}

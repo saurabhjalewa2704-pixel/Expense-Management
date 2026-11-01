@@ -28,6 +28,11 @@ export async function createTransaction(input: unknown): Promise<ActionResult<Tr
   });
   // EC-C5: a session that expired while offline is not a failed entry: it stays queued and is sent, under the same client_id, once signed in again
   if (error) return fail(friendlyDbError(error), isRetryableDbError(error) || error.code === "28000");
+  // BUD-01: link a refund to the category it reduces (idempotent, so a retried entry sets the same value again)
+  if (v.type === "income" && v.refund_category_id) {
+    const r = await supabase.from("transactions").update({ refund_category_id: v.refund_category_id }).eq("client_id", v.client_id);
+    if (r.error) return fail(friendlyDbError(r.error), isRetryableDbError(r.error));
+  }
   return ok(data as Transaction);
 }
 
@@ -53,6 +58,10 @@ export async function updateTransaction(id: string, input: unknown): Promise<Act
     p_fx_rate: v.fx_set ? (v.fx_rate ?? null) : null, p_fx_rate_on: v.fx_set ? (v.fx_rate_on ?? null) : null, p_fx_source: v.fx_set && v.original_currency ? (v.fx_source ?? "auto") : null,
   });
   if (error) return fail(friendlyDbError(error));
+  if (v.refund_set) {
+    const r = await supabase.from("transactions").update({ refund_category_id: v.type === "income" ? (v.refund_category_id ?? null) : null }).eq("id", id);
+    if (r.error) return fail(friendlyDbError(r.error));
+  }
   return ok(data as Transaction);
 }
 

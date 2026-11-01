@@ -2,6 +2,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { AskDock } from "@/components/insights/ask-screen";
+import { MonthOutlook } from "@/components/budget/month-outlook";
 import { InsightCardView, useCardFeedback } from "@/components/insights/insight-card";
 import { useToast } from "@/components/ui/toast";
 import { PageHeader } from "@/components/ui/page-header";
@@ -55,6 +56,7 @@ export function InsightsScreen() {
         ))}
       </div>
       <div className="stack" style={{ marginTop: 16 }}>
+        <MonthOutlook />
         {off ? (
           <p className="sub">AI insights are switched off. Turn them on in Settings → AI insights.</p>
         ) : count.data !== undefined && count.data < 10 ? (
@@ -66,7 +68,9 @@ export function InsightsScreen() {
         ) : cards.length === 0 ? (
           <p className="sub" data-testid="insights-none">{run && run.cards.length === 0 ? "This run had nothing to say yet. Keep logging and refresh again." : "You\u2019ve dismissed everything here. Refresh for a new look."}</p>
         ) : (
-          cards.map((c) => <InsightCardView key={c.key} run={run} card={c} onFeedback={(a) => feedback(run, c, a)} />)
+          <>
+            {cards.map((c) => <InsightCardView key={c.key} run={run} card={c} onFeedback={(a) => feedback(run, c, a)} />)}
+          </>
         )}
       </div>
       {run?.stale && <p className="sub" data-testid="insights-stale" style={{ marginTop: 12, textAlign: "center" }}>You added something to this period afterwards. These cards may be out of date; the next refresh updates them.</p>}

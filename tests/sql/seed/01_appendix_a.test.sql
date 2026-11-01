@@ -43,7 +43,6 @@ begin
   assert r.total_pence = 31260 and r.txn_count = 21 and r.total_pence / r.txn_count = 1488, r::text;  -- £14.88 (truncated)
   assert (select array_agg(month::text || ':' || total_pence order by month) from category_monthly((select id from categories where name = 'Eating out'), 6))
        = array['2026-05-01:21840','2026-06-01:24310','2026-07-01:33120','2026-08-01:28760','2026-09-01:26410','2026-10-01:31260'];
-  assert 31260 + category_remaining((select id from categories where name = 'Eating out'), '2026-10-18') = 53800, 'projection ≈ £538';
   assert (select name from top_places('2026-10-01', '2026-10-18', 3, (select id from categories where name = 'Eating out')) limit 1) = 'Dishoom Kensington';
   -- invariant 6 over several ranges
   for n in 0..5 loop
@@ -68,7 +67,7 @@ begin
   assert exists (select 1 from list_transactions(p_q => 'ASOS') where type = 'income' and amount_pence = 12160 and category_name = 'Refunds');
   assert (select count(*) from account_balances('2026-10-18') where counts_as_cash) = 4;
 
-  -- the late-month spending of the six previous months has a median of £1,825.15, so October is heading for £5,062
+  -- the late-month spending of the six previous months has a median of £1,825.15 (a fact about the data; the forecast itself is lib/forecast.ts)
   assert (select round(percentile_cont(0.5) within group (order by late))
             from (select (select coalesce(sum(amount_pence), 0) from transactions t where t.type = 'expense' and t.deleted_at is null
                            and t.occurred_on > m::date + 17 and t.occurred_on < (m + interval '1 month')::date) as late

@@ -36,6 +36,9 @@ const base = z.object({
   fx_rate: z.string().regex(/^\d+(\.\d{1,8})?$/, "Enter a rate like 0.79.").nullish(),
   fx_rate_on: isoDate.nullish(),
   fx_source: z.enum(["auto", "manual"]).nullish(),
+  /** BUD-01: an income refund linked to the expense category it reduces. `refund_set` (edit) says whether to change it, including clearing it. */
+  refund_category_id: z.uuid().nullish(),
+  refund_set: z.boolean().nullish(),
   /** Edit only: apply the FX fields (including clearing them). */
   fx_set: z.boolean().nullish(),
   /** Edit only: the row's updated_at when the editor opened. If another device changed it since, the edit is not applied (EC-C3). */

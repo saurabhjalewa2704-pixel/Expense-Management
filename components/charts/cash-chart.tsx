@@ -1,7 +1,7 @@
 "use client";
 import { scaleLinear } from "@visx/scale";
 import { useRef, useState } from "react";
-import { formatShort, type ISODate } from "@/lib/dates";
+import { diffDays, formatShort, type ISODate } from "@/lib/dates";
 import { formatGBP } from "@/lib/money";
 
 export interface CashPoint { day: ISODate; cash_pence: number }
@@ -16,8 +16,10 @@ const compact = (p: number) => {
  * AN / S7: available cash by day. One ink line, grey context, direct labels. Press and drag (or use the arrow keys)
  * to read the cash on any day; the selection drives the figure above it (CASH-03).
  */
-export function CashChart({ points, selected, onSelect, height = 190, label }: {
+export function CashChart({ points, selected, onSelect, height = 190, label, projection }: {
   points: CashPoint[]; selected: ISODate; onSelect: (d: ISODate) => void; height?: number; label: string;
+  /** CASH-06: the projected close, drawn as a dashed line from the last day to the end of the month. */
+  projection?: { day: ISODate; cash_pence: number } | null;
 }) {
   const ref = useRef<SVGSVGElement>(null);
   const [w, setW] = useState(320);
@@ -31,9 +33,11 @@ export function CashChart({ points, selected, onSelect, height = 190, label }: {
 
   const padL = 4, padR = 40, padT = 34, padB = 26;
   const iw = w - padL - padR, ih = height - padT - padB;
-  const vals = points.map((p) => p.cash_pence);
+  const vals = points.map((p) => p.cash_pence).concat(projection ? [projection.cash_pence] : []);
+  const last = points[points.length - 1]!;
+  const extra = projection ? Math.max(0, diffDays(projection.day, last.day)) : 0;          // days between the last real point and the projected close
   const y = scaleLinear<number>({ domain: [Math.min(...vals), Math.max(...vals)], range: [padT + ih, padT], nice: true });
-  const x = (i: number) => padL + (i / (points.length - 1)) * iw;
+  const x = (i: number) => padL + (i / (points.length - 1 + extra)) * iw;
   const ticks = y.ticks(3);
   const selIdx = Math.max(0, points.findIndex((p) => p.day === selected));
   const sel = points[selIdx]!;
@@ -68,6 +72,16 @@ export function CashChart({ points, selected, onSelect, height = 190, label }: {
       ))}
       <path d={`${d} L${x(points.length - 1)},${padT + ih} L${x(0)},${padT + ih} Z`} fill="var(--chart-fill)" />
       <path d={d} fill="none" stroke="var(--chart-ink)" strokeWidth={2.25} strokeLinejoin="round" strokeLinecap="round" />
+      {projection && extra > 0 && (() => {
+        const x0 = x(points.length - 1), x1 = x(points.length - 1 + extra), y0 = y(last.cash_pence), y1 = y(projection.cash_pence), xm = (x0 + x1) / 2;
+        return (
+          <g data-testid="cash-projection" aria-hidden>
+            <path d={`M${x0.toFixed(1)},${y0.toFixed(1)} C${xm.toFixed(1)},${y0.toFixed(1)} ${xm.toFixed(1)},${y1.toFixed(1)} ${x1.toFixed(1)},${y1.toFixed(1)}`} fill="none" stroke="var(--chart-ink)" strokeWidth={1.75} strokeDasharray="3 4" opacity={0.55} />
+            <circle cx={x1} cy={y1} r={3.5} fill="none" stroke="var(--chart-ink)" strokeWidth={1.5} opacity={0.7} />
+            <text x={x1 + 4} y={y1 + 16} textAnchor="end" fontSize={11} fontWeight={500} fill="var(--ink-3)">≈ {compact(projection.cash_pence)} projected</text>
+          </g>
+        );
+      })()}
       <line x1={x(selIdx)} x2={x(selIdx)} y1={padT - 2} y2={padT + ih} stroke="var(--ink-3)" strokeWidth={1} />
       <circle cx={x(selIdx)} cy={y(sel.cash_pence)} r={6} fill="var(--bg)" stroke="var(--chart-ink)" strokeWidth={2.25} />
       <g transform={`translate(${tipX},0)`} aria-hidden>
@@ -76,8 +90,8 @@ export function CashChart({ points, selected, onSelect, height = 190, label }: {
         <text x={0} y={29} textAnchor="middle" fontSize={13} fontWeight={600} fill="var(--on-ink)">{formatGBP(sel.cash_pence)}</text>
       </g>
       <text x={padL} y={height - 6} fontSize={11} fill="var(--ink-3)">{formatShort(points[0]!.day).split(" ").slice(1).join(" ")}</text>
-      <text x={padL + iw / 2} y={height - 6} textAnchor="middle" fontSize={11} fill="var(--ink-3)">{points[Math.floor(points.length / 2)]!.day.slice(8).replace(/^0/, "")}</text>
-      <text x={padL + iw} y={height - 6} textAnchor="end" fontSize={11} fill="var(--ink-3)">{points[points.length - 1]!.day.slice(8).replace(/^0/, "")}</text>
+      <text x={padL + iw / 2} y={height - 6} textAnchor="middle" fontSize={11} fill="var(--ink-3)">{(extra > 0 ? points[Math.floor((points.length + extra) / 2)]?.day ?? "" : points[Math.floor(points.length / 2)]!.day).slice(8).replace(/^0/, "") || "15"}</text>
+      <text x={padL + iw} y={height - 6} textAnchor="end" fontSize={11} fill="var(--ink-3)">{(extra > 0 ? projection!.day : points[points.length - 1]!.day).slice(8).replace(/^0/, "")}</text>
     </svg>
   );
 }

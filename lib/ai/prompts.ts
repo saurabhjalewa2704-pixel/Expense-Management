@@ -15,7 +15,7 @@ Rules:
 - Output 3–6 cards by calling the emit_cards tool. Always call it; do not answer in plain text. Titles ≤ 70 characters, bodies ≤ 220 characters.`;
 
 const GUIDE = `How to fill the cards:
-- type: pace (this month against last month), anomaly (a category well above its usual), trend (rising for several months), subscription, new_payee (first time at a payee), win (something went well), suggestion (a behavioural idea).
+- type: pace (this month against last month), anomaly (a category well above its usual), trend (rising for several months), subscription, new_payee (first time at a payee), win (something went well), suggestion (a behavioural idea), budget_risk (the limit most at risk, with what is left, the safe amount a day and the usual pace, only if the facts have limit:*:over), budget_win (a limit well under, only if the facts have limit:*:under), budget_pace (the overall budget and the forecast, only if the facts have budget_forecast), budget_suggest (propose a new limit, only if the facts have suggest:*:proposed; it changes nothing until the user accepts).
 - severity: caution for anomalies and overspending, positive for wins, info otherwise.
 - metric: optional. fact_key is the fact to show as the big figure; delta_fact_key is the fact to compare it with.
 - viz: bar_compare needs a metric with a delta_fact_key; spark needs a metric whose fact has a series; otherwise none.

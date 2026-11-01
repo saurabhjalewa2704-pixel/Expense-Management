@@ -84,7 +84,7 @@ describe("insights", () => {
   const base: FactsInput = {
     today: "2026-10-18", scope: "adhoc", period: { from: "2026-10-01", to: "2026-10-18", label: "October so far", compare_label: "earlier months" },
     pace: { month_start: "2026-10-01", day_of_month: 18, days_in_month: 31, spend_pence: 323685, prev_spend_pence: 360410, prev_label_day: 18, prev_total_pence: 531620 },
-    projected: 506200, monthAvg: 534926, history: [], trends: {}, newPayees: [], big: [], weekdayAvg: [], series: [], feedback: [],
+    forecast: { pence: 506200, low: 480000, high: 530000 }, monthAvg: 534926, history: [], trends: {}, newPayees: [], big: [], weekdayAvg: [], series: [], feedback: [],
   };
   const facts = assembleFacts(base);
   const bad: CardWriter = { model: "fake", write: async () => ({ cards: [{ key: "x", type: "pace", severity: "info", title: "You spent £1,234.56", body: "That is 99% more", viz: "none", rank: 1 }], inputTokens: 1, outputTokens: 1 }) };

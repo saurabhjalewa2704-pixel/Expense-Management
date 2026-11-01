@@ -17,8 +17,9 @@ Next.js 16 on Vercel · Supabase (Postgres, Auth, RLS) · Claude API for the ins
 | Update 2 | "New version available" banner for the installed app |
 | Update 3 | One-off pots (e.g. a home purchase), kept out of monthly spend, analytics and insights |
 | Update 4 | Ask Sterling: ask about your spending in plain English (Insights → Ask) |
+| v1.7.1 | Budgets (monthly amount, category limits, plan, forecast with range, safe-to-spend, what-ifs, alerts) and one forecast engine behind every month-end figure; run migration `20261102000001_budgets.sql` |
 
-Not built (P1, PRD §M5): natural-language entry, Shortcuts endpoint, recurring rules, budgets, other push types, Face ID lock, month-end outlook card.
+Not built (P1, PRD §M5): natural-language entry, Shortcuts endpoint, other push types, Face ID lock, month-end outlook card.
 
 ## Set up (about 20 minutes)
 

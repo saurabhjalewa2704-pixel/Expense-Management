@@ -78,3 +78,6 @@ export function mentionsTrip(text: string, trip: { name: string; country_code: s
   const codes = countryOf(trip.country_code)?.airports ?? [];
   return codes.some((c) => t.includes(` ${c.toLowerCase()} `));
 }
+
+/** The symbol a trip currency chip shows ("$ USD", "€ EUR"); other currencies show their code alone. */
+export const currencySymbol = (code: string): string => ({ USD: "$", EUR: "€", GBP: "£", JPY: "¥", INR: "₹", CAD: "$", AUD: "$", NZD: "$" } as Record<string, string>)[code] ?? "";

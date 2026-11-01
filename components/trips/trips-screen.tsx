@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { diffDays, formatMonthShort, type ISODate } from "@/lib/dates";
 import { UI } from "@/lib/icons";
-import { flagOf } from "@/lib/countries";
+import { currencySymbol, flagOf } from "@/lib/countries";
 import { formatGBP } from "@/lib/money";
 import { useToday, useTripStops, useTrips, useTripsOverview } from "@/lib/queries/hooks";
 import { tripClock, tripFigures } from "@/lib/tripMath";
@@ -27,11 +27,10 @@ export function TripsScreen() {
   return (
     <div className="scroll" data-testid="trips">
       <div className="navbar" style={{ justifyContent: "space-between" }}>
-        <Link className="back" href="/settings"><UI.ChevronLeft size={22} strokeWidth={1.75} aria-hidden />Settings</Link>
+        <Link className="back" href="/"><UI.ChevronLeft size={22} strokeWidth={1.75} aria-hidden />Home</Link>
         <Link className="icon-btn" href="/trips/new" aria-label="New trip" data-testid="trip-new"><UI.Plus size={20} strokeWidth={2} aria-hidden /></Link>
       </div>
       <h1 className="large-title">Trips</h1>
-      <div className="sub" style={{ marginTop: 6 }}>Each trip keeps its own spending, budget and insights</div>
 
       {empty && (
         <div className="card" style={{ marginTop: 16, textAlign: "center", padding: "28px 16px" }} data-testid="trips-empty">
@@ -51,7 +50,7 @@ export function TripsScreen() {
       )}
       {past.length > 0 && (
         <section data-testid="trips-past">
-          <div className="section-h"><h2>Past trips</h2></div>
+          <div className="eyebrow" style={{ margin: "26px 4px 8px" }} data-testid="past-trips-label">Past trips · {past.length}</div>
           <div className="list">{past.map((t) => <TripRow key={t.id} trip={t} row={rows.get(t.id)} today={today} />)}</div>
         </section>
       )}
@@ -68,7 +67,7 @@ function Hero({ trip, stops, row, today }: { trip: Trip; stops: TripStop[]; row?
       <div className="tr-head"><span className="lbl"><i />{label}</span></div>
       <div className="row-between" style={{ alignItems: "flex-start" }}>
         <div className="tr-name">{trip.name}</div>
-        {trip.currency !== "GBP" && <span className="cur-chip" style={{ marginTop: 4 }}>{flagOf(trip.country_code)} {trip.currency}</span>}
+        {trip.currency !== "GBP" && <span className="cur-chip" style={{ marginTop: 4 }}>{currencySymbol(trip.currency)} {trip.currency}</span>}
       </div>
       <div className="tr-sub">{[stopsLabel(stops), rangeLabel(trip.start_on, trip.end_on)].filter(Boolean).join(" · ")}</div>
       <TripTimeline trip={trip} stops={stops} today={today} />
@@ -87,7 +86,7 @@ function TripRow({ trip, row, today }: { trip: Trip; row?: TripOverviewRow; toda
   const upcoming = trip.start_on > today;
   return (
     <Link href={`/trips/${trip.id}`} className="past-trip" data-testid="trip-row">
-      <div className="tile" aria-hidden><UI.Plane size={18} strokeWidth={1.75} /></div>
+      <div className="tile" aria-hidden><UI.MapPin size={18} strokeWidth={1.75} /></div>
       <div className="row-main" style={{ minWidth: 0 }}>
         <div className="row-t">{trip.name}</div>
         <div className="row-s">{[place, plural(nights, "night"), upcoming ? `in ${plural(diffDays(trip.start_on, today), "day")}` : `${formatMonthShort(trip.start_on)} ${trip.start_on.slice(0, 4)}`].filter(Boolean).join(" · ")}</div>

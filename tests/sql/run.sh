@@ -29,4 +29,15 @@ for f in "$ROOT"/tests/sql/trip/*.test.sql; do
   printf '• trip/%s ... ' "$(basename "$f")"
   if out=$(psql -q -v ON_ERROR_STOP=1 -d sterling_trip -f "$f" 2>&1); then echo ok; else echo FAILED; echo "$out"; status=1; fi
 done
+
+# the budget demo seed (PRD Appendix A.3) on top of the Appendix A seed, with the BUD acceptance inputs
+psql -q -v ON_ERROR_STOP=1 -d postgres -c "drop database if exists sterling_budget with (force)" -c "create database sterling_budget" >/dev/null
+fresh_db sterling_budget 2>/dev/null
+psql -q -v ON_ERROR_STOP=1 -d sterling_budget -f "$ROOT/supabase/seed.sql" >/dev/null 2>&1 || { echo "seed.sql FAILED"; status=1; }
+psql -q -v ON_ERROR_STOP=1 -d sterling_budget -f "$ROOT/supabase/seed_budget.sql" >/dev/null 2>&1 || { echo "seed_budget.sql FAILED"; psql -v ON_ERROR_STOP=1 -d sterling_budget -f "$ROOT/supabase/seed_budget.sql" 2>&1 | tail -5; status=1; }
+for f in "$ROOT"/tests/sql/budget/*.test.sql; do
+  [ -e "$f" ] || continue
+  printf '• budget/%s ... ' "$(basename "$f")"
+  if out=$(psql -q -v ON_ERROR_STOP=1 -d sterling_budget -f "$f" 2>&1); then echo ok; else echo FAILED; echo "$out"; status=1; fi
+done
 exit $status

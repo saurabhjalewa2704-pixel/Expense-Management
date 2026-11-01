@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildWaterfall, categoryFinding, subcategoryFinding, leafLabel, averageTicket, deltaFlag, heatLevels, paceFinding, projectMonth, rhythmFinding, trendFinding, weekdayAverages } from "@/lib/analytics";
+import { buildWaterfall, categoryFinding, subcategoryFinding, leafLabel, averageTicket, deltaFlag, heatLevels, paceFinding, rhythmFinding, trendFinding, weekdayAverages } from "@/lib/analytics";
 import { canStepForward, resolvePeriod, stepPeriod } from "@/lib/periods";
 import type { CashFlow, CategorySpend, DailySpend } from "@/lib/types";
 
@@ -112,13 +112,5 @@ describe("rhythm, heat, projection", () => {
     expect(Math.min(...lv.slice(1))).toBe(1);
     expect(Math.max(...lv)).toBe(5);
     expect(heatLevels([0, 0])).toEqual([0, 0]);
-  });
-  it("projects the month: spend so far plus the median of what earlier months spent after this day", () => {
-    const daily: DailySpend[] = [];
-    for (const m of ["2026-09", "2026-08", "2026-07"]) {
-      daily.push(day(`${m}-10`, 100000), day(`${m}-25`, m === "2026-09" ? 150000 : m === "2026-08" ? 200000 : 175000));
-    }
-    expect(projectMonth(daily, "2026-10-18", 323685)).toBe(323685 + 175000);
-    expect(projectMonth([], "2026-10-18", 323685)).toBe(323685);
   });
 });

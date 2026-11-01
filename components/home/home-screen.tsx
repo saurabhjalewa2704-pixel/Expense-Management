@@ -6,6 +6,7 @@ import { Figure, cashLabel } from "@/components/money";
 import { ReminderPrompt } from "@/components/home/reminder-prompt";
 import { PotsSection } from "@/components/home/pots-section";
 import { BillsCard } from "@/components/home/bills-card";
+import { BudgetCard, BudgetPrompt, LimitsCard, useHasBudget } from "@/components/home/budget-cards";
 import { TripCard } from "@/components/home/trip-card";
 import { InsightCard } from "@/components/insights/insight-card";
 import { formatLong, formatMonth, addMonths, monthStart } from "@/lib/dates";
@@ -26,6 +27,7 @@ export function HomeScreen() {
 function MobileHome() {
   const { today, data: flow } = useMonthFlow();
   const { data: pace } = usePace();
+  const budget = useHasBudget();
   const { data: profile } = useProfile();
   const { rows: recent, isLoading: recentLoading } = useRecent(4);
   const { open } = useQuickAdd();
@@ -64,7 +66,9 @@ function MobileHome() {
 
       <div style={{ marginTop: 24 }} className="stack">
         <TripCard />
-        <PaceCard today={today} pace={pace} trackingStart={profile?.tracking_started_on} />
+        {budget.loading ? <div className="bg-card"><div className="skeleton" style={{ height: 210 }} aria-busy /></div>
+          : budget.view ? <><BudgetCard /><LimitsCard /></>
+          : <><BudgetPrompt /><PaceCard today={today} pace={pace} trackingStart={profile?.tracking_started_on} /></>}
         <BillsCard />
         <InsightCard variant="home" />
         <ReminderPrompt />

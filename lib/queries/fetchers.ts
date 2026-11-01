@@ -95,10 +95,6 @@ export const fetchCategoryMonthly = (db: SupabaseClient, id: string, months: num
 export const fetchTopPlaces = (db: SupabaseClient, from: ISODate, to: ISODate, limit: number, category: string, children = true) =>
   unwrap<TopPlace[]>(db.rpc("top_places", { p_from: from, p_to: to, p_limit: limit, p_category: category, p_include_children: children }));
 
-/** The median spend in the rest of the month (after `asOf`'s day) over the previous three months: the trend projection. */
-export const fetchCategoryRemaining = async (db: SupabaseClient, id: string, asOf: ISODate, children = true) =>
-  Number(await unwrap<number | string>(db.rpc("category_remaining", { p_category: id, p_as_of: asOf, p_include_children: children })));
-
 import type { HistoryRow } from "@/lib/suggest";
 import { addDays, todayLondon } from "@/lib/dates";
 

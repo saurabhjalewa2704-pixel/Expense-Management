@@ -14,7 +14,7 @@ import { CategoryIcon, UI } from "@/lib/icons";
 import { formatGBP, medianPence, pctChange, pctOf } from "@/lib/money";
 import { periodQuery, useUrlPeriod } from "@/lib/period-url";
 import { resolvePeriod, stepPeriod } from "@/lib/periods";
-import { useCategoryMonthly, useCategoryRemaining, useCategoryTree, useSpendByCategory, useToday, useTopPlaces } from "@/lib/queries/hooks";
+import { useCategoryMonthly, useBudgetRows, useCategoryTree, useMonthForecast, useSpendByCategory, useToday, useTopPlaces } from "@/lib/queries/hooks";
 
 const isAre = (name: string) => (/s$/.test(name) ? "are" : "is");
 
@@ -52,7 +52,12 @@ export function CategoryDetail({ id, level }: { id: string; level: "category" | 
   const withKids = !isSub && !chip;   // a category's own trend includes its sub-categories; a chip or a sub-category is just itself
   const monthly = useCategoryMonthly(trendId, 6, withKids);
   const projecting = p.isCurrent && p.kind === "month";
-  const remaining = useCategoryRemaining(trendId, p.to, withKids, projecting);
+  // the one forecast engine (lib/forecast.ts), for this category (or the chosen sub-category): the same figure the Budget screens show
+  const catForecast = useMonthForecast(monthStart(today), trendId, projecting);
+  const fc = projecting && catForecast.data?.forecast.available ? catForecast.data.forecast : null;
+  // BUD-12: a category with a limit shows it in the header and as a dashed line on the monthly chart
+  const budgetRows = useBudgetRows(monthStart(today));
+  const limitRow = !isSub && !chip ? budgetRows.data?.find((r) => r.category_id === id) ?? null : null;
   const places = useTopPlaces(p.from, p.to, isSub ? 5 : 3, id, isSub ? false : true);
 
   const allRows = all.data ?? [];
@@ -85,12 +90,12 @@ export function CategoryDetail({ id, level }: { id: string; level: "category" | 
   const thisMonth = monthStart(today);
   const bars: MonthlyBar[] = (monthly.data ?? []).map((m) => ({
     month: m.month, spend: m.total_pence, isCurrent: m.month === thisMonth,
-    projectedExtra: m.month === thisMonth && projecting ? remaining.data ?? 0 : 0,
+    projectedExtra: m.month === thisMonth && fc ? Math.max(0, fc.forecast - m.total_pence) : 0,
   }));
   const cur = bars.find((b) => b.isCurrent);
   const earlier = bars.filter((b) => !b.isCurrent).map((b) => b.spend);
   const projected = cur ? cur.spend + cur.projectedExtra : 0;
-  const trendFinding = !cur || !projecting || earlier.length === 0 || remaining.data == null ? `${chip ? tree.byId.get(chip)?.name : name} by month`
+  const trendFinding = !cur || !projecting || earlier.length === 0 || !fc ? `${chip ? tree.byId.get(chip)?.name : name} by month`
     : projected > Math.max(...earlier) ? "On course for your biggest month in six"
     : projected < Math.min(...earlier) ? "On course for your smallest month in six"
     : `On course for ${formatGBP(projected, { whole: true })}, in line with the last six months (median ${formatGBP(medianPence(earlier), { whole: true })})`;
@@ -123,6 +128,11 @@ export function CategoryDetail({ id, level }: { id: string; level: "category" | 
               <div className="big num" data-testid="detail-total">{loading ? "—" : formatGBP(total)}</div>
             </div>
           </div>
+          {limitRow && (
+            <div className="sub" style={{ marginTop: 6 }} data-testid="detail-limit">
+              {formatGBP(total)} of {formatGBP(limitRow.amount_pence, { whole: true })}{fc ? ` · forecast ${formatGBP(fc.forecast, { whole: true })}` : ""}
+            </div>
+          )}
           {cmp && <div className="cmp-line" data-testid="detail-cmp"><i className={cmp.tone} />{cmp.text}</div>}
 
           <div className="stat-tiles" data-testid="detail-stats">
@@ -146,8 +156,8 @@ export function CategoryDetail({ id, level }: { id: string; level: "category" | 
 
           <div style={{ marginTop: 12 }}>
             <ChartCard testId="chart-monthly" loading={monthly.isLoading} empty={bars.every((b) => b.spend === 0 && b.projectedExtra === 0)}
-              finding={trendFinding} sub={`${chip ? tree.byId.get(chip)?.name : name} by month${projecting && cur ? " · hatched = projected to month end" : ""}`}
-              table={{ columns: ["Month", "Spend"], rows: bars.map((b) => [b.month.slice(0, 7), formatGBP(b.spend + b.projectedExtra) + (b.projectedExtra ? " (projected)" : "")]) }}>
+              finding={trendFinding} sub={`${chip ? tree.byId.get(chip)?.name : name} by month${projecting && cur ? " · hatched = forecast to month end" : ""}`}
+              table={{ columns: ["Month", "Spend"], rows: bars.map((b) => [b.month.slice(0, 7), formatGBP(b.spend + b.projectedExtra) + (b.projectedExtra ? " (forecast)" : "")]) }}>
               {!isSub && chips.length > 1 && (
                 <div className="chip-row" role="group" aria-label="Show a sub-category" data-testid="trend-chips">
                   <button className={`chip plain ${chip === null ? "sel" : ""}`} aria-pressed={chip === null} onClick={() => setChip(null)}>All</button>
@@ -156,7 +166,7 @@ export function CategoryDetail({ id, level }: { id: string; level: "category" | 
                 </div>
               )}
               <div style={{ marginTop: 12 }}>
-                <MonthlyBars bars={bars} flagged={!!flag && !chip} ariaLabel={`${name} by month, last six months`} />
+                <MonthlyBars bars={bars} flagged={!!flag && !chip} limit={limitRow?.amount_pence ?? null} ariaLabel={`${name} by month, last six months`} />
               </div>
             </ChartCard>
           </div>
