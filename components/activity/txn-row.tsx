@@ -1,5 +1,6 @@
 "use client";
 import { useQuickAdd } from "@/components/capture/quick-add";
+import { OneOffChip } from "@/components/forecast/one-off";
 import { addDays, formatShort, londonTime, todayLondon, type ISODate } from "@/lib/dates";
 import { rowSubtitle, rowTitle } from "@/lib/categories";
 import { CategoryIcon, UI } from "@/lib/icons";
@@ -36,7 +37,7 @@ export function TxnItem({ row, subtitle }: { row: TxnRow; subtitle?: string }) {
     <button className="row" style={{ width: "100%", textAlign: "left" }} onClick={() => open({ edit: row })} data-testid="txn-row" data-pending={row.pending ? "" : undefined}>
       <div className={`tile ${row.type === "income" ? "pos" : ""}`}>{icon}</div>
       <div className="row-main">
-        <div className="row-t">{rowTitle(row)}{row.recurring_id && <UI.Repeat size={13} strokeWidth={1.75} aria-label="Recurring" className="faint" style={{ marginLeft: 6, verticalAlign: "-1px" }} data-testid="recurring-glyph" />}{row.is_estimate && <span className="est" data-testid="est">EST</span>}</div>
+        <div className="row-t">{rowTitle(row)}{row.recurring_id && <UI.Repeat size={13} strokeWidth={1.75} aria-label="Recurring" className="faint" style={{ marginLeft: 6, verticalAlign: "-1px" }} data-testid="recurring-glyph" />}{row.is_estimate && <span className="est" data-testid="est">EST</span>}{row.type === "expense" && !row.pending && <OneOffChip id={row.id} />}</div>
         <div className="row-s">{subtitle ?? rowSubtitle(row)}</div>
       </div>
       <div className={`amt ${amt.positive ? "pos" : ""} ${amt.muted ? "muted" : ""}`}>

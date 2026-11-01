@@ -35,7 +35,7 @@ export function LimitSheet({ open, onOpenChange, name, categoryId, usual, draft,
   const valid = pence !== null && pence > 0;
   const cur = monthStart(today);
   const fcq = useMonthForecast(cur, categoryId);
-  const fcv = fcq.data?.forecast.available ? fcq.data.forecast : null;
+  const fcv = fcq.data?.view.available ? fcq.data.view : null;
   const bars = (monthly.data ?? []).filter((m) => m.month <= cur).slice(-6);
   const prior = bars.filter((b) => b.month < cur);
   const maxV = Math.max(1, ...bars.map((b) => b.total_pence), valid ? pence! : 0, fcv?.forecast ?? 0);

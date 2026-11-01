@@ -1,0 +1,44 @@
+{
+ "description": "Brand-new user, day 2: no forecast, floor only",
+ "today": "2026-11-02",
+ "tracking_started_on": "2026-11-01",
+ "days": [
+  {
+   "d": "2026-11-01",
+   "discretionary": 3200,
+   "by_cat": {},
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-11-02",
+   "discretionary": 4100,
+   "by_cat": {},
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  }
+ ],
+ "spent_month_to_date": 167300,
+ "spent_by_cat": {},
+ "scheduled": [
+  {
+   "d": "2026-11-27",
+   "amount": 1299,
+   "label": "Netflix",
+   "kind": "bill",
+   "category": null,
+   "varies": false
+  }
+ ],
+ "trips": [],
+ "categories": [],
+ "params": {}
+}

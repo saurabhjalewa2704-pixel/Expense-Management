@@ -7,7 +7,8 @@ import { StatusPill } from "@/components/budget/parts";
 import { type LimitView } from "@/lib/budget";
 import { addMonths, formatMonthShort, formatMonthYear, monthStart } from "@/lib/dates";
 import { UI } from "@/lib/icons";
-import { formatGBP, medianPence } from "@/lib/money";
+import { accuracyAtDay, biasFlag } from "@/lib/forecast/backtest";
+import { formatGBP } from "@/lib/money";
 import { useBudgetHistory, useBudgetView, useToday } from "@/lib/queries/hooks";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
@@ -20,13 +21,13 @@ export function AnalyticsBudgets() {
   const [why, setWhy] = useState(false);
   const q = useBudgetView(month);
   const hist = useBudgetHistory(6);
+  // BUD-11: forecast accuracy reads the nightly backtests (FORECASTING-ENGINE-PRD §6.14.13)
   const acc = useQuery({
-    queryKey: ["budget", "accuracy", month, today],
+    queryKey: ["forecast", "backtest"],
     queryFn: async () => {
-      // BUD-05: mean absolute error at the same day of the month over the last three months, from the nightly snapshots
-      const day = Number(today.slice(8));
-      const { data } = await supabaseBrowser().from("budget_forecast_log").select("month, forecast_pence, day").is("category_id", null).eq("day", day).lt("month", monthStart(today));
-      return (data ?? []) as { month: string; forecast_pence: number; day: number }[];
+      const { data } = await supabaseBrowser().from("forecast_backtest").select("month, day, point_pence, low_pence, high_pence, actual_pence");
+      return ((data ?? []) as { month: string; day: number; point_pence: number; low_pence: number | null; high_pence: number | null; actual_pence: number }[])
+        .map((r) => ({ month: r.month, day: r.day, point: r.point_pence, low: r.low_pence, high: r.high_pence, actual: r.actual_pence }));
     },
   });
   const v = q.data;
@@ -65,11 +66,8 @@ export function AnalyticsBudgets() {
   const atRisk = v.limits.filter((l) => l.variance > 0).map((l) => l.name);
   const unbudgeted = o.spent > 0 ? Math.round((v.elsewhere.spent * 100) / o.spent) : 0;
   const saving = v.limits.filter((l) => variance(l) < 0).sort((a, b) => variance(a) - variance(b))[0];
-  const errs = (acc.data ?? []).map((r) => {
-    const actual = h.find((x) => x.month === r.month)?.spent_pence;
-    return actual ? Math.abs(r.forecast_pence - actual) * 100 / actual : null;
-  }).filter((x): x is number => x !== null);
-  const accuracy = errs.length ? Math.round(medianPence(errs.map(Math.round))) : null;
+  const accuracy = accuracyAtDay(acc.data ?? [], v.dom);
+  const bias = biasFlag(acc.data ?? []);
 
   return (
     <div style={{ padding: "0 16px" }} data-testid="analytics-budgets">
@@ -134,7 +132,7 @@ export function AnalyticsBudgets() {
         <div style={{ fontSize: 19, fontWeight: 600, letterSpacing: "-.02em" }}>Budget health</div>
         <div className="kpis">
           <div className="kpi"><div className="k">Limits on track</div><div className="v" data-testid="health-track">{v.limits.length ? `${v.limits.filter((l) => l.variance <= 0).length} of ${v.limits.length}` : "–"}</div><div className="s">{atRisk.length ? `${atRisk.join(", ")} at risk` : "none at risk"}</div></div>
-          <div className="kpi"><div className="k">Forecast accuracy</div><div className="v" data-testid="health-accuracy">{accuracy === null ? "–" : `±${accuracy}%`}</div><div className="s">{accuracy === null ? "builds up as nightly snapshots are kept" : `last ${errs.length} months at day ${v.dom}`}</div></div>
+          <div className="kpi"><div className="k">Forecast accuracy</div><div className="v" data-testid="health-accuracy">{accuracy === null ? "Learning" : `±${accuracy.pct}%`}</div><div className="s">{accuracy === null ? "2 full months needed" : `by mid-month, last ${accuracy.months} months`}{bias?.flag ? ` · Forecasts have been ${Math.abs(bias.pct)}% ${bias.pct < 0 ? "low" : "high"} recently` : ""}</div></div>
           <div className="kpi"><div className="k">Unbudgeted share</div><div className="v">{unbudgeted}%</div><div className="s">of spending has no limit of its own</div></div>
           <div className="kpi"><div className="k">Biggest saving</div><div className="v" style={{ color: saving ? "var(--positive)" : undefined }}>{saving ? saving.name : "–"}</div><div className="s">{saving ? `${whole(-variance(saving))} under its limit` : "no limit is under yet"}</div></div>
         </div>

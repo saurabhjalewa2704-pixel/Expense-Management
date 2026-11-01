@@ -54,7 +54,7 @@ export function CategoryDetail({ id, level }: { id: string; level: "category" | 
   const projecting = p.isCurrent && p.kind === "month";
   // the one forecast engine (lib/forecast.ts), for this category (or the chosen sub-category): the same figure the Budget screens show
   const catForecast = useMonthForecast(monthStart(today), trendId, projecting);
-  const fc = projecting && catForecast.data?.forecast.available ? catForecast.data.forecast : null;
+  const fc = projecting && catForecast.data?.view.available ? catForecast.data.view : null;
   // BUD-12: a category with a limit shows it in the header and as a dashed line on the monthly chart
   const budgetRows = useBudgetRows(monthStart(today));
   const limitRow = !isSub && !chip ? budgetRows.data?.find((r) => r.category_id === id) ?? null : null;

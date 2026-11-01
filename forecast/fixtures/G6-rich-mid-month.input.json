@@ -1,0 +1,2696 @@
+{
+ "description": "5 months history, weekday + payday profiles, categories, one-off excluded, varies bill",
+ "today": "2026-11-12",
+ "tracking_started_on": "2026-06-01",
+ "days": [
+  {
+   "d": "2026-06-01",
+   "discretionary": 4279,
+   "by_cat": {
+    "Groceries": 1797,
+    "Eating out": 1412,
+    "Transport": 641,
+    "Other": 429
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-06-02",
+   "discretionary": 2512,
+   "by_cat": {
+    "Groceries": 1055,
+    "Eating out": 828,
+    "Transport": 376,
+    "Other": 253
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-06-03",
+   "discretionary": 2812,
+   "by_cat": {
+    "Groceries": 1181,
+    "Eating out": 927,
+    "Transport": 421,
+    "Other": 283
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-06-04",
+   "discretionary": 5248,
+   "by_cat": {
+    "Groceries": 2204,
+    "Eating out": 1731,
+    "Transport": 787,
+    "Other": 526
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-06-05",
+   "discretionary": 11156,
+   "by_cat": {
+    "Groceries": 4685,
+    "Eating out": 3681,
+    "Transport": 1673,
+    "Other": 1117
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-06-06",
+   "discretionary": 4448,
+   "by_cat": {
+    "Groceries": 1868,
+    "Eating out": 1467,
+    "Transport": 667,
+    "Other": 446
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-06-07",
+   "discretionary": 11994,
+   "by_cat": {
+    "Groceries": 5037,
+    "Eating out": 3958,
+    "Transport": 1799,
+    "Other": 1200
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-06-08",
+   "discretionary": 6122,
+   "by_cat": {
+    "Groceries": 2571,
+    "Eating out": 2020,
+    "Transport": 918,
+    "Other": 613
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-06-09",
+   "discretionary": 2267,
+   "by_cat": {
+    "Groceries": 952,
+    "Eating out": 748,
+    "Transport": 340,
+    "Other": 227
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-06-10",
+   "discretionary": 2818,
+   "by_cat": {
+    "Groceries": 1183,
+    "Eating out": 929,
+    "Transport": 422,
+    "Other": 284
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-06-11",
+   "discretionary": 3338,
+   "by_cat": {
+    "Groceries": 1401,
+    "Eating out": 1101,
+    "Transport": 500,
+    "Other": 336
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-06-12",
+   "discretionary": 9222,
+   "by_cat": {
+    "Groceries": 3873,
+    "Eating out": 3043,
+    "Transport": 1383,
+    "Other": 923
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-06-13",
+   "discretionary": 14034,
+   "by_cat": {
+    "Groceries": 5894,
+    "Eating out": 4631,
+    "Transport": 2105,
+    "Other": 1404
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-06-14",
+   "discretionary": 10186,
+   "by_cat": {
+    "Groceries": 4278,
+    "Eating out": 3361,
+    "Transport": 1527,
+    "Other": 1020
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-06-15",
+   "discretionary": 1443,
+   "by_cat": {
+    "Groceries": 606,
+    "Eating out": 476,
+    "Transport": 216,
+    "Other": 145
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-06-16",
+   "discretionary": 1233,
+   "by_cat": {
+    "Groceries": 517,
+    "Eating out": 406,
+    "Transport": 184,
+    "Other": 126
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-06-17",
+   "discretionary": 3285,
+   "by_cat": {
+    "Groceries": 1379,
+    "Eating out": 1084,
+    "Transport": 492,
+    "Other": 330
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-06-18",
+   "discretionary": 5411,
+   "by_cat": {
+    "Groceries": 2272,
+    "Eating out": 1785,
+    "Transport": 811,
+    "Other": 543
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-06-19",
+   "discretionary": 7546,
+   "by_cat": {
+    "Groceries": 3169,
+    "Eating out": 2490,
+    "Transport": 1131,
+    "Other": 756
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-06-20",
+   "discretionary": 5942,
+   "by_cat": {
+    "Groceries": 2495,
+    "Eating out": 1960,
+    "Transport": 891,
+    "Other": 596
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-06-21",
+   "discretionary": 3596,
+   "by_cat": {
+    "Groceries": 1510,
+    "Eating out": 1186,
+    "Transport": 539,
+    "Other": 361
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-06-22",
+   "discretionary": 5553,
+   "by_cat": {
+    "Groceries": 2332,
+    "Eating out": 1832,
+    "Transport": 832,
+    "Other": 557
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-06-23",
+   "discretionary": 2531,
+   "by_cat": {
+    "Groceries": 1063,
+    "Eating out": 835,
+    "Transport": 379,
+    "Other": 254
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-06-24",
+   "discretionary": 7419,
+   "by_cat": {
+    "Groceries": 3115,
+    "Eating out": 2448,
+    "Transport": 1112,
+    "Other": 744
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-06-25",
+   "discretionary": 6047,
+   "by_cat": {
+    "Groceries": 2539,
+    "Eating out": 1995,
+    "Transport": 907,
+    "Other": 606
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-06-26",
+   "discretionary": 8539,
+   "by_cat": {
+    "Groceries": 3586,
+    "Eating out": 2817,
+    "Transport": 1280,
+    "Other": 856
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-06-27",
+   "discretionary": 19937,
+   "by_cat": {
+    "Groceries": 8373,
+    "Eating out": 6579,
+    "Transport": 2990,
+    "Other": 1995
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-06-28",
+   "discretionary": 10738,
+   "by_cat": {
+    "Groceries": 4509,
+    "Eating out": 3543,
+    "Transport": 1610,
+    "Other": 1076
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-06-29",
+   "discretionary": 7183,
+   "by_cat": {
+    "Groceries": 3016,
+    "Eating out": 2370,
+    "Transport": 1077,
+    "Other": 720
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-06-30",
+   "discretionary": 4358,
+   "by_cat": {
+    "Groceries": 1830,
+    "Eating out": 1438,
+    "Transport": 653,
+    "Other": 437
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-07-01",
+   "discretionary": 3255,
+   "by_cat": {
+    "Groceries": 1367,
+    "Eating out": 1074,
+    "Transport": 488,
+    "Other": 326
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-07-02",
+   "discretionary": 3621,
+   "by_cat": {
+    "Groceries": 1520,
+    "Eating out": 1194,
+    "Transport": 543,
+    "Other": 364
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-07-03",
+   "discretionary": 9614,
+   "by_cat": {
+    "Groceries": 4037,
+    "Eating out": 3172,
+    "Transport": 1442,
+    "Other": 963
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-07-04",
+   "discretionary": 4859,
+   "by_cat": {
+    "Groceries": 2040,
+    "Eating out": 1603,
+    "Transport": 728,
+    "Other": 488
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-07-05",
+   "discretionary": 10618,
+   "by_cat": {
+    "Groceries": 4459,
+    "Eating out": 3503,
+    "Transport": 1592,
+    "Other": 1064
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-07-06",
+   "discretionary": 4958,
+   "by_cat": {
+    "Groceries": 2082,
+    "Eating out": 1636,
+    "Transport": 743,
+    "Other": 497
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-07-07",
+   "discretionary": 3989,
+   "by_cat": {
+    "Groceries": 1675,
+    "Eating out": 1316,
+    "Transport": 598,
+    "Other": 400
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-07-08",
+   "discretionary": 1750,
+   "by_cat": {
+    "Groceries": 735,
+    "Eating out": 577,
+    "Transport": 262,
+    "Other": 176
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-07-09",
+   "discretionary": 3140,
+   "by_cat": {
+    "Groceries": 1318,
+    "Eating out": 1036,
+    "Transport": 471,
+    "Other": 315
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-07-10",
+   "discretionary": 10448,
+   "by_cat": {
+    "Groceries": 4388,
+    "Eating out": 3447,
+    "Transport": 1567,
+    "Other": 1046
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-07-11",
+   "discretionary": 10540,
+   "by_cat": {
+    "Groceries": 4426,
+    "Eating out": 3478,
+    "Transport": 1581,
+    "Other": 1055
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-07-12",
+   "discretionary": 6582,
+   "by_cat": {
+    "Groceries": 2764,
+    "Eating out": 2172,
+    "Transport": 987,
+    "Other": 659
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-07-13",
+   "discretionary": 1454,
+   "by_cat": {
+    "Groceries": 610,
+    "Eating out": 479,
+    "Transport": 218,
+    "Other": 147
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-07-14",
+   "discretionary": 5070,
+   "by_cat": {
+    "Groceries": 2129,
+    "Eating out": 1673,
+    "Transport": 760,
+    "Other": 508
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-07-15",
+   "discretionary": 1952,
+   "by_cat": {
+    "Groceries": 819,
+    "Eating out": 644,
+    "Transport": 292,
+    "Other": 197
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-07-16",
+   "discretionary": 4090,
+   "by_cat": {
+    "Groceries": 1717,
+    "Eating out": 1349,
+    "Transport": 613,
+    "Other": 411
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-07-17",
+   "discretionary": 5996,
+   "by_cat": {
+    "Groceries": 2518,
+    "Eating out": 1978,
+    "Transport": 899,
+    "Other": 601
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-07-18",
+   "discretionary": 5812,
+   "by_cat": {
+    "Groceries": 2441,
+    "Eating out": 1917,
+    "Transport": 871,
+    "Other": 583
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-07-19",
+   "discretionary": 4190,
+   "by_cat": {
+    "Groceries": 1759,
+    "Eating out": 1382,
+    "Transport": 628,
+    "Other": 421
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-07-20",
+   "discretionary": 1853,
+   "by_cat": {
+    "Groceries": 778,
+    "Eating out": 611,
+    "Transport": 277,
+    "Other": 187
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-07-21",
+   "discretionary": 3241,
+   "by_cat": {
+    "Groceries": 1361,
+    "Eating out": 1069,
+    "Transport": 486,
+    "Other": 325
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-07-22",
+   "discretionary": 6852,
+   "by_cat": {
+    "Groceries": 2877,
+    "Eating out": 2261,
+    "Transport": 1027,
+    "Other": 687
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-07-23",
+   "discretionary": 3733,
+   "by_cat": {
+    "Groceries": 1567,
+    "Eating out": 1231,
+    "Transport": 559,
+    "Other": 376
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-07-24",
+   "discretionary": 10227,
+   "by_cat": {
+    "Groceries": 4295,
+    "Eating out": 3374,
+    "Transport": 1534,
+    "Other": 1024
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-07-25",
+   "discretionary": 14099,
+   "by_cat": {
+    "Groceries": 5921,
+    "Eating out": 4652,
+    "Transport": 2114,
+    "Other": 1412
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-07-26",
+   "discretionary": 14884,
+   "by_cat": {
+    "Groceries": 6251,
+    "Eating out": 4911,
+    "Transport": 2232,
+    "Other": 1490
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-07-27",
+   "discretionary": 6107,
+   "by_cat": {
+    "Groceries": 2564,
+    "Eating out": 2015,
+    "Transport": 916,
+    "Other": 612
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-07-28",
+   "discretionary": 3579,
+   "by_cat": {
+    "Groceries": 1503,
+    "Eating out": 1181,
+    "Transport": 536,
+    "Other": 359
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-07-29",
+   "discretionary": 1782,
+   "by_cat": {
+    "Groceries": 748,
+    "Eating out": 588,
+    "Transport": 267,
+    "Other": 179
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-07-30",
+   "discretionary": 5790,
+   "by_cat": {
+    "Groceries": 2431,
+    "Eating out": 1910,
+    "Transport": 868,
+    "Other": 581
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-07-31",
+   "discretionary": 6446,
+   "by_cat": {
+    "Groceries": 2707,
+    "Eating out": 2127,
+    "Transport": 966,
+    "Other": 646
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-08-01",
+   "discretionary": 14846,
+   "by_cat": {
+    "Groceries": 6235,
+    "Eating out": 4899,
+    "Transport": 2226,
+    "Other": 1486
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-08-02",
+   "discretionary": 7317,
+   "by_cat": {
+    "Groceries": 3073,
+    "Eating out": 2414,
+    "Transport": 1097,
+    "Other": 733
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-08-03",
+   "discretionary": 4541,
+   "by_cat": {
+    "Groceries": 1907,
+    "Eating out": 1498,
+    "Transport": 681,
+    "Other": 455
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-08-04",
+   "discretionary": 3834,
+   "by_cat": {
+    "Groceries": 1610,
+    "Eating out": 1265,
+    "Transport": 575,
+    "Other": 384
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-08-05",
+   "discretionary": 3456,
+   "by_cat": {
+    "Groceries": 1451,
+    "Eating out": 1140,
+    "Transport": 518,
+    "Other": 347
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-08-06",
+   "discretionary": 4405,
+   "by_cat": {
+    "Groceries": 1850,
+    "Eating out": 1453,
+    "Transport": 660,
+    "Other": 442
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-08-07",
+   "discretionary": 5913,
+   "by_cat": {
+    "Groceries": 2483,
+    "Eating out": 1951,
+    "Transport": 886,
+    "Other": 593
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-08-08",
+   "discretionary": 12059,
+   "by_cat": {
+    "Groceries": 5064,
+    "Eating out": 3979,
+    "Transport": 1808,
+    "Other": 1208
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-08-09",
+   "discretionary": 3765,
+   "by_cat": {
+    "Groceries": 1581,
+    "Eating out": 1242,
+    "Transport": 564,
+    "Other": 378
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-08-10",
+   "discretionary": 2615,
+   "by_cat": {
+    "Groceries": 1098,
+    "Eating out": 862,
+    "Transport": 392,
+    "Other": 263
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-08-11",
+   "discretionary": 4399,
+   "by_cat": {
+    "Groceries": 1847,
+    "Eating out": 1451,
+    "Transport": 659,
+    "Other": 442
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-08-12",
+   "discretionary": 4870,
+   "by_cat": {
+    "Groceries": 2045,
+    "Eating out": 1607,
+    "Transport": 730,
+    "Other": 488
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-08-13",
+   "discretionary": 1478,
+   "by_cat": {
+    "Groceries": 620,
+    "Eating out": 487,
+    "Transport": 221,
+    "Other": 150
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-08-14",
+   "discretionary": 7247,
+   "by_cat": {
+    "Groceries": 3043,
+    "Eating out": 2391,
+    "Transport": 1087,
+    "Other": 726
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-08-15",
+   "discretionary": 9419,
+   "by_cat": {
+    "Groceries": 3955,
+    "Eating out": 3108,
+    "Transport": 1412,
+    "Other": 944
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-08-16",
+   "discretionary": 5129,
+   "by_cat": {
+    "Groceries": 2154,
+    "Eating out": 1692,
+    "Transport": 769,
+    "Other": 514
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-08-17",
+   "discretionary": 5032,
+   "by_cat": {
+    "Groceries": 2113,
+    "Eating out": 1660,
+    "Transport": 754,
+    "Other": 505
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-08-18",
+   "discretionary": 5247,
+   "by_cat": {
+    "Groceries": 2203,
+    "Eating out": 1731,
+    "Transport": 787,
+    "Other": 526
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-08-19",
+   "discretionary": 5230,
+   "by_cat": {
+    "Groceries": 2196,
+    "Eating out": 1725,
+    "Transport": 784,
+    "Other": 525
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-08-20",
+   "discretionary": 3216,
+   "by_cat": {
+    "Groceries": 1350,
+    "Eating out": 1061,
+    "Transport": 482,
+    "Other": 323
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-08-21",
+   "discretionary": 5859,
+   "by_cat": {
+    "Groceries": 2460,
+    "Eating out": 1933,
+    "Transport": 878,
+    "Other": 588
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-08-22",
+   "discretionary": 5621,
+   "by_cat": {
+    "Groceries": 2360,
+    "Eating out": 1854,
+    "Transport": 843,
+    "Other": 564
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-08-23",
+   "discretionary": 11516,
+   "by_cat": {
+    "Groceries": 4836,
+    "Eating out": 3800,
+    "Transport": 1727,
+    "Other": 1153
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-08-24",
+   "discretionary": 8376,
+   "by_cat": {
+    "Groceries": 3517,
+    "Eating out": 2764,
+    "Transport": 1256,
+    "Other": 839
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-08-25",
+   "discretionary": 7219,
+   "by_cat": {
+    "Groceries": 3031,
+    "Eating out": 2382,
+    "Transport": 1082,
+    "Other": 724
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-08-26",
+   "discretionary": 7369,
+   "by_cat": {
+    "Groceries": 3094,
+    "Eating out": 2431,
+    "Transport": 1105,
+    "Other": 739
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-08-27",
+   "discretionary": 4264,
+   "by_cat": {
+    "Groceries": 1790,
+    "Eating out": 1407,
+    "Transport": 639,
+    "Other": 428
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-08-28",
+   "discretionary": 7690,
+   "by_cat": {
+    "Groceries": 3229,
+    "Eating out": 2537,
+    "Transport": 1153,
+    "Other": 771
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-08-29",
+   "discretionary": 17714,
+   "by_cat": {
+    "Groceries": 7439,
+    "Eating out": 5845,
+    "Transport": 2657,
+    "Other": 1773
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-08-30",
+   "discretionary": 13457,
+   "by_cat": {
+    "Groceries": 5651,
+    "Eating out": 4440,
+    "Transport": 2018,
+    "Other": 1348
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-08-31",
+   "discretionary": 2249,
+   "by_cat": {
+    "Groceries": 944,
+    "Eating out": 742,
+    "Transport": 337,
+    "Other": 226
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-09-01",
+   "discretionary": 2645,
+   "by_cat": {
+    "Groceries": 1110,
+    "Eating out": 872,
+    "Transport": 396,
+    "Other": 267
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-09-02",
+   "discretionary": 2122,
+   "by_cat": {
+    "Groceries": 891,
+    "Eating out": 700,
+    "Transport": 318,
+    "Other": 213
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-09-03",
+   "discretionary": 1654,
+   "by_cat": {
+    "Groceries": 694,
+    "Eating out": 545,
+    "Transport": 248,
+    "Other": 167
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-09-04",
+   "discretionary": 9655,
+   "by_cat": {
+    "Groceries": 4055,
+    "Eating out": 3186,
+    "Transport": 1448,
+    "Other": 966
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-09-05",
+   "discretionary": 15131,
+   "by_cat": {
+    "Groceries": 6355,
+    "Eating out": 4993,
+    "Transport": 2269,
+    "Other": 1514
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-09-06",
+   "discretionary": 6317,
+   "by_cat": {
+    "Groceries": 2653,
+    "Eating out": 2084,
+    "Transport": 947,
+    "Other": 633
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-09-07",
+   "discretionary": 4021,
+   "by_cat": {
+    "Groceries": 1688,
+    "Eating out": 1326,
+    "Transport": 603,
+    "Other": 404
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-09-08",
+   "discretionary": 4175,
+   "by_cat": {
+    "Groceries": 1753,
+    "Eating out": 1377,
+    "Transport": 626,
+    "Other": 419
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-09-09",
+   "discretionary": 1872,
+   "by_cat": {
+    "Groceries": 786,
+    "Eating out": 617,
+    "Transport": 280,
+    "Other": 189
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-09-10",
+   "discretionary": 2965,
+   "by_cat": {
+    "Groceries": 1245,
+    "Eating out": 978,
+    "Transport": 444,
+    "Other": 298
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-09-11",
+   "discretionary": 10557,
+   "by_cat": {
+    "Groceries": 4433,
+    "Eating out": 3483,
+    "Transport": 1583,
+    "Other": 1058
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-09-12",
+   "discretionary": 6446,
+   "by_cat": {
+    "Groceries": 2707,
+    "Eating out": 2127,
+    "Transport": 966,
+    "Other": 646
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-09-13",
+   "discretionary": 7325,
+   "by_cat": {
+    "Groceries": 3076,
+    "Eating out": 2417,
+    "Transport": 1098,
+    "Other": 734
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-09-14",
+   "discretionary": 4672,
+   "by_cat": {
+    "Groceries": 1962,
+    "Eating out": 1541,
+    "Transport": 700,
+    "Other": 469
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-09-15",
+   "discretionary": 4156,
+   "by_cat": {
+    "Groceries": 1745,
+    "Eating out": 1371,
+    "Transport": 623,
+    "Other": 417
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-09-16",
+   "discretionary": 2960,
+   "by_cat": {
+    "Groceries": 1243,
+    "Eating out": 976,
+    "Transport": 444,
+    "Other": 297
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-09-17",
+   "discretionary": 2341,
+   "by_cat": {
+    "Groceries": 983,
+    "Eating out": 772,
+    "Transport": 351,
+    "Other": 235
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-09-18",
+   "discretionary": 3127,
+   "by_cat": {
+    "Groceries": 1313,
+    "Eating out": 1031,
+    "Transport": 469,
+    "Other": 314
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-09-19",
+   "discretionary": 11088,
+   "by_cat": {
+    "Groceries": 4656,
+    "Eating out": 3659,
+    "Transport": 1663,
+    "Other": 1110
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-09-20",
+   "discretionary": 5651,
+   "by_cat": {
+    "Groceries": 2373,
+    "Eating out": 1864,
+    "Transport": 847,
+    "Other": 567
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-09-21",
+   "discretionary": 2628,
+   "by_cat": {
+    "Groceries": 1103,
+    "Eating out": 867,
+    "Transport": 394,
+    "Other": 264
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-09-22",
+   "discretionary": 6947,
+   "by_cat": {
+    "Groceries": 2917,
+    "Eating out": 2292,
+    "Transport": 1042,
+    "Other": 696
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-09-23",
+   "discretionary": 2652,
+   "by_cat": {
+    "Groceries": 1113,
+    "Eating out": 875,
+    "Transport": 397,
+    "Other": 267
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-09-24",
+   "discretionary": 7375,
+   "by_cat": {
+    "Groceries": 3097,
+    "Eating out": 2433,
+    "Transport": 1106,
+    "Other": 739
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-09-25",
+   "discretionary": 15140,
+   "by_cat": {
+    "Groceries": 6358,
+    "Eating out": 4996,
+    "Transport": 2271,
+    "Other": 1515
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-09-26",
+   "discretionary": 7990,
+   "by_cat": {
+    "Groceries": 3355,
+    "Eating out": 2636,
+    "Transport": 1198,
+    "Other": 801
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-09-27",
+   "discretionary": 15391,
+   "by_cat": {
+    "Groceries": 6464,
+    "Eating out": 5079,
+    "Transport": 2308,
+    "Other": 1540
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-09-28",
+   "discretionary": 7937,
+   "by_cat": {
+    "Groceries": 3333,
+    "Eating out": 2619,
+    "Transport": 1190,
+    "Other": 795
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-09-29",
+   "discretionary": 2675,
+   "by_cat": {
+    "Groceries": 1123,
+    "Eating out": 882,
+    "Transport": 401,
+    "Other": 269
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-09-30",
+   "discretionary": 6478,
+   "by_cat": {
+    "Groceries": 2720,
+    "Eating out": 2137,
+    "Transport": 971,
+    "Other": 650
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-10-01",
+   "discretionary": 4351,
+   "by_cat": {
+    "Groceries": 1827,
+    "Eating out": 1435,
+    "Transport": 652,
+    "Other": 437
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-10-02",
+   "discretionary": 6713,
+   "by_cat": {
+    "Groceries": 2819,
+    "Eating out": 2215,
+    "Transport": 1006,
+    "Other": 673
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-10-03",
+   "discretionary": 6953,
+   "by_cat": {
+    "Groceries": 2920,
+    "Eating out": 2294,
+    "Transport": 1042,
+    "Other": 697
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-10-04",
+   "discretionary": 8057,
+   "by_cat": {
+    "Groceries": 3383,
+    "Eating out": 2658,
+    "Transport": 1208,
+    "Other": 808
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-10-05",
+   "discretionary": 3597,
+   "by_cat": {
+    "Groceries": 1510,
+    "Eating out": 1187,
+    "Transport": 539,
+    "Other": 361
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-10-06",
+   "discretionary": 4220,
+   "by_cat": {
+    "Groceries": 1772,
+    "Eating out": 1392,
+    "Transport": 633,
+    "Other": 423
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-10-07",
+   "discretionary": 3199,
+   "by_cat": {
+    "Groceries": 1343,
+    "Eating out": 1055,
+    "Transport": 479,
+    "Other": 322
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-10-08",
+   "discretionary": 3938,
+   "by_cat": {
+    "Groceries": 1653,
+    "Eating out": 1299,
+    "Transport": 590,
+    "Other": 396
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-10-09",
+   "discretionary": 2861,
+   "by_cat": {
+    "Groceries": 1201,
+    "Eating out": 944,
+    "Transport": 429,
+    "Other": 287
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-10-10",
+   "discretionary": 12416,
+   "by_cat": {
+    "Groceries": 5214,
+    "Eating out": 4097,
+    "Transport": 1862,
+    "Other": 1243
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-10-11",
+   "discretionary": 7145,
+   "by_cat": {
+    "Groceries": 3000,
+    "Eating out": 2357,
+    "Transport": 1071,
+    "Other": 717
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-10-12",
+   "discretionary": 4529,
+   "by_cat": {
+    "Groceries": 1902,
+    "Eating out": 1494,
+    "Transport": 679,
+    "Other": 454
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-10-13",
+   "discretionary": 5517,
+   "by_cat": {
+    "Groceries": 2317,
+    "Eating out": 1820,
+    "Transport": 827,
+    "Other": 553
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-10-14",
+   "discretionary": 1827,
+   "by_cat": {
+    "Groceries": 767,
+    "Eating out": 602,
+    "Transport": 274,
+    "Other": 184
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-10-15",
+   "discretionary": 6320,
+   "by_cat": {
+    "Groceries": 2654,
+    "Eating out": 2085,
+    "Transport": 948,
+    "Other": 633
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-10-16",
+   "discretionary": 6732,
+   "by_cat": {
+    "Groceries": 2827,
+    "Eating out": 2221,
+    "Transport": 1009,
+    "Other": 675
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-10-17",
+   "discretionary": 6005,
+   "by_cat": {
+    "Groceries": 2522,
+    "Eating out": 1981,
+    "Transport": 900,
+    "Other": 602
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-10-18",
+   "discretionary": 5466,
+   "by_cat": {
+    "Groceries": 2295,
+    "Eating out": 1803,
+    "Transport": 819,
+    "Other": 549
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-10-19",
+   "discretionary": 4221,
+   "by_cat": {
+    "Groceries": 1772,
+    "Eating out": 1392,
+    "Transport": 633,
+    "Other": 424
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-10-20",
+   "discretionary": 5343,
+   "by_cat": {
+    "Groceries": 2244,
+    "Eating out": 1763,
+    "Transport": 801,
+    "Other": 535
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-10-21",
+   "discretionary": 3788,
+   "by_cat": {
+    "Groceries": 1590,
+    "Eating out": 1250,
+    "Transport": 568,
+    "Other": 380
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-10-22",
+   "discretionary": 7579,
+   "by_cat": {
+    "Groceries": 3183,
+    "Eating out": 2501,
+    "Transport": 1136,
+    "Other": 759
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-10-23",
+   "discretionary": 5076,
+   "by_cat": {
+    "Groceries": 2131,
+    "Eating out": 1675,
+    "Transport": 761,
+    "Other": 509
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-10-24",
+   "discretionary": 11136,
+   "by_cat": {
+    "Groceries": 4677,
+    "Eating out": 3674,
+    "Transport": 1670,
+    "Other": 1115
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-10-25",
+   "discretionary": 13023,
+   "by_cat": {
+    "Groceries": 5469,
+    "Eating out": 4297,
+    "Transport": 1953,
+    "Other": 1304
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-10-26",
+   "discretionary": 4950,
+   "by_cat": {
+    "Groceries": 2079,
+    "Eating out": 1633,
+    "Transport": 742,
+    "Other": 496
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-10-27",
+   "discretionary": 6748,
+   "by_cat": {
+    "Groceries": 2834,
+    "Eating out": 2226,
+    "Transport": 1012,
+    "Other": 676
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-10-28",
+   "discretionary": 1793,
+   "by_cat": {
+    "Groceries": 753,
+    "Eating out": 591,
+    "Transport": 268,
+    "Other": 181
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-10-29",
+   "discretionary": 2984,
+   "by_cat": {
+    "Groceries": 1253,
+    "Eating out": 984,
+    "Transport": 447,
+    "Other": 300
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-10-30",
+   "discretionary": 4990,
+   "by_cat": {
+    "Groceries": 2095,
+    "Eating out": 1646,
+    "Transport": 748,
+    "Other": 501
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-10-31",
+   "discretionary": 17979,
+   "by_cat": {
+    "Groceries": 7551,
+    "Eating out": 5933,
+    "Transport": 2696,
+    "Other": 1799
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-11-01",
+   "discretionary": 12614,
+   "by_cat": {
+    "Groceries": 4613,
+    "Eating out": 5254,
+    "Transport": 1647,
+    "Other": 1100
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-11-02",
+   "discretionary": 2622,
+   "by_cat": {
+    "Groceries": 959,
+    "Eating out": 1091,
+    "Transport": 342,
+    "Other": 230
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-11-03",
+   "discretionary": 4841,
+   "by_cat": {
+    "Groceries": 1770,
+    "Eating out": 2016,
+    "Transport": 632,
+    "Other": 423
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-11-04",
+   "discretionary": 5600,
+   "by_cat": {
+    "Groceries": 2047,
+    "Eating out": 2333,
+    "Transport": 731,
+    "Other": 489
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-11-05",
+   "discretionary": 3894,
+   "by_cat": {
+    "Groceries": 1424,
+    "Eating out": 1622,
+    "Transport": 508,
+    "Other": 340
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-11-06",
+   "discretionary": 6565,
+   "by_cat": {
+    "Groceries": 2401,
+    "Eating out": 2734,
+    "Transport": 857,
+    "Other": 573
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-11-07",
+   "discretionary": 11026,
+   "by_cat": {
+    "Groceries": 4032,
+    "Eating out": 4593,
+    "Transport": 1440,
+    "Other": 961
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-11-08",
+   "discretionary": 7110,
+   "by_cat": {
+    "Groceries": 2600,
+    "Eating out": 2962,
+    "Transport": 928,
+    "Other": 620
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-11-09",
+   "discretionary": 5651,
+   "by_cat": {
+    "Groceries": 2066,
+    "Eating out": 2353,
+    "Transport": 738,
+    "Other": 494
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-11-10",
+   "discretionary": 2350,
+   "by_cat": {
+    "Groceries": 859,
+    "Eating out": 978,
+    "Transport": 307,
+    "Other": 206
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-11-11",
+   "discretionary": 4866,
+   "by_cat": {
+    "Groceries": 1779,
+    "Eating out": 2027,
+    "Transport": 635,
+    "Other": 425
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  },
+  {
+   "d": "2026-11-12",
+   "discretionary": 1840,
+   "by_cat": {
+    "Groceries": 0,
+    "Eating out": 1840,
+    "Transport": 0,
+    "Other": 0
+   },
+   "recurring": 0,
+   "trip": 0,
+   "oneoff": 0,
+   "has_activity": true,
+   "confirmed_zero": false,
+   "trip_day": false
+  }
+ ],
+ "spent_month_to_date": 345419,
+ "spent_by_cat": {
+  "Groceries": 24550,
+  "Eating out": 29803,
+  "Transport": 8765,
+  "Entertainment": 299
+ },
+ "scheduled": [
+  {
+   "d": "2026-11-22",
+   "amount": 1299,
+   "label": "Spotify",
+   "kind": "bill",
+   "category": "Entertainment",
+   "varies": false
+  },
+  {
+   "d": "2026-11-24",
+   "amount": 899,
+   "label": "Disney+",
+   "kind": "bill",
+   "category": "Entertainment",
+   "varies": false
+  },
+  {
+   "d": "2026-11-27",
+   "amount": 1299,
+   "label": "Netflix",
+   "kind": "bill",
+   "category": "Entertainment",
+   "varies": false
+  },
+  {
+   "d": "2026-11-26",
+   "amount": 4840,
+   "label": "Octopus Energy",
+   "kind": "bill_estimate",
+   "category": null,
+   "varies": true
+  }
+ ],
+ "trips": [],
+ "categories": [
+  "Groceries",
+  "Eating out",
+  "Transport",
+  "Entertainment"
+ ],
+ "params": {}
+}

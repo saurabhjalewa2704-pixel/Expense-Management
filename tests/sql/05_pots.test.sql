@@ -36,8 +36,8 @@ begin
   assert (select max(cumulative_pence) from daily_spend('2026-10-01', '2026-10-18')) = 10000, 'daily_spend';
   select * into r from month_pace('2026-10-18');
   assert r.spend_pence = 10000, 'month_pace spend: ' || r.spend_pence;
-  assert (select spend_pence from monthly_totals(2) order by month desc limit 1) = 10000, 'monthly_totals spend';
-  assert (select income_pence from monthly_totals(2) order by month desc limit 1) = 0, 'monthly_totals income';
+  assert (select spend_pence from monthly_totals(3) where month = '2026-10-01') = 10000, 'monthly_totals spend';
+  assert (select income_pence from monthly_totals(3) where month = '2026-10-01') = 0, 'monthly_totals income';
   assert not exists (select 1 from top_payees('2026-10-01', '2026-10-18') where name = 'HMRC'), 'top_payees';
   assert not exists (select 1 from top_transactions('2026-10-01', '2026-10-18', 10) where amount_pence = 1250000), 'top_transactions';
   assert not exists (select 1 from new_payees('2026-10-01', '2026-10-18') where name = 'HMRC'), 'new_payees';

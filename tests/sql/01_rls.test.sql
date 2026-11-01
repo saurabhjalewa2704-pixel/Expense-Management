@@ -48,7 +48,7 @@ begin
   -- user B sees nothing, anywhere
   perform set_config('request.jwt.claims', json_build_object('sub', ub, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  foreach t in array array['accounts','payees','transactions','recurring_items','recurring_occurrences','recurring_dismissed','trips','trip_stops','trip_category_budgets','category_redirects','budgets','budget_overrides','budget_forecast_log','budget_alerts_sent','insight_runs',
+  foreach t in array array['accounts','payees','transactions','recurring_items','recurring_occurrences','recurring_dismissed','trips','trip_stops','trip_category_budgets','category_redirects','budgets','budget_overrides','budget_forecast_log','budget_alerts_sent','forecast_params','forecast_param_log','forecast_backtest','forecast_snapshots','planned_extras','planned_extra_answers','insight_runs',
                            'insight_feedback','api_tokens','push_subscriptions','no_spend_days','pots','ask_turns'] loop
     execute format('select count(*) from %I', t) into n;
     assert n = 0, 'B can read ' || t;
@@ -61,7 +61,7 @@ begin
   assert (select count(*) from list_transactions()) = 0, 'activity list ignores other users';
   assert (select count(*) from spend_by_category('2026-01-01', '2026-12-31')) = 0, 'analytics ignore other users';
   assert (select count(*) from budget_for_month('2026-02-01')) = 0, 'budget_for_month ignores other users';
-  assert (select spent_pence from forecast_inputs('2026-02-01', null, '2026-02-28')) = 0, 'forecast_inputs ignore other users';
+  assert (select count(*) from forecast_daily_facts('2026-02-01', '2026-02-28') where discretionary <> 0 or has_activity) = 0, 'forecast facts ignore other users';
   assert (select count(*) from budget_history(6, '2026-02-15') where budget_pence is not null) = 0, 'budget_history ignores other users';
 
   -- B cannot change or delete A's rows

@@ -1,8 +1,10 @@
-// PRD §6.13: everything the Budget screens show, built from the database's facts and `forecastMonth` (lib/forecast.ts).
+// PRD §6.13: everything the Budget screens show, built from the one forecast engine (lib/forecast, getForecast).
 // This file never projects anything itself: every month-end figure is a `Forecast` returned by the one engine.
 import { dayOfMonth, daysInMonth, monthEnd, monthStart, type ISODate } from "@/lib/dates";
 import { billsIn, type BillRow } from "@/lib/bills";
-import { budgetStatus, forecastMonth, planToDate, safeToSpend, whatIfs, type BudgetStatus, type Forecast, type ForecastInputs, type WhatIf } from "@/lib/forecast";
+import { budgetStatus, planToDate, safeToSpend, whatIfs, type BudgetStatus, type WhatIf } from "@/lib/forecast/measures";
+import { fcView, type FcView } from "@/lib/forecast/view";
+import type { Forecast } from "@/lib/forecast/types";
 import type { Holidays } from "@/lib/recurrence";
 import type { Category, RecurringItem, RecurringOccurrence } from "@/lib/types";
 import type { Pence } from "@/lib/money";
@@ -28,41 +30,7 @@ export interface BudgetRow {
   covers: Covers;
 }
 
-/** One row of `forecast_inputs`: what the database knows about a month for one scope. */
-export interface ScopeFacts {
-  spent_pence: Pence;
-  recurring_logged_pence: Pence;
-  discretionary_pence: Pence;
-  discretionary_today_pence: Pence;
-  tracking_start: ISODate | null;
-  covers: Covers;
-  qualifying_months: ISODate[];
-  history_daily: Pence[];
-}
-
-/** The facts for a scope as `ForecastInputs` (the engine's own input shape), with the bills the caller worked out. */
-export function toForecastInputs(month: ISODate, today: ISODate, f: ScopeFacts, billsToCome: Pence): ForecastInputs {
-  return {
-    month, today, trackingStart: f.tracking_start, spent: f.spent_pence, recurringLogged: f.recurring_logged_pence,
-    discretionary: f.discretionary_pence, discretionaryToday: f.discretionary_today_pence, billsToCome,
-    qualifyingMonths: f.qualifying_months, historyDaily: f.history_daily,
-  };
-}
-
 export interface BillSums { toCome: Pence; upToToday: Pence; allMonth: Pence }
-
-/** One bill still to come this month (for "Bills still to come: Spotify 22nd · Disney+ 24th"). */
-export interface BillToCome { itemId: string; payeeId: string | null; note: string | null; dueOn: ISODate; amount: Pence }
-
-/** The recurring expenses in a scope that are not yet in the ledger this month, in date order. */
-export function billsToCome(
-  items: readonly RecurringItem[], occurrences: readonly RecurringOccurrence[], month: ISODate,
-  inScope: (categoryId: string | null) => boolean, holidays?: Holidays,
-): BillToCome[] {
-  return billsIn(items, occurrences, monthStart(month), monthEnd(month), holidays)
-    .filter((r) => r.item.type === "expense" && inScope(r.item.category_id) && (r.state === "due" || r.state === "pending"))
-    .map((r) => ({ itemId: r.item.id, payeeId: r.item.payee_id, note: r.item.note, dueOn: r.due_on, amount: r.amount_pence }));
-}
 
 /** Recurring expenses for a month, in one scope: still to come, scheduled on or before today, and scheduled in the whole month (BUD-03). */
 export function billSums(
@@ -117,7 +85,7 @@ export interface LimitView {
   againstPlan: Pence;
   billsToCome: Pence;
   safePerDay: Pence;
-  forecast: Forecast;
+  forecast: FcView;
   /** forecast − amount: positive = over. */
   variance: Pence;
   /** amount − forecast: positive = room to spare. */
@@ -143,15 +111,16 @@ export interface BudgetView {
   whatIfs: WhatIf[];
   /** The overall plan for each day of the month, 1st first (BUD-03). */
   planByDay: Pence[];
+  /** The engine's full answer, for the Why sheet. */
+  forecast: Forecast;
 }
 
 export interface BudgetSource {
   month: ISODate;
   today: ISODate;
   rows: readonly BudgetRow[];
-  /** Facts for the overall scope, and for each limit's category. */
-  overall: ScopeFacts;
-  byCategory: Readonly<Record<string, ScopeFacts>>;
+  /** The one forecast for the month, with the budgeted categories reconciled into it (getForecast). */
+  forecast: Forecast;
   items: readonly RecurringItem[];
   occurrences: readonly RecurringOccurrence[];
   categories: readonly Category[];
@@ -160,27 +129,37 @@ export interface BudgetSource {
 
 const pct = (a: Pence, b: Pence) => (b > 0 ? Math.round((a * 100) / b) : 0);
 
+/** A category's reading of the month's forecast: its own spent, scheduled and point (reconciled so they add up to the overall). */
+export function categoryView(f: Forecast, cat: string, today: ISODate): FcView {
+  const base = fcView(f, today);
+  const c = f.categories?.[cat];
+  if (!c) return { ...base, spent: 0, scheduled: 0, restOfMonth: 0, trips: 0, extras: 0, floor: 0, forecast: 0, point: base.available ? 0 : null, low: null, high: null, expectedPerDay: 0 };
+  const per = f.perDay.length || 1;
+  return {
+    ...base, spent: c.spent, scheduled: c.scheduled, restOfMonth: c.restOfMonth, trips: 0, extras: 0, floor: c.spent + c.scheduled, forecast: c.point,
+    point: base.available ? c.point : null, low: null, high: null, expectedPerDay: Math.round(c.restOfMonth / per), weight: c.weightThisMonth ?? base.weight, loggedToday: 0,
+  };
+}
+
 function scopeView(args: {
   categoryId: string | null; kind: LimitView["kind"]; name: string; icon: string | null; color: string | null;
   row: Pick<BudgetRow, "amount_pence" | "base_pence" | "override_pence" | "carried_pence" | "rollover">;
-  facts: ScopeFacts; bills: BillSums; month: ISODate; today: ISODate; covers: Covers; discToday: Pence;
+  fc: FcView; bills: BillSums; covers: Covers;
 }): LimitView {
-  const { row, facts, bills } = args;
+  const { row, fc, bills } = args;
   const noBills = excludesBills(args.covers);
-  const toCome = noBills ? 0 : bills.toCome;
-  const forecast = forecastMonth(toForecastInputs(args.month, args.today, facts, toCome));
-  const dim = daysInMonth(args.month);
-  const dom = forecast.closed ? dim : Math.min(dim, Math.max(1, dayOfMonth(args.today)));
+  const dim = fc.daysInMonth;
+  const dom = fc.closed ? dim : Math.min(dim, Math.max(1, fc.dom));
   const plan = planToDate(row.amount_pence, noBills ? 0 : bills.upToToday, noBills ? 0 : bills.allMonth, dom, dim, noBills);
-  const spent = facts.spent_pence;
+  const spent = fc.spent;
   return {
     categoryId: args.categoryId, kind: args.kind, name: args.name, icon: args.icon, color: args.color,
     amount: row.amount_pence, base: row.base_pence, override: row.override_pence, carried: row.carried_pence, rollover: row.rollover,
     spent, spentShown: Math.max(0, spent), netRefund: spent < 0, left: row.amount_pence - spent,
     pctSpent: pct(Math.max(0, spent), row.amount_pence), pctLeft: Math.max(0, 100 - pct(Math.max(0, spent), row.amount_pence)),
-    plan, againstPlan: plan - spent, billsToCome: toCome, safePerDay: safeToSpend(row.amount_pence, forecast), forecast,
-    variance: forecast.forecast - row.amount_pence, headroom: row.amount_pence - forecast.forecast,
-    status: budgetStatus(forecast, row.amount_pence, plan),
+    plan, againstPlan: plan - spent, billsToCome: fc.scheduled, safePerDay: safeToSpend(row.amount_pence, fc), forecast: fc,
+    variance: fc.forecast - row.amount_pence, headroom: row.amount_pence - fc.forecast,
+    status: budgetStatus(fc, row.amount_pence, plan),
   };
 }
 
@@ -192,30 +171,23 @@ export function buildBudgetView(src: BudgetSource): BudgetView | null {
   const covers = overallRow.covers;
   const catById = new Map(src.categories.map((c) => [c.id, c]));
   const l1 = (id: string | null) => { const c = id ? catById.get(id) : undefined; return c ? (c.parent_id ?? c.id) : null; };
+  const overallFc = fcView(src.forecast, src.today);
 
   const all = billSums(src.items, src.occurrences, month, src.today, () => true, src.holidays);
-  const overall = scopeView({
-    categoryId: null, kind: "overall", name: "Monthly budget", icon: null, color: null, row: overallRow, facts: src.overall, bills: all,
-    month, today: src.today, covers, discToday: src.overall.discretionary_today_pence,
-  });
+  const overall = scopeView({ categoryId: null, kind: "overall", name: "Monthly budget", icon: null, color: null, row: overallRow, fc: overallFc, bills: all, covers });
 
   const limits: LimitView[] = [];
   for (const row of src.rows) {
     if (row.category_id === null) continue;
     const cat = catById.get(row.category_id);
-    const facts = src.byCategory[row.category_id];
-    if (!cat || !facts) continue;
+    if (!cat) continue;
     const bills = billSums(src.items, src.occurrences, month, src.today, (c) => l1(c) === row.category_id, src.holidays);
-    limits.push(scopeView({
-      categoryId: row.category_id, kind: "limit", name: cat.name, icon: cat.icon, color: cat.color, row, facts, bills,
-      month, today: src.today, covers, discToday: facts.discretionary_today_pence,
-    }));
+    limits.push(scopeView({ categoryId: row.category_id, kind: "limit", name: cat.name, icon: cat.icon, color: cat.color, row, fc: categoryView(src.forecast, row.category_id, src.today), bills, covers }));
   }
   // Riskiest first: the largest forecast as a share of its limit (a limit forecast over comes before one that is under, then by how close it is).
   limits.sort((a, b) => b.forecast.forecast * a.amount - a.forecast.forecast * b.amount || a.name.localeCompare(b.name));
 
-  // Everything else = the overall figures less the limits. The forecast is the overall forecast less the limits' forecasts, so the
-  // parts always add up to the whole, to the penny (invariant 10).
+  // Everything else = the overall figures less the limits, so the parts always add up to the whole, to the penny (invariant 10).
   const sum = (f: (l: LimitView) => number) => limits.reduce((s, l) => s + f(l), 0);
   const limitsTotal = sum((l) => l.amount);
   const elseAmountRaw = overall.amount - limitsTotal;
@@ -224,21 +196,21 @@ export function buildBudgetView(src: BudgetSource): BudgetView | null {
   const elseForecastValue = overall.forecast.forecast - sum((l) => l.forecast.forecast);
   const elsePlan = Math.max(0, overall.plan - sum((l) => l.plan));
   const elseBills = Math.max(0, overall.billsToCome - sum((l) => l.billsToCome));
-  const elseForecast: Forecast = { ...overall.forecast, spent: elseSpent, billsToCome: elseBills, forecast: elseForecastValue, low: null, high: null, lowPerDay: null, highPerDay: null };
+  const elseFc: FcView = { ...overallFc, spent: elseSpent, scheduled: elseBills, forecast: elseForecastValue, point: overallFc.available ? elseForecastValue : null, low: null, high: null, floor: elseSpent + elseBills };
   const elsewhere: LimitView = {
     categoryId: null, kind: "elsewhere", name: "Everything else", icon: null, color: null,
     amount: elseAmount, base: elseAmount, override: null, carried: 0, rollover: false,
     spent: elseSpent, spentShown: Math.max(0, elseSpent), netRefund: elseSpent < 0, left: elseAmount - elseSpent,
     pctSpent: pct(Math.max(0, elseSpent), elseAmount), pctLeft: Math.max(0, 100 - pct(Math.max(0, elseSpent), elseAmount)),
-    plan: elsePlan, againstPlan: elsePlan - elseSpent, billsToCome: elseBills, safePerDay: 0, forecast: elseForecast,
+    plan: elsePlan, againstPlan: elsePlan - elseSpent, billsToCome: elseBills, safePerDay: 0, forecast: elseFc,
     variance: elseForecastValue - elseAmountRaw, headroom: elseAmountRaw - elseForecastValue,
     // "Everything else" has no limit of its own to be tight against: it is on track, or over (A.3)
     status: elseForecastValue > elseAmountRaw ? "over" : "on_track",
   };
 
   return {
-    month, today: src.today, closed: overall.forecast.closed, dom: overall.forecast.closed ? dim : dayOfMonth(src.today), dim,
-    monthPct: overall.forecast.closed ? 100 : pct(dayOfMonth(src.today), dim), covers,
+    month, today: src.today, closed: overallFc.closed, dom: overallFc.closed ? dim : overallFc.dom, dim,
+    monthPct: overallFc.closed ? 100 : pct(overallFc.dom, dim), covers,
     overall, limits, elsewhere, limitsTotal, limitsOverBy: Math.max(0, -elseAmountRaw),
     planByDay: (() => {
       const noBills = excludesBills(covers);
@@ -247,7 +219,8 @@ export function buildBudgetView(src: BudgetSource): BudgetView | null {
       let cum = 0;
       return days.map((d, i) => { cum += noBills ? 0 : d; return planToDate(overall.amount, cum, total, i + 1, dim, noBills); });
     })(),
-    whatIfs: overall.forecast.available ? whatIfs(overall.amount, overall.forecast, src.overall.discretionary_today_pence) : [],
+    whatIfs: overallFc.available && !overallFc.closed ? whatIfs(overall.amount, overallFc) : [],
+    forecast: src.forecast,
   };
 }
 

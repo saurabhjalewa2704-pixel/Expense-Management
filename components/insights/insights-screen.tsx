@@ -2,7 +2,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { AskDock } from "@/components/insights/ask-screen";
-import { MonthOutlook } from "@/components/budget/month-outlook";
+import { FarAboveUsual, MonthOutlook } from "@/components/budget/month-outlook";
 import { InsightCardView, useCardFeedback } from "@/components/insights/insight-card";
 import { useToast } from "@/components/ui/toast";
 import { PageHeader } from "@/components/ui/page-header";
@@ -57,6 +57,7 @@ export function InsightsScreen() {
       </div>
       <div className="stack" style={{ marginTop: 16 }}>
         <MonthOutlook />
+        <FarAboveUsual />
         {off ? (
           <p className="sub">AI insights are switched off. Turn them on in Settings → AI insights.</p>
         ) : count.data !== undefined && count.data < 10 ? (

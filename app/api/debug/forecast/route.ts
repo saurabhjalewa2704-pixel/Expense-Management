@@ -18,12 +18,13 @@ export async function GET(req: NextRequest) {
   const p = req.nextUrl.searchParams;
   const raw = p.get("month");
   const month = raw && /^\d{4}-\d{2}$/.test(raw) ? `${raw}-01` : raw && isISODate(raw) ? monthStart(raw) : monthStart(todayLondon());
-  const override = process.env.STERLING_TEST_TODAY ? p.get("today") : null;
+  const pinned = process.env.STERLING_TEST_TODAY;
+  const override = pinned ? (p.get("today") ?? pinned) : null;
   const today = override && isISODate(override) ? override : todayLondon();
   const category = p.get("category");
   try {
     const r = await loadMonthForecast(supabase, month, today, category || null);
-    return NextResponse.json({ month, today, category: category || null, ...r }, { headers: { "cache-control": "no-store" } });
+    return NextResponse.json({ month, today, ...r }, { headers: { "cache-control": "no-store" } });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "Could not load the forecast" }, { status: 500 });
   }

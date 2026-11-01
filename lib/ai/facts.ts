@@ -177,7 +177,7 @@ export async function buildFacts(db: SupabaseClient, o: { scope: Facts["scope"];
   const thisMonth = monthStart(o.today);
   // BUD-05a rule 7: the same forecast as the trend chart, the Budget card and Available cash; missing history is excluded, never £0
   const mf = o.scope === "adhoc" || o.scope === "weekly" ? await loadMonthForecast(db, thisMonth, o.today) : null;
-  const forecast = mf && mf.forecast.available && !mf.forecast.closed ? { pence: mf.forecast.forecast, low: mf.forecast.low, high: mf.forecast.high } : null;
+  const forecast = mf && mf.view.available && !mf.view.closed ? { pence: mf.view.forecast, low: mf.view.low, high: mf.view.high } : null;
   const complete = monthlyTotals.filter((t) => t.month < thisMonth && t.spend_pence > 0 && !partial(t.month)).map((t) => t.spend_pence);
 
   // monthly history for the top categories and the streaming sub-category, full months only

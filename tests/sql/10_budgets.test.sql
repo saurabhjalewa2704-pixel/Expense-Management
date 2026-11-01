@@ -28,7 +28,7 @@ begin
   perform set_budget(null, 100000, '2026-10-18');
   perform set_budget(groc, 30000, '2026-10-18');
   assert (select amount_pence from budget_for_month('2026-10-01') where category_id is null) = 100000, 'EC-G1 the budget applies to October from its first day';
-  assert (select spent_pence from forecast_inputs('2026-10-01', groc, '2026-10-18')) = 15000, 'EC-G1 spend logged before the budget existed counts, sub-categories and parent-direct together';
+  assert budget_spent('2026-10-01', '2026-10-18', groc) = 15000, 'EC-G1 spend logged before the budget existed counts, sub-categories and parent-direct together';
 
   -- EC-G2: changed "from next month": October keeps what applied; November takes the new amount
   perform set_budget(null, 120000, '2026-11-01');
@@ -57,34 +57,37 @@ begin
 
   -- EC-G8: a refund reduces spend only when linked to a category
   perform create_transaction(gen_random_uuid(), 'income', 2000, acc, null, refunds, null, null, '{}', '2026-10-06');
-  assert (select spent_pence from forecast_inputs('2026-10-01', groc, '2026-10-18')) = 15000, 'EC-G8 an unlinked refund changes nothing';
+  assert budget_spent('2026-10-01', '2026-10-18', groc) = 15000, 'EC-G8 an unlinked refund changes nothing';
   update transactions set refund_category_id = groc where category_id = refunds and occurred_on = '2026-10-06';
-  assert (select spent_pence from forecast_inputs('2026-10-01', groc, '2026-10-18')) = 13000, 'EC-G8 a refund linked to Groceries reduces Groceries';
-  assert (select spent_pence from forecast_inputs('2026-10-01', null, '2026-10-18')) = 13000, 'EC-G8 ...and the overall spend';
-  assert (select spent_pence from forecast_inputs('2026-10-01', eat, '2026-10-18')) = 0, 'EC-G8 ...and no other category';
+  assert budget_spent('2026-10-01', '2026-10-18', groc) = 13000, 'EC-G8 a refund linked to Groceries reduces Groceries';
+  assert budget_spent('2026-10-01', '2026-10-18', null) = 13000, 'EC-G8 ...and the overall spend';
+  assert budget_spent('2026-10-01', '2026-10-18', eat) = 0, 'EC-G8 ...and no other category';
   update transactions set refund_category_id = groc where category_id = refunds;
   perform create_transaction(gen_random_uuid(), 'income', 20000, acc, null, refunds, null, null, '{}', '2026-10-07');
   update transactions set refund_category_id = eat where category_id = refunds and occurred_on = '2026-10-07';
-  assert (select spent_pence from forecast_inputs('2026-10-01', eat, '2026-10-18')) = -20000, 'EC-G8 a refund can take a category''s spent below zero (the app shows £0 with "net refund")';
+  assert budget_spent('2026-10-01', '2026-10-18', eat) = -20000, 'EC-G8 a refund can take a category''s spent below zero (the app shows £0 with "net refund")';
 
-  -- EC-G7: a large one-off is excluded from the run-rate once there are five tickets to judge by, but still counts as spent
+  -- EC-G7 / EC-F9: a large one-off (more than max(£150, 5x the usual ticket), or £250 with few tickets) is flagged automatically, counts as spent, never in the daily pace
   for d in select generate_series('2026-09-01'::date, '2026-09-05'::date, '1 day')::date loop
     perform create_transaction(gen_random_uuid(), 'expense', 1500, acc, null, (select id from categories where name = 'Homeware'), null, null, '{}', d);
   end loop;
   perform create_transaction(gen_random_uuid(), 'expense', 90000, acc, null, (select id from categories where name = 'Homeware'), null, null, '{}', '2026-10-09');   -- the £900 sofa
-  assert (select spent_pence from forecast_inputs('2026-10-01', (select id from categories where name = 'Shopping' and parent_id is null), '2026-10-18')) = 90000, 'EC-G7 the sofa counts in spent';
-  assert (select discretionary_pence from forecast_inputs('2026-10-01', (select id from categories where name = 'Shopping' and parent_id is null), '2026-10-18')) = 0, 'EC-G7 ...but is left out of the run-rate (more than 5x the median ticket)';
+  assert (select is_one_off and one_off_source = 'auto' from transactions where amount_pence = 90000), 'EC-G7 the sofa is flagged automatically';
+  assert budget_spent('2026-10-09', '2026-10-09', (select id from categories where name = 'Shopping' and parent_id is null)) = 90000, 'EC-G7 the sofa counts in spent';
+  assert (select oneoff from forecast_daily_facts('2026-10-09', '2026-10-09')) = 90000 and (select discretionary from forecast_daily_facts('2026-10-09', '2026-10-09')) = 0, 'EC-G7 ...but is left out of the pace';
   update transactions set is_one_off = false where amount_pence = 90000;
-  assert (select discretionary_pence from forecast_inputs('2026-10-01', (select id from categories where name = 'Shopping' and parent_id is null), '2026-10-18')) = 90000, 'EC-G7 the user can override the automatic mark';
+  assert (select discretionary from forecast_daily_facts('2026-10-09', '2026-10-09')) = 90000 and (select one_off_source from transactions where amount_pence = 90000) = 'user', 'EC-G7 the user can override the automatic mark';
+  update transactions set amount_pence = 91000 where amount_pence = 90000;
+  assert (select is_one_off from transactions where amount_pence = 91000) = false, 'EC-F9 a choice made by the user is never overwritten by re-flagging';
 
-  -- EC-G9: a trip: counts in spent when covered, never in the run-rate; excluded when the budget says so
+  -- EC-G9: a trip: counts in spent when covered, never in the pace; excluded when the budget says so
   insert into trips (name, currency, start_on, end_on) values ('Rome', 'GBP', '2026-10-10', '2026-10-12') returning id into trp;
   perform create_transaction(gen_random_uuid(), 'expense', 7000, acc, null, eat, null, null, '{}', '2026-10-11');
-  update transactions set trip_id = trp where occurred_on = '2026-10-11';
-  select * into r from forecast_inputs('2026-10-01', eat, '2026-10-18');
-  assert r.spent_pence = -20000 + 7000 and r.discretionary_pence = -20000, 'EC-G9 the trip counts in spent, not in the run-rate: ' || r::text;
+  update transactions set trip_id = trp where occurred_on = '2026-10-11' and amount_pence = 7000;
+  assert budget_spent('2026-10-01', '2026-10-18', eat) = -20000 + 7000, 'EC-G9 the trip counts in spent';
+  assert (select trip from forecast_daily_facts('2026-10-11', '2026-10-11')) = 7000 and (select trip_day from forecast_daily_facts('2026-10-11', '2026-10-11')), 'EC-G9 ...in the trip bucket, on a trip day, not in the pace';
   perform set_budget(null, 110000, '2026-10-01', false, 'exclude_trips');
-  assert (select spent_pence from forecast_inputs('2026-10-01', eat, '2026-10-18')) = -20000, 'BUD-01 "exclude trips" leaves trip spend out of spent too';
+  assert budget_spent('2026-10-01', '2026-10-18', eat, 'exclude_trips') = -20000, 'BUD-01 "exclude trips" leaves trip spend out of spent too';
   perform set_budget(null, 110000, '2026-10-01', false, 'all');
 
   -- BUD-01 exclude bills: recurring spend leaves both the spend and the budget's plan
@@ -92,26 +95,15 @@ begin
     values ('expense', 4000, acc, groc, 'monthly', 4, '2026-10-04', '2026-11-04') returning id into tx;
   perform create_transaction(gen_random_uuid(), 'expense', 4000, acc, null, groc, null, null, '{}', '2026-10-04');
   update transactions set recurring_id = tx where occurred_on = '2026-10-04' and amount_pence = 4000;
-  select * into r from forecast_inputs('2026-10-01', groc, '2026-10-18');
-  assert r.recurring_logged_pence = 4000 and r.spent_pence = 13000 + 4000, 'BUD-04 recurring is part of spent and shown apart: ' || r::text;
-  assert r.discretionary_pence = 13000, 'BUD-05 ...but is not discretionary';
-  perform set_budget(null, 110000, '2026-10-01', false, 'exclude_bills');
-  assert (select spent_pence from forecast_inputs('2026-10-01', groc, '2026-10-18')) = 13000, 'BUD-01 "exclude bills" removes recurring spend from the spend';
-  perform set_budget(null, 110000, '2026-10-01', false, 'all');
+  assert (select recurring from forecast_daily_facts('2026-10-04', '2026-10-04')) = 4000, 'BUD-04 recurring is part of spent and shown apart';
+  assert (select discretionary from forecast_daily_facts('2026-10-04', '2026-10-04')) = 0, 'BUD-05 ...but is not discretionary';
+  assert budget_spent('2026-10-01', '2026-10-18', groc, 'exclude_bills') = 13000, 'BUD-01 "exclude bills" removes recurring spend from the spend';
 
-  -- FC-4 / FC-5 / FC-7: which prior months supply history
+  -- EC-F4 / EC-F28: the engine's days start at tracking start; nothing before it is history
   update profiles set tracking_started_on = '2026-10-04' where id = ua;
-  assert cardinality((select qualifying_months from forecast_inputs('2026-10-01', null, '2026-10-18'))) = 0, 'FC-4 months before tracking started are excluded, never counted as £0';
-  assert (select cardinality(history_daily) from forecast_inputs('2026-10-01', null, '2026-10-18')) = 0, 'FC-4 no history values at all';
-  assert (select discretionary_pence from forecast_inputs('2026-10-01', groc, '2026-10-18')) = 3000, 'FC-2 the pace window starts at tracking start (4 Oct): the 3 Oct purchase is outside it';
-  update profiles set tracking_started_on = '2026-09-15' where id = ua;
-  assert (select qualifying_months from forecast_inputs('2026-10-01', null, '2026-10-18')) = array[]::date[], 'FC-5 September began before tracking: partial months do not qualify';
-  update profiles set tracking_started_on = '2026-09-01' where id = ua;
-  assert (select qualifying_months from forecast_inputs('2026-10-01', null, '2026-10-18')) = array['2026-09-01']::date[], 'FC-5 one fully tracked month qualifies';
+  assert (forecast_input('2026-10-01', '2026-10-18')->'days'->0->>'d') = '2026-10-04', 'EC-F4 days before tracking started are never history';
+  assert jsonb_array_length(forecast_input('2026-10-01', '2026-10-18')->'days') = 15, 'EC-F8 every tracked day is present, quiet or not, so a genuine £0 day is a £0 day';
   update profiles set tracking_started_on = '2026-06-01' where id = ua;
-  assert (select qualifying_months from forecast_inputs('2026-10-01', eat, '2026-10-18')) = array['2026-09-01', '2026-08-01', '2026-07-01']::date[], 'FC-7 a tracked month with £0 spend qualifies; only the three latest are used';
-  assert (select count(*) from forecast_inputs('2026-10-01', eat, '2026-10-18') f, unnest(f.history_daily) x where x <> 0) >= 0, 'FC-7 zero days are present in the history';
-  assert (select cardinality(history_daily) from forecast_inputs('2026-10-01', eat, '2026-10-18')) = 14 + 14 + 13, 'FC-7 every remaining day of each qualifying month contributes a value, zero or not';
 
   -- EC-G13: merging categories carries the limit; two limits are summed
   perform set_budget(groc, 30000, '2026-10-01');
@@ -125,11 +117,10 @@ begin
   assert (select count(*) from budget_for_month('2026-11-01') where category_id = groc) = 0, 'BUD-02 removed from November';
   assert (select amount_pence from budget_for_month('2026-10-01') where category_id = groc) = 70000, 'BUD-02 October keeps the limit';
 
-  -- EC-G10: an expense from before tracking began counts in its own month's spent, never moves a balance, and that month is not history
-  update profiles set tracking_started_on = '2026-06-01' where id = ua;
+  -- EC-G10 / EC-F28: an expense from before tracking began counts in its own month's spent, never moves a balance, and is not history
   perform create_transaction(gen_random_uuid(), 'expense', 3300, acc, null, groc, null, null, '{}', '2026-05-20', null, 'app', false, false, null, false);
-  assert (select spent_pence from forecast_inputs('2026-05-01', groc, '2026-05-31')) = 3300, 'EC-G10 counts in its own month''s spent and limits';
-  assert not ('2026-05-01'::date = any (select unnest(qualifying_months) from forecast_inputs('2026-10-01', null, '2026-10-18'))), 'EC-G10 that month is partial and excluded from forecasts';
+  assert budget_spent('2026-05-01', '2026-05-31', groc) = 3300, 'EC-G10 counts in its own month''s spent and limits';
+  assert (select count(*) from jsonb_array_elements(forecast_input('2026-10-01', '2026-10-18')->'days') e where (e->>'d')::date < '2026-06-01') = 0, 'EC-G10 that month is not history';
 
   -- invariant: budgets never move money
   assert (select balance_pence from account_balances() where account_id = acc) is not null, 'balances still computed';

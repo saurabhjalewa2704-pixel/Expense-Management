@@ -1,0 +1,51 @@
+{
+ "point": 547415,
+ "low": 537127,
+ "high": 557703,
+ "regime": "full",
+ "confidence": "High",
+ "components": {
+  "spent": 421195,
+  "scheduled": 7038,
+  "rest_of_month": 29182,
+  "trips": 90000
+ },
+ "evidence": {
+  "n_completed_days": 19,
+  "weight_this_month": 0.7308,
+  "ratio_actual_vs_usual": 1.1147,
+  "ratio_used": 1.0838,
+  "logged_today": 1840
+ },
+ "prior": {
+  "H": 153,
+  "usual_per_day": 6204,
+  "weekday_profile": true,
+  "month_position_profile": true,
+  "k_eff": 7.0
+ },
+ "days_left": 9,
+ "categories": {
+  "Groceries": {
+   "point": 53028,
+   "rest_of_month": 11066,
+   "weight_this_month": 0.7308
+  },
+  "Eating out": {
+   "point": 59270,
+   "rest_of_month": 11478,
+   "weight_this_month": 0.7308
+  },
+  "Transport": {
+   "point": 18932,
+   "rest_of_month": 3951,
+   "weight_this_month": 0.7308
+  },
+  "Entertainment": {
+   "point": 2497,
+   "rest_of_month": 0,
+   "weight_this_month": 0.2533
+  }
+ },
+ "everything_else": 413688
+}

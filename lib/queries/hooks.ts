@@ -14,7 +14,7 @@ import {
 } from "./fetchers";
 import { qk, type ActivityFilters } from "./keys";
 import { poolFlowsToCome } from "@/lib/budget";
-import { projectedClose } from "@/lib/forecast";
+import { projectedClose } from "@/lib/forecast/measures";
 import { fetchBudgetHistory, fetchBudgetRows, loadBudgetView, loadMonthForecast } from "@/lib/forecast-data";
 
 const db = () => supabaseBrowser();
@@ -251,7 +251,7 @@ export function useProjectedClose() {
     if (!ready) return null;
     const pool = new Set(accounts.data!.filter((a) => a.counts_as_cash).map((a) => a.id));
     const flows = poolFlowsToCome(items.data!, occ.data!, pool, month, holidays.data);
-    return projectedClose(flow.data!.closing_pence, forecast.data!.forecast, flows.transfersOut, flows.incomeIn);
+    return projectedClose(flow.data!.closing_pence, forecast.data!.view, flows.transfersOut, flows.incomeIn);
   }, [ready, forecast.data, flow.data, items.data, occ.data, accounts.data, holidays.data, month]);
-  return { value, month, today, forecast: forecast.data?.forecast ?? null, loading: !ready };
+  return { value, month, today, forecast: forecast.data?.view ?? null, loading: !ready };
 }

@@ -41,7 +41,7 @@ begin
   assert (select count(*) from spend_by_category('2026-10-01', '2026-10-18', p_level => 'leaf') where is_fixed) = 6, 'Fixed costs · 6';
   select * into r from spend_by_category('2026-10-01', '2026-10-18') where name = 'Eating out';
   assert r.total_pence = 31260 and r.txn_count = 21 and r.total_pence / r.txn_count = 1488, r::text;  -- £14.88 (truncated)
-  assert (select array_agg(month::text || ':' || total_pence order by month) from category_monthly((select id from categories where name = 'Eating out'), 6))
+  assert (select array_agg(month::text || ':' || total_pence order by month) from category_monthly((select id from categories where name = 'Eating out'), 7) where month between '2026-05-01' and '2026-10-01')
        = array['2026-05-01:21840','2026-06-01:24310','2026-07-01:33120','2026-08-01:28760','2026-09-01:26410','2026-10-01:31260'];
   assert (select name from top_places('2026-10-01', '2026-10-18', 3, (select id from categories where name = 'Eating out')) limit 1) = 'Dishoom Kensington';
   -- invariant 6 over several ranges
@@ -81,7 +81,7 @@ begin
   assert (select txn_count from transaction_totals(p_from => '2026-10-01', p_to => '2026-10-18')) = 52, 'linking bills does not change the Appendix A transaction count';
 
   -- six months of history, and the invariant holds on it
-  assert (select count(*) from monthly_totals(7) where spend_pence > 0) = 7;
+  assert (select count(*) from monthly_totals(8) where spend_pence > 0 and month <= '2026-10-01') = 7;
   for n in 1..30 loop
     select * into r from cash_flow('2026-04-01'::date + (n * 5), '2026-04-01'::date + (n * 5) + 20);
     assert r.opening_pence + r.income_pence - r.spend_pence + r.set_aside_pence + r.adjust_pence = r.closing_pence, 'identity on seed range ' || n;
