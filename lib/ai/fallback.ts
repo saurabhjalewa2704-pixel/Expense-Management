@@ -6,6 +6,13 @@ import type { Card, Fact, Facts } from "./types";
 
 const clip = (s: string, n: number) => (s.length <= n ? s : `${s.slice(0, n - 1).trimEnd()}…`);
 
+/** How a card should refer to its period: a month in progress is "so far"; a finished week or month is named, never "so far". */
+export function periodWords(facts: Facts): { when: string; typical: string; short: string } {
+  if (facts.scope === "weekly") return { when: "last week", typical: "in a typical week", short: "last week" };
+  if (facts.scope === "monthly") { const m = facts.period.label; return { when: `in ${m}`, typical: "in a typical month", short: `in ${m}` }; }
+  return { when: "so far", typical: "by this point in a typical period", short: "this month" };
+}
+
 export function fallbackCards(facts: Facts): Card[] {
   const by = new Map(facts.facts.map((f) => [f.key, f]));
   const get = (k: string): Fact | undefined => by.get(k);
@@ -27,6 +34,7 @@ export function fallbackCards(facts: Facts): Card[] {
   }
 
   // anomalies and wins, per category
+  const pw = periodWords(facts);
   for (const f of facts.facts.filter((x) => x.key.endsWith(":pct_over")).slice(0, 2)) {
     const slug = f.key.split(":")[1]!;
     const total = get(`cat:${slug}:total`), usual = get(`cat:${slug}:usual`), name = f.label;
@@ -34,8 +42,8 @@ export function fallbackCards(facts: Facts): Card[] {
     const e = entity(name);
     add({
       key: `anomaly:${slug}:${facts.period.to.slice(0, 7)}`, type: "anomaly", severity: "caution",
-      title: clip(`${name} is running ${f.display} above your usual`, 70),
-      body: clip(`${total.display} so far, against about ${usual.display} by this point in a typical period.`, 220),
+      title: clip(facts.scope === "adhoc" ? `${name} is running ${f.display} above your usual` : `${name} was ${f.display} above your usual ${pw.short}`, 70),
+      body: clip(`${total.display} ${pw.when === "so far" ? "so far" : `spent ${pw.when}`}, against about ${usual.display} ${pw.typical}.`, 220),
       metric: { fact_key: `cat:${slug}:total`, delta_fact_key: `cat:${slug}:usual` }, viz: "bar_compare", link: e ? { kind: "category", id: e.id } : undefined,
     });
   }
@@ -47,7 +55,7 @@ export function fallbackCards(facts: Facts): Card[] {
     add({
       key: `win:${slug}:${facts.period.to.slice(0, 7)}`, type: "win", severity: "positive",
       title: clip(`${f.label} is your lowest in ${f.display} months: ${total.display}`, 70),
-      body: clip(`${total.display} so far, less than in any of the previous ${f.display} comparable periods.`, 220),
+      body: clip(`${total.display} ${pw.when === "so far" ? "so far" : `spent ${pw.when}`}, less than in any of the previous ${f.display} comparable periods.`, 220),
       metric: { fact_key: `cat:${slug}:total` }, link: e ? { kind: "category", id: e.id } : undefined,
     });
   }

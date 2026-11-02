@@ -94,7 +94,7 @@ function Detail({ v, daily, onWhy }: { v: NonNullable<ReturnType<typeof useBudge
           <div className="kpis" style={{ marginTop: 12 }}>
             <div className="kpi" data-testid="tile-safe"><div className="k">Safe to spend</div><div className="v">{formatGBP(o.safePerDay)}/day</div><div className="s">{over ? "Over budget: anything more adds to the overspend" : `${f.daysLeft} days left incl. today`}</div></div>
             <div className="kpi" data-testid="tile-usual"><div className="k">Your usual pace</div><div className="v">{f.available ? `${formatGBP(f.expectedPerDay)}/day` : "–"}</div><div className="s">{v.forecast.prior.historyDays > 0 ? "from your history, adjusted for this month" : "this month so far"}</div></div>
-            <div className="kpi" data-testid="tile-plan"><div className="k">Against plan</div><div className="v" style={{ color: o.againstPlan >= 0 ? "var(--positive)" : "var(--caution)" }}>{formatGBP(Math.abs(o.againstPlan))} {o.againstPlan >= 0 ? "under" : "over"}</div><div className="s">{o.pctSpent}% spent{o.againstPlan >= 0 ? " is mostly bills" : ""}</div></div>
+            <div className="kpi" data-testid="tile-plan"><div className="k">Against plan so far</div><div className="v" style={{ color: o.againstPlan >= 0 ? "var(--positive)" : "var(--caution)" }}>{formatGBP(Math.abs(o.againstPlan))} {o.againstPlan >= 0 ? "under" : "over"}</div><div className="s">{o.pctSpent}% spent{o.againstPlan >= 0 ? " is mostly bills" : ""}</div></div>
             <div className="kpi" data-testid="tile-bills"><div className="k">Bills to come</div><div className="v">{formatGBP(o.billsToCome)}</div><div className="s">{o.billsToCome > 0 ? "still to be paid this month" : "nothing else due"}</div></div>
           </div>
         )}

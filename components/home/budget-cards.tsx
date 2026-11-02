@@ -43,8 +43,13 @@ export function BudgetCard() {
         </div>
         <div className="bg-sub" style={{ position: "relative", pointerEvents: "none" }} data-testid="budget-sub">
           {o.pctSpent}% spent · {v.monthPct}% of the month gone ·{" "}
-          <span className={planGap >= 0 ? "pos" : "cau"}>{whole(Math.abs(planGap))} {planGap >= 0 ? "under" : "over"} plan</span>
+          <span className={planGap >= 0 ? "pos" : "cau"}>{whole(Math.abs(planGap))} {planGap >= 0 ? "under" : "over"} plan so far</span>
         </div>
+        {f.available && !f.closed && o.variance > 0 && planGap >= 0 && (
+          <div className="sub cau-t" style={{ position: "relative", pointerEvents: "none", marginTop: 6, lineHeight: 1.4 }} data-testid="plan-vs-forecast">
+            Under plan so far, but your usual pace of {formatGBP(f.expectedPerDay)} a day is above the {formatGBP(o.safePerDay)} a day you can spend: heading {whole(o.variance)} over by month end.
+          </div>
+        )}
         <div style={{ position: "relative", pointerEvents: "none" }}><BudgetMeter v={o} /></div>
         <div className="kpis" style={{ position: "relative" }}>
           <div className="kpi" style={{ pointerEvents: "none" }} data-testid="safe-to-spend">
@@ -59,7 +64,7 @@ export function BudgetCard() {
               return (
                 <>
                   <div className="v" data-testid="forecast-figure">{d.approx ? "≈ " : ""}{d.approx ? whole(d.pence) : whole(d.pence)}</div>
-                  <div className="s" style={{ color: o.variance > 0 ? "var(--caution)" : "var(--positive)" }}>{o.variance > 0 ? `${whole(o.variance)} over` : `${whole(o.headroom)} headroom`}{f.confidence === "Low" ? " · Low confidence" : ""}</div>
+                  <div className="s" style={{ color: o.variance > 0 ? "var(--caution)" : "var(--positive)" }}>{o.variance > 0 ? `${whole(o.variance)} over budget` : `${whole(o.headroom)} headroom`}{f.confidence === "Low" ? " · Low confidence" : ""}</div>
                 </>
               );
             })() : (
