@@ -5,6 +5,7 @@ import { useState } from "react";
 import { BudgetMeter, LimitRow, StatusPill } from "@/components/budget/parts";
 import { ForecastWhySheet } from "@/components/budget/forecast-why";
 import { formatDayMonth, formatMonth, monthEnd } from "@/lib/dates";
+import { displayPoint } from "@/lib/forecast/view";
 import { UI } from "@/lib/icons";
 import { formatGBP } from "@/lib/money";
 import { useBudgetView, useToday } from "@/lib/queries/hooks";
@@ -53,15 +54,18 @@ export function BudgetCard() {
           </div>
           <button className="kpi" data-testid="forecast-kpi" onClick={() => setWhy(true)} aria-label="Why this forecast?">
             <div className="k">Forecast · {formatDayMonth(monthEnd(today))}</div>
-            {f.available ? (
+            {f.available ? (() => {
+              const d = displayPoint(f.forecast, f.confidence);
+              return (
+                <>
+                  <div className="v" data-testid="forecast-figure">{d.approx ? "≈ " : ""}{d.approx ? whole(d.pence) : whole(d.pence)}</div>
+                  <div className="s" style={{ color: o.variance > 0 ? "var(--caution)" : "var(--positive)" }}>{o.variance > 0 ? `${whole(o.variance)} over` : `${whole(o.headroom)} headroom`}{f.confidence === "Low" ? " · Low confidence" : ""}</div>
+                </>
+              );
+            })() : (
               <>
-                <div className="v">{whole(f.forecast)}</div>
-                <div className="s" style={{ color: o.variance > 0 ? "var(--caution)" : "var(--positive)" }}>{o.variance > 0 ? `${whole(o.variance)} over` : `${whole(o.headroom)} headroom`}{f.confidence === "low" ? " · Low confidence" : ""}</div>
-              </>
-            ) : (
-              <>
-                <div className="v">–</div>
-                <div className="s">{f.unavailableReason}</div>
+                <div className="v" data-testid="forecast-figure">At least {whole(f.floor)}</div>
+                <div className="s">Forecast after 3 days of logging</div>
               </>
             )}
           </button>

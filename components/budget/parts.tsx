@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { LimitView } from "@/lib/budget";
-import type { BudgetStatus } from "@/lib/forecast";
+import type { BudgetStatus } from "@/lib/forecast/measures";
 import { CategoryIcon } from "@/lib/icons";
 import { formatGBP } from "@/lib/money";
 
@@ -22,7 +22,7 @@ export function BudgetMeter({ v }: { v: LimitView }) {
   const scale = Math.max(v.amount, f.forecast, v.spent, 1) * 1.04;
   const w = (p: number) => `${Math.max(0, Math.min(100, (p / scale) * 100))}%`;
   const spent = Math.max(0, v.spent);
-  const bills = Math.min(f.billsToCome, Math.max(0, f.forecast - spent));
+  const bills = Math.min(f.scheduled, Math.max(0, f.forecast - spent));
   const rest = Math.max(0, f.forecast - spent - bills);
   return (
     <>

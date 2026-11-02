@@ -25,6 +25,8 @@ import { useKeyboardInset } from "@/lib/use-keyboard-inset";
 import { useIsDesktop } from "@/lib/use-media";
 import { AccountPicker, DateSheet, NoteSheet } from "./pickers";
 import { PotPicker } from "./pot-picker";
+import { OneOffBlock } from "@/components/forecast/one-off";
+import { PlannedMatch } from "@/components/forecast/planned-match";
 import { usePots } from "@/lib/queries/hooks";
 import { CategoryPicker } from "./category-picker";
 import { CurrencySheet, PoundsSheet, TripPicker } from "./trip-fx";
@@ -587,6 +589,9 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
               <BalanceFlagBlock account={account} accountName={account?.name ?? "account"} date={date} counts={effCounts} editing={!!editing} trackingStart={profile?.tracking_started_on} tripName={selTrip?.name}
                 onAnswer={setFlagAnswer} />
             )}
+
+            {editing && !editing.pending && mode === "expense" && !potId && <OneOffBlock id={editing.id} category={tree.byId.get(tree.root(categoryId ?? "")?.id ?? "")?.name} />}
+            {editing && !editing.pending && mode === "expense" && <PlannedMatch txn={{ id: editing.id, amount_pence: editing.amount_pence, occurred_on: editing.occurred_on, category_id: categoryId, payee_name: payee, note }} />}
 
             {potId && mode !== "transfer" && <p className="sub" data-testid="pot-note" style={{ margin: "8px 2px 0" }}>In “{potName}”. No category needed. Kept out of monthly spend.</p>}
 

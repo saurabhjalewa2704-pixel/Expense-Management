@@ -1,0 +1,28 @@
+{
+ "point": 275299,
+ "low": 252312,
+ "high": 298286,
+ "regime": "this-month-only",
+ "confidence": "Low",
+ "components": {
+  "spent": 176400,
+  "scheduled": 1299,
+  "rest_of_month": 97600,
+  "trips": 0
+ },
+ "evidence": {
+  "n_completed_days": 4,
+  "weight_this_month": 1.0,
+  "ratio_actual_vs_usual": null,
+  "ratio_used": 1.0,
+  "logged_today": 1200
+ },
+ "prior": {
+  "H": 0,
+  "usual_per_day": null,
+  "weekday_profile": false,
+  "month_position_profile": false,
+  "k_eff": null
+ },
+ "days_left": 26
+}

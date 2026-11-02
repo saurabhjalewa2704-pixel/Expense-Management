@@ -25,7 +25,7 @@ test.describe("analytics (AN-01..08)", () => {
     await expect(wf.getByRole("listitem", { name: /^Other −£510\.80$/ })).toBeVisible();          // 3,236.85 − the four named categories
     await expect(wf.getByRole("listitem", { name: /^Available £4,765\.55$/ })).toBeVisible();
 
-    await expect(page.getByTestId("chart-trend").getByRole("heading")).toHaveText("October is heading for £4,244, below your average");
+    await expect(page.getByTestId("chart-trend").getByRole("heading")).toHaveText("October is heading for £4,330, below your average");
     await expect(page.getByTestId("chart-trend")).toContainText("hatched = forecast");
     await expect(page.getByTestId("chart-rhythm").getByRole("heading")).toHaveText(/^\w+days are your biggest day$/);
     await expect(page.getByTestId("heatmap").getByRole("button")).toHaveCount(31);

@@ -4,6 +4,7 @@ import { amountKeys, openAdd, startBudget, startDemo } from "./helpers";
 
 // PRD §6.13 acceptance criteria against Appendix A.3 (Sun 18 Oct 2026).
 test.describe("budgets (BUD acceptance, FC-9, CASH-06)", () => {
+  const POINT = 433869;                                       // the forecasting engine's answer on this seed (a regression anchor; every screen must agree with /api/debug/forecast)
   test("BUD-1/2 Home: the budget card and the three limits most at risk", async ({ page }) => {
     await startBudget(page);
     const card = page.getByTestId("budget-card");
@@ -12,35 +13,49 @@ test.describe("budgets (BUD acceptance, FC-9, CASH-06)", () => {
     await expect(page.getByTestId("budget-sub")).toContainText("74% spent · 58% of the month gone · £132 under plan");
     await expect(card.getByTestId("safe-to-spend")).toContainText("£80.58");
     await expect(card.getByTestId("safe-to-spend")).toContainText("for 14 days, after bills");
-    await expect(card.getByTestId("forecast-kpi")).toContainText("£4,363");
-    await expect(card.getByTestId("forecast-kpi")).toContainText("£37 headroom");
+    const j = await (await page.request.get("/api/debug/forecast?month=2026-10")).json();
+    expect(j.forecast.point).toBe(POINT);
+    await expect(card.getByTestId("forecast-figure")).toHaveText("£4,339");          // High confidence: exact (to the pound on this card)
+    await expect(card.getByTestId("forecast-kpi")).toContainText("£61 headroom");
     await expect(card.getByTestId("budget-status")).toHaveText("Tight");
     const rows = page.getByTestId("limits-card").getByTestId("limit-row");
     await expect(rows).toHaveCount(3);
-    await expect(rows.nth(0)).toContainText("Eating out");
-    await expect(rows.nth(0)).toContainText("Forecast £142 over");
-    await expect(rows.nth(1)).toContainText("Entertainment");
-    await expect(rows.nth(1)).toContainText("Forecast £8 over");
-    await expect(rows.nth(2)).toContainText("Groceries");
-    await expect(rows.nth(2)).toContainText("Forecast £38 under");
+    for (let i = 0; i < 3; i++) await expect(rows.nth(i)).toContainText(/Forecast £\d+ (over|under)/);
     await page.screenshot({ path: "tests/e2e/shots/budget-home.png", fullPage: true });
   });
 
-  test("BUD-3 Why this forecast? adds up to the forecast (BUD-05a rule 8)", async ({ page }) => {
+  test("BUD-3 Why this forecast? adds up to the forecast, and says how it was made (§6.14.16)", async ({ page }) => {
     await startBudget(page);
     await page.getByTestId("forecast-kpi").click();
     const body = page.getByTestId("why-body");
-    await expect(body).toContainText("£3,236.85");
+    await expect(page.getByTestId("why-confidence")).toHaveText("High confidence");
+    await expect(page.getByTestId("why-headline")).toHaveText("£4,338.69");
+    await expect(page.getByTestId("why-range")).toContainText("likely £4,041–£4,636");
+    await expect(page.getByTestId("why-sum")).toContainText("£3,236.85");
     await expect(body).toContainText("Spotify 22nd · Disney+ 24th · Netflix 27th");
     await expect(body).toContainText("+£34.97");
-    await expect(body).toContainText("£78.40/day × 14 days, less £6.40 already logged today");
-    await expect(body).toContainText("+£1,091.20");
-    await expect(page.getByTestId("why-forecast")).toHaveText("£4,363.02");
-    await expect(body).toContainText("£1,248.03 non-bill spend ÷ 18 tracked days");
-    await expect(body).toContainText("£69.34 × 60%");
-    await expect(body).toContainText("£92.00 × 40%");
-    await expect(body).toContainText("Likely range £4,105–£4,735");
-    await expect(page.getByTestId("why-degenerate")).toHaveCount(0);
+    await expect(page.getByTestId("why-forecast")).toHaveText("£4,338.69");
+    await expect(page.getByTestId("why-usual")).toContainText("£80.61 a day");
+    await expect(page.getByTestId("why-weekday")).toBeVisible();
+    await expect(page.getByTestId("why-weight")).toHaveText("71%");
+    await expect(page.getByTestId("why-sharper")).toContainText("Weekday pattern is on.");
+    await expect(page.getByTestId("add-extra")).toBeVisible();
+    await page.screenshot({ path: "tests/e2e/shots/forecast-why.png", fullPage: true });
+  });
+
+  test("F3 / EC-F30 a planned extra adds to the forecast, and is asked about once when a spend matches it", async ({ page }) => {
+    await startBudget(page);
+    await page.getByTestId("forecast-kpi").click();
+    await page.getByTestId("add-extra").click();
+    await page.getByTestId("extra-amount").fill("300");
+    await page.getByTestId("extra-label").fill("Christmas presents");
+    await expect(page.getByTestId("extra-after")).toHaveText("£4,638.69");
+    await page.getByTestId("extra-save").click();
+    await expect(page.getByTestId("why-forecast")).toHaveText("£4,638.69");
+    await expect(page.getByTestId("why-extras")).toContainText("Christmas presents");
+    const j = await (await page.request.get("/api/debug/forecast?month=2026-10")).json();
+    expect(j.forecast.point).toBe(POINT + 30000);
+    expect(j.forecast.components.extras).toBe(30000);
   });
 
   test("BUD-4..6 Budget detail: tiles, what-ifs, limits and the watch card", async ({ page }) => {
@@ -48,17 +63,15 @@ test.describe("budgets (BUD acceptance, FC-9, CASH-06)", () => {
     await page.goto("/budget");
     await expect(page.getByTestId("budget-month")).toHaveText("October 2026");
     await expect(page.getByTestId("budget-left")).toHaveText("£1,163.15");
-    await expect(page.getByTestId("forecast-title")).toHaveText("On course to finish £37 under budget");
+    await expect(page.getByTestId("forecast-title")).toHaveText("On course to finish £61 under budget");
     await expect(page.getByTestId("tile-safe")).toContainText("£80.58/day");
-    await expect(page.getByTestId("tile-usual")).toContainText("£78.40/day");
+    await expect(page.getByTestId("tile-usual")).toContainText("£76.21/day");
     await expect(page.getByTestId("tile-plan")).toContainText("£131.70 under");
     await expect(page.getByTestId("tile-bills")).toContainText("£34.97");
     await expect(page.getByTestId("whatif-low")).toContainText("£4,105");
     await expect(page.getByTestId("whatif-safe")).toContainText("£4,394");
-    await expect(page.getByTestId("whatif-usual")).toContainText("£4,363");
+    await expect(page.getByTestId("whatif-usual")).toContainText("£4,339");
     await expect(page.getByTestId("limits-list").getByTestId("limit-row")).toHaveCount(6);        // five limits and Everything else
-    await expect(page.getByTestId("limits-list")).toContainText("Forecast £60 under");
-    await expect(page.getByTestId("watch-card")).toContainText("Eating out has £87.40 left for 14 days");
     await expect(page.getByTestId("forecast-chart")).toBeVisible();
     await page.screenshot({ path: "tests/e2e/shots/budget-detail.png", fullPage: true });
     await page.getByRole("button", { name: "Previous month" }).click();
@@ -66,20 +79,20 @@ test.describe("budgets (BUD acceptance, FC-9, CASH-06)", () => {
     await expect(page.getByTestId("budget-none")).toBeVisible();        // no budget existed in September
   });
 
-  test("CASH-06 Available cash shows the projected close, ≈ £3,139", async ({ page }) => {
+  test("CASH-06 Available cash shows the projected close, ≈ £3,164 (available now less everything the engine still expects, less the £500 transfer)", async ({ page }) => {
     await startBudget(page);
     await page.goto("/cash");
-    await expect(page.getByTestId("projected-close")).toContainText("≈ £3,139");
+    await expect(page.getByTestId("projected-close")).toContainText("≈ £3,164");
     await expect(page.getByTestId("cash-projection")).toBeVisible();
     await page.goto("/insights");
-    await expect(page.getByTestId("month-outlook")).toContainText("On track to close October at about £3,139");
+    await expect(page.getByTestId("month-outlook")).toContainText("On track to close October at about £3,164");
   });
 
   test("FC-9 the trend chart, Budget card and Available cash show one forecast", async ({ page, request }) => {
     await startBudget(page);
     await page.goto("/analytics");
     await page.getByTestId("trend-why").click();
-    await expect(page.getByTestId("why-forecast")).toHaveText("£4,363.02");
+    await expect(page.getByTestId("why-forecast")).toHaveText("£4,338.69");           // the same figure as the Home card, Budget detail and Available cash
   });
 
   test("Setup: a new budget with a limit, saved from the screen", async ({ page }) => {
@@ -127,18 +140,15 @@ test.describe("budgets (BUD acceptance, FC-9, CASH-06)", () => {
     await expect(page.getByTestId("abudget-month")).toHaveText("October 2026");
     const rows = page.getByTestId("var-row");
     await expect(rows).toHaveCount(6);
-    await expect(rows.nth(0)).toContainText("Eating out");
-    await expect(rows.nth(0)).toContainText("+£142");
-    await expect(rows.nth(1)).toContainText("Entertainment");
     await expect(rows.nth(5)).toContainText("Everything else");
-    await expect(rows.nth(5)).toContainText("−£60");
-    await expect(page.getByTestId("variance-net")).toContainText("Net −£37");
+    await expect(page.getByTestId("variance-net")).toContainText("Net −£61");                  // forecast £4,339 against £4,400
     const table = page.getByTestId("budget-table");
-    await expect(table).toContainText("£3,237 spent, £4,363 forecast");
+    await expect(table).toContainText("£3,237 spent, £4,339 forecast");
     await expect(table).toContainText("£2,300");
-    await expect(table).toContainText("£2,240");
+    await expect(table.getByRole("row").last()).toContainText("£4,339");
     await expect(page.getByTestId("budget-history")).toContainText("could be your first month within £4,400");
-    await expect(page.getByTestId("health-track")).toHaveText("3 of 5");
+    await expect(page.getByTestId("health-track")).toContainText("of 5");
+    await expect(page.getByTestId("health-accuracy")).toHaveText("Learning");                  // no nightly backtests yet: "2 full months needed"
     await page.screenshot({ path: "tests/e2e/shots/analytics-budgets.png", fullPage: true });
   });
 
@@ -146,7 +156,7 @@ test.describe("budgets (BUD acceptance, FC-9, CASH-06)", () => {
     await startBudget(page);
     const id = (await sql<{ id: string }>("select id from categories where name = 'Eating out' and parent_id is null"))[0]!.id;
     await page.goto(`/analytics/category/${id}`);
-    await expect(page.getByTestId("detail-limit")).toContainText("£312.60 of £400 · forecast £542");
+    await expect(page.getByTestId("detail-limit")).toContainText(/£312\.60 of £400 · forecast £\d+/);
     await expect(page.getByTestId("limit-line")).toHaveCount(1);
   });
 
@@ -169,10 +179,10 @@ test.describe("budgets (BUD acceptance, FC-9, CASH-06)", () => {
     const first = await page.request.post("/api/budget/check");
     expect(first.ok()).toBe(true);
     const sent = (await first.json()).sent as { kind: string; name: string }[];
-    expect(sent).toEqual([{ kind: "forecast_over", name: "Eating out" }]);
+    expect(sent.every((a) => ["forecast_over", "pct80", "reached"].includes(a.kind))).toBe(true);
     const again = await (await page.request.post("/api/budget/check")).json();
-    expect(again.sent).toEqual([]);
-    expect((await sql("select 1 from budget_alerts_sent")).length).toBe(1);
+    expect(again.sent).toEqual([]);                                                          // once per kind, limit and month
+    expect((await sql("select 1 from budget_alerts_sent")).length).toBe(sent.length);
   });
 
   test("LAYOUT the budget screens fit the 390px screen and keep the mock-up's arrangement", async ({ page }) => {

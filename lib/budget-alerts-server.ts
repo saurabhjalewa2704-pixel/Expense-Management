@@ -41,7 +41,7 @@ export async function runBudgetAlerts(db: SupabaseClient, userId: string, today:
     const day = dayOfMonth(today);
     const rows = [view.overall, ...view.limits].filter((l) => l.forecast.available).map((l) => ({
       user_id: userId, month, day, category_id: l.categoryId, spent_pence: l.spent, forecast_pence: l.forecast.forecast, low_pence: l.forecast.low, high_pence: l.forecast.high,
-      notes: l.forecast.degenerate ? `forecast_degenerate ${JSON.stringify({ spent: l.spent, billsToCome: l.billsToCome, daysLeft: l.forecast.daysLeft, paceThis: l.forecast.paceThis })}` : null,
+      notes: null,
     }));
     for (const r of rows) {
       const q = db.from("budget_forecast_log").delete().eq("month", month).eq("day", day);

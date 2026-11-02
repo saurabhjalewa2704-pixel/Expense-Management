@@ -133,7 +133,7 @@ function SpendingScreen({ tabs }: { tabs: React.ReactNode }) {
   const monthSpendSoFar = totals.data?.find((t) => t.month === thisMonth)?.spend_pence ?? 0;
   // AN-04: the hatched bar is the one forecast engine's answer (lib/forecast.ts); with too little data there is no bar, only a note
   const monthForecast = useMonthForecast(thisMonth, null, p.kind === "month" && p.isCurrent);
-  const fc = p.kind === "month" && p.isCurrent ? monthForecast.data?.forecast : undefined;
+  const fc = p.kind === "month" && p.isCurrent ? monthForecast.data?.view : undefined;
   const projected = fc && fc.available && !fc.closed ? fc.forecast : null;
   const [why, setWhy] = useState(false);
   const bars = trendBars(totals.data ?? [], thisMonth, projected);
@@ -218,7 +218,7 @@ function SpendingScreen({ tabs }: { tabs: React.ReactNode }) {
         </ChartCard>
 
         <ChartCard testId="chart-trend" loading={totals.isLoading} empty={past.length === 0 && monthSpendSoFar === 0}
-          finding={trendTitle} sub={first && lastBar ? `Monthly spend, ${formatMonthYear(first.month).replace(/(\w+) (\d+)/, "$1 $2").slice(0, 3)} ${first.month.slice(0, 4)} – ${formatMonthYear(lastBar.month).slice(0, 3)} ${lastBar.month.slice(0, 4)}${projected !== null ? " · hatched = forecast" : fc && !fc.available ? ` · ${fc.unavailableReason}` : ""}${partialBars.length ? " · Partial: before tracking" : ""}` : "Monthly spend"}
+          finding={trendTitle} sub={first && lastBar ? `Monthly spend, ${formatMonthYear(first.month).replace(/(\w+) (\d+)/, "$1 $2").slice(0, 3)} ${first.month.slice(0, 4)} – ${formatMonthYear(lastBar.month).slice(0, 3)} ${lastBar.month.slice(0, 4)}${projected !== null ? " · hatched = forecast" : fc && !fc.available ? ` · ${fc.message ?? ""}` : ""}${partialBars.length ? " · Partial: before tracking" : ""}` : "Monthly spend"}
           actions={<>
             {projected !== null && <button className="chip plain" style={{ height: 30, fontSize: 12 }} data-testid="trend-why" onClick={() => setWhy(true)}>Why?</button>}
             <button className={`chip plain ${showIncome ? "sel" : ""}`} style={{ height: 30, fontSize: 12 }} aria-pressed={showIncome} onClick={() => setShowIncome((v) => !v)}>Income</button>

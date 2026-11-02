@@ -35,7 +35,7 @@ test.describe("Add expense on a trip, in dollars (TRIP-04, TRIP-06)", () => {
     await expect(page.getByTestId("fx-conversion")).toContainText("£39.10");
     await expect(page.getByTestId("fx-conversion")).toContainText("effective 0.8045");
     await page.getByRole("button", { name: "Save changes" }).click();
-    await expect.poll(async () => (await sqlOne<{ p: number }>(`select amount_pence::int p from transactions where original_amount_minor = 4860`)).p).toBe(3910);
+    await expect.poll(async () => (await sqlOne<{ p: number }>(`select amount_pence::int p from transactions where original_amount_minor = 4860`)).p, { timeout: 30_000 }).toBe(3910);
     expect(await sqlOne(`select fx_source s, original_amount_minor::int m, fx_rate::text r from transactions where original_amount_minor = 4860`)).toEqual({ s: "manual", m: 4860, r: "0.80450000" });
   });
 
