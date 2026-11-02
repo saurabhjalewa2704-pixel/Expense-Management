@@ -21,7 +21,8 @@ const GUIDE = `How to fill the cards:
 - viz: bar_compare needs a metric with a delta_fact_key; spark needs a metric whose fact has a series; otherwise none.
 - link: category or payee ids come from "entities"; for a screen use one of /activity, /analytics, /cash, /insights.
 - rank: 1 is the most important card. key: a stable id such as "anomaly:eating_out:2026-10".
-- Quote "display" values exactly as written, including the £ sign and commas. Never round or reformat them.`;
+- Quote "display" values exactly as written, including the £ sign and commas. Never round or reformat them.
+- Name the period the facts cover. If it is last week or a finished month, say "last week" or the month's name; use "so far" or "this month" only when the period is the month in progress.`;
 
 const TRIP_GUIDE = `How to fill the cards (this is about ONE trip, not the month):
 - Write 2 to 4 cards. type: trip_pace (on budget or at risk, with the projected finish), trip_mix (the largest share of the trip's spending), trip_stop (one stop against another, only if the facts have stop_cmp_pct), trip_compare (this trip against earlier trips, only if the facts have cmp_* values), trip_big (the single largest expense), trip_fx (card fees, only if the facts have fx_fee_total).

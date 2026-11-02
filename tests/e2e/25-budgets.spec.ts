@@ -10,7 +10,7 @@ test.describe("budgets (BUD acceptance, FC-9, CASH-06)", () => {
     const card = page.getByTestId("budget-card");
     await expect(card.getByTestId("budget-left")).toHaveText("£1,163.15");
     await expect(card).toContainText("left of £4,400");
-    await expect(page.getByTestId("budget-sub")).toContainText("74% spent · 58% of the month gone · £132 under plan");
+    await expect(page.getByTestId("budget-sub")).toContainText("74% spent · 58% of the month gone · £132 under plan so far");
     await expect(card.getByTestId("safe-to-spend")).toContainText("£80.58");
     await expect(card.getByTestId("safe-to-spend")).toContainText("for 14 days, after bills");
     const j = await (await page.request.get("/api/debug/forecast?month=2026-10")).json();
@@ -223,5 +223,16 @@ test.describe("budgets (BUD acceptance, FC-9, CASH-06)", () => {
     await page.getByTestId("tab-budgets").click();
     await expect(page.getByTestId("budget-health")).toBeVisible();
     await overflow("analytics budgets");
+  });
+
+  test("under plan so far but heading over: the card says why both are true (owner question, 2 Nov)", async ({ page }) => {
+    await startBudget(page);
+    await sql(`update budgets set amount_pence = 430000 where category_id is null`);
+    await page.goto("/");
+    await expect(page.getByTestId("budget-sub")).toContainText("under plan so far");
+    const note = page.getByTestId("plan-vs-forecast");
+    await expect(note).toContainText("Under plan so far, but your usual pace");
+    await expect(note).toContainText("heading £39 over by month end");
+    await expect(page.getByTestId("forecast-kpi")).toContainText("£39 over budget");
   });
 });

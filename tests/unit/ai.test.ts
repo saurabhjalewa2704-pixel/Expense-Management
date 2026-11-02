@@ -170,3 +170,19 @@ describe("the pipeline: 20 generations, zero ungrounded numbers, at least 3 card
     expect(n.cards.every((c) => c.title.length <= 70)).toBe(true);
   });
 });
+
+describe("a finished week is never described as 'so far' (owner bug, 2 Nov)", () => {
+  it("the weekly digest names last week; only the month in progress says 'so far'", () => {
+    const weekly = assembleFacts({ ...input, scope: "weekly", period: { from: "2026-10-26", to: "2026-11-01", label: "last week (26 Oct to 1 Nov)", compare_label: "the previous four weeks" } });
+    const anomalies = fallbackCards(weekly).filter((c) => c.type === "anomaly");
+    expect(anomalies.length).toBeGreaterThan(0);
+    for (const c of anomalies) {
+      expect(c.body).not.toContain("so far");
+      expect(c.body).toContain("spent last week");
+      expect(c.body).toContain("in a typical week");
+      expect(c.title).toContain("last week");
+    }
+    const adhoc = fallbackCards(assembleFacts(input)).filter((c) => c.type === "anomaly");
+    expect(adhoc[0]!.body).toContain("so far");
+  });
+});
