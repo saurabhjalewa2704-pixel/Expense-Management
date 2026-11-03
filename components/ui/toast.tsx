@@ -9,7 +9,7 @@ interface ToastInput {
   duration?: number;
   tone?: "default" | "error";
 }
-interface ToastState extends ToastInput { id: number }
+interface ToastState extends ToastInput { id: number; leaving?: boolean }
 
 const Ctx = createContext<(t: ToastInput) => void>(() => {});
 export const useToast = () => useContext(Ctx);
@@ -19,13 +19,18 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const idRef = useRef(0);
 
+  // leave with a short fade (150ms) instead of vanishing; a new toast replaces the old one immediately
+  const leave = useCallback((id: number) => {
+    setToast((cur) => (cur?.id === id ? { ...cur, leaving: true } : cur));
+    timer.current = setTimeout(() => setToast((cur) => (cur?.id === id ? null : cur)), 150);
+  }, []);
   const dismiss = useCallback(() => { clearTimeout(timer.current); setToast(null); }, []);
   const show = useCallback((t: ToastInput) => {
     clearTimeout(timer.current);
     const id = ++idRef.current;
     setToast({ ...t, id });
-    timer.current = setTimeout(() => setToast((cur) => (cur?.id === id ? null : cur)), t.duration ?? 6000);
-  }, []);
+    timer.current = setTimeout(() => leave(id), t.duration ?? 6000);
+  }, [leave]);
   useEffect(() => () => clearTimeout(timer.current), []);
 
   return (
@@ -39,7 +44,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               pointerEvents: "auto", display: "flex", alignItems: "center", gap: 12, background: "var(--surface-3)", color: "var(--ink)",
               borderRadius: 14, padding: "12px 12px 12px 16px", fontSize: "var(--t-callout)", fontWeight: 500, maxWidth: 420, width: "100%",
               boxShadow: "inset 0 0 0 1px var(--rule-strong), 0 8px 24px rgba(0,0,0,.4)",
-              animation: "toast-in 220ms var(--spring)",
+              animation: toast.leaving ? "toast-out 150ms var(--ease-in-out) forwards" : "toast-in var(--dur-ui) var(--ease-out)",
             }}
           >
             <span style={{ flex: 1, color: toast.tone === "error" ? "var(--caution)" : undefined }}>{toast.message}</span>

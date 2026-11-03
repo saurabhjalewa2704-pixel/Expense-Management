@@ -56,7 +56,7 @@ export function CashScreen() {
     <div className="scroll" style={{ paddingBottom: 48 }}>
       <PageHeader title="" back="/" backLabel="Home"
         right={<button className="icon-btn" style={{ marginRight: 8 }} aria-label="Pick a date" onClick={() => setPicking(true)}><UI.Calendar size={18} strokeWidth={1.75} aria-hidden /></button>} />
-      <div className="hero" style={{ marginTop: -26 }}>
+      <div className="hero" style={{ marginTop: 6 }}>
         <div className="hero-label" data-testid="cash-label">{cashLabel(cash)}</div>
         {cash === undefined ? <div className="skeleton" style={{ height: 76, width: 280, marginTop: 10 }} aria-busy /> : (
           <div data-testid="cash-figure" aria-label={`Available cash ${formatGBP(f?.closing_pence ?? 0)}`}><Figure pence={cash} xl /></div>

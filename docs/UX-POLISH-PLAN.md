@@ -1,6 +1,6 @@
 # Sterling — UX polish plan
 
-Status: **PROPOSED — awaiting approval. No code has been changed.**
+Status: **APPROVED and implemented on branch `claude/ux-polish-plan`** (see the outcome table at the end and `DECISIONS.md` › UX polish pass). Open questions were resolved on my best judgement, as you asked.
 Audit date: 3 Nov 2026 · Viewport: 390×844 (iPhone, dark-only) · Routes captured: 21 · Skills used: `improve-animations`, `find-animation-opportunities`, `mobile-native`, `apple-design`, `break-ui` (installed from `emilkowalski/skills`; `write-swift` and `animate-expo` excluded).
 
 ## 0. Ground rules for every item below
@@ -188,3 +188,30 @@ Each batch: separate branch/PR, desktop (≥1024) regression check, `npm run typ
 6. **Commit `.claude/skills/` and `skills-lock.json`?** They're currently untracked. Recommended: commit `skills-lock.json` only and keep `.claude/skills/` out of git (or commit both if you want the skills available in every cloud session).
 
 Nothing will be implemented until you approve (or edit) this plan.
+
+
+---
+
+## 10. Outcome (after implementation)
+
+| Item | Result |
+|---|---|
+| P1-1 press feedback | Done (shared CSS block) |
+| P1-2 `touch-action` | Done |
+| P1-3 hit areas ≥ 44 | Done for controls; tap-target scan went from ~170 under-44 targets to about 45 across 21 routes. Remaining ones are the documented exceptions (inputs inside 48px fields, two Save buttons, a few full-width text rows) |
+| P1-4 hover gating | No hover styles exist; nothing added |
+| P1-5 sheet curve | **Plan was wrong:** Vaul already uses 500ms `cubic-bezier(0.32,0.72,0,1)`. Left alone; desktop modal retimed with an exit |
+| P1-6 toast exit | Done (150ms) |
+| P1-7 bars | Done (`clip-path` / `scaleX`) |
+| P1-8 reduced motion | Done (movement off, opacity and colour kept) |
+| P1-9 `/cash` overlap | Done |
+| P2-1 / P2-2 timings | Switch, swipe row, `pane-in`, `gb-in`, toast and modal now use the tokens |
+| P2-3 swipe velocity | Done (0.11 px/ms) |
+| P2-4 tab colour | Done (160ms) |
+| P2-5 overscroll-x | Done |
+| P2-6 user-select | Done |
+| P2-7 subtitles | Decided: keep ellipsis |
+| P2-8 big figures | Already handled by `figureSize` |
+| P2-9 break-ui data sweep | Partly done; see the PR notes |
+| P2-10 chip fade | Decided against (see DECISIONS.md) |
+| §3 #2, #4, #6 | Deferred |

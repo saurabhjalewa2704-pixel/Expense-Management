@@ -119,6 +119,6 @@ describe("more register rows", () => {
     const row = { category_id: "c", name: "Shopping", icon: "shopping-bag", color: "stone" as const, parent_id: null, total_pence: -2500, txn_count: 2, norm_pence: null, parent_name: null, is_fixed: false, is_parent_direct: false, visits: 2 };
     const html = renderToStaticMarkup(CategoryBars({ rows: [row], fixedIds: new Set(), showUsual: false, href: () => "/x", total: 10000 }));
     expect(html).toContain("net refund £25.00");
-    expect(html).toContain("width:0%");
+    expect(html).toContain("--w:0%");
   });
 });

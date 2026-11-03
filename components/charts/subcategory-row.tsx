@@ -1,4 +1,5 @@
 "use client";
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { CategoryIcon, UI } from "@/lib/icons";
 import { deltaFlag, leafLabel } from "@/lib/analytics";
@@ -20,7 +21,7 @@ export function SubcategoryRow({ row, caption, scale, showUsual, href, total }: 
       <span className="chev" aria-hidden><UI.ChevronRight size={14} strokeWidth={2} /></span>
       <div className="sub-cap">{caption}</div>
       <div className="cbar-track" aria-hidden>
-        <div className="b" style={{ width: `${Math.min(100, (row.total_pence / scale) * 100)}%`, background: flag ? "var(--caution)" : undefined, transition: "width 280ms var(--spring)" }} />
+        <div className="b bw" style={{ "--w": `${Math.min(100, (row.total_pence / scale) * 100)}%`, background: flag ? "var(--caution)" : undefined } as CSSProperties} />
         {showUsual && row.norm_pence != null && row.norm_pence > 0 && <div className="n" style={{ left: `${Math.min(100, (row.norm_pence / scale) * 100)}%` }} />}
       </div>
     </Link>

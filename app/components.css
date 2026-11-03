@@ -220,7 +220,7 @@ td + td{padding-left:14px}
 .cat-panes .row + .row::before{left:12px}
 .cat-panes .tile{width:28px;height:28px;border-radius:8px}
 .cat-panes .radio{margin-left:auto}
-.pane-in{animation:pane-in 180ms ease-out}
+.pane-in{animation:pane-in 180ms var(--ease-out)}
 @keyframes pane-in{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.pane-in{animation:none}}
 
@@ -242,7 +242,7 @@ td + td{padding-left:14px}
 
 /* Sub-category analytics (PRD §6.7.1): the view switch, the three-line row, the share bar, the detail screens */
 .view-seg{margin:14px 0 6px}
-.gb-list{animation:gb-in 200ms var(--spring)}
+.gb-list{animation:gb-in var(--dur-ui) var(--ease-out)}
 @keyframes gb-in{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){.gb-list{animation:none}}
 .sub-row{display:grid;grid-template-columns:28px 1fr auto 14px;gap:2px 12px;align-items:center;padding:11px 0}
@@ -464,3 +464,49 @@ td + td{padding-left:14px}
 .var-row .v{font-size:13px;text-align:right;font-variant-numeric:tabular-nums;font-weight:500}
 .bm-two{display:block}
 @media (min-width:1024px){.bm-two{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;align-items:start}}
+
+
+/* ---------- UX polish (docs/UX-POLISH-PLAN.md) ---------- */
+/* P1-2 / P2-6: no tap delay or double-tap zoom; chrome is not selectable (amounts, notes and payees stay selectable) */
+button,a,[role=button],[role=switch],label,summary,.chip,.tab,.tab-add,.key,.icon-btn,.seg > *{touch-action:manipulation}
+.key,.tab,.tab-add,.chip,.icon-btn,.seg > *,.tabbar{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+[role=button],label,summary{-webkit-tap-highlight-color:transparent}
+
+/* P1-1: respond on pointer-down. Small controls scale; wide rows and cards dim instead (scaling a 350px row looks wrong).
+   Only transform/opacity are animated; never `transition: all`. */
+button,a,[role=button],.seg > *{transition:transform var(--dur-press) var(--ease-out),opacity var(--dur-press) var(--ease-out),background-color var(--dur-press) var(--ease-out),color var(--dur-press) var(--ease-out)}
+button:not(:disabled):active,a:active,[role=button]:active{opacity:.7}
+.chip:active,.icon-btn:active,.key:active,.tab:active,.btn:active,.seg > *:active{opacity:1}
+.chip:not(:disabled):active,.icon-btn:not(:disabled):active,.key:not(:disabled):active,.tab:active,.btn:not(:disabled):active,.seg > *:active{transform:scale(.97)}
+.tab-add:active{transform:scale(.96);opacity:1}
+.tab.active{transition:color var(--dur-press) var(--ease-out)}
+
+/* P1-3: >=44px hit areas with unchanged visuals (invisible extension; layout untouched) */
+.icon-btn,.chip,.back,.seg > *,.link,button.link,[role=switch]{position:relative}
+.icon-btn::after,.chip::after,.back::after,.seg > *::after,.link::after,[role=switch]::after{content:"";position:absolute;inset:-4px}
+.period .icon-btn::after{inset:-6px}
+.chip::after{inset:-5px 0}
+.seg > *::after{inset:-6px 0}
+.chip-row .chip::after,.meta .chip::after{inset:-5px 0}
+.back::after{inset:-3px -4px}
+.link::after{inset:-13px -8px}
+[role=switch]::after{inset:-7px -4px}
+
+/* P2-5: a sideways swipe at the end of a chip row must not trigger the browser's back-swipe */
+.chip-row,.chips.nowrap{overscroll-behavior-x:contain}
+
+/* P1-8: reduced motion drops movement but keeps opacity / colour feedback */
+@media (prefers-reduced-motion:reduce){
+  .chip:active,.icon-btn:active,.key:active,.tab:active,.btn:active,.seg > *:active,.tab-add:active{transform:none}
+  .chip:not(:disabled):active,.icon-btn:not(:disabled):active,.key:not(:disabled):active,.btn:not(:disabled):active,.seg > *:active,.tab:active,.tab-add:active{opacity:.7}
+}
+/* P1-7: bars animate by clipping (paint only), never by width (layout); the rounded end is kept */
+.cbar-track .b.bw{width:100%;clip-path:inset(0 calc(100% - var(--w)) 0 0 round 3px);transition:clip-path 280ms var(--ease-out)}
+@media (prefers-reduced-motion:reduce){.cbar-track .b.bw{transition:none}}
+/* P1-3 (cont.): the remaining small controls */
+.avatar,[role=tab],.btn{position:relative}
+.avatar::after,[role=tab]::after,.btn::after{content:"";position:absolute;inset:-4px}
+.btn::after{inset:-4px 0}
+[role=tab]::after{inset:-8px 0}
+.seg > *::after{inset:-8px 0}
+.avatar{touch-action:manipulation}

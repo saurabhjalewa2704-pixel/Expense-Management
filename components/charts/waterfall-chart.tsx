@@ -18,8 +18,8 @@ export function WaterfallChart({ steps, base }: { steps: WaterfallStep[]; base: 
           <div key={s.key} role="listitem" style={{ display: "grid", gridTemplateColumns: "84px 1fr 86px", alignItems: "center", gap: 8, height: 26 }} aria-label={`${s.label} ${formatGBP(s.value, { signed: s.kind !== "total" })}`}>
             <span style={{ fontSize: 13, color: s.kind === "total" ? "var(--ink)" : "var(--ink-2)", fontWeight: s.kind === "total" ? 600 : 400, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.label}</span>
             <div style={{ position: "relative", height: 14 }} aria-hidden>
-              <motion.div initial={{ width: 0 }} animate={{ width: `${width}%` }} transition={{ type: "spring", duration: 0.28, bounce: 0 }}
-                style={{ position: "absolute", left: `${left}%`, top: 0, bottom: 0, borderRadius: 3, background: color }} />
+              <motion.div initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ type: "spring", duration: 0.28, bounce: 0 }}
+                style={{ position: "absolute", left: `${left}%`, width: `${width}%`, transformOrigin: "left", top: 0, bottom: 0, borderRadius: 3, background: color }} />
             </div>
             <span className={`num ${s.kind === "up" ? "pos" : ""}`} style={{ fontSize: 13, textAlign: "right", fontWeight: s.kind === "total" ? 600 : 400 }}>{formatGBP(s.value, { signed: s.kind === "up" })}</span>
           </div>
