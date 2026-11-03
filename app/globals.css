@@ -72,7 +72,7 @@ html { font-family: var(--font); font-feature-settings: "tnum"; }
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; outline: none;
   background: var(--surface); border-radius: var(--r-sheet) var(--r-sheet) 0 0; box-shadow: var(--shadow-sheet);
   padding: 8px var(--gutter) max(env(safe-area-inset-bottom), 34px);
-  max-height: 96dvh; display: flex; flex-direction: column;
+  max-height: var(--sheet-max); display: flex; flex-direction: column;
 }
 .vaul-body { overflow-y: auto; overscroll-behavior: contain; flex: 1; min-height: 0; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
@@ -84,6 +84,8 @@ html { font-family: var(--font); font-feature-settings: "tnum"; }
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
   --dur-press: 160ms;
   --dur-ui: 200ms;
+  /* Sheets stop below the clock / Dynamic Island with a small gap (iOS 26 fades and blurs whatever sits under the status bar) */
+  --sheet-max: calc(100dvh - var(--safe-top) - 12px);
 }
 
 /* Reduced motion: no movement, but opacity and colour still change so state stays visible (P1-8) */

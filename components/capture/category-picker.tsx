@@ -89,7 +89,7 @@ export function CategoryPicker({ open, onOpenChange, kind, selectedId, onSelect,
   const drilled = !desktop && !q && drill ? tree.byId.get(drill) : undefined;
 
   return (
-    <Sheet open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) { setQuery(""); setDrill(null); } }} nested title="Choose a category" maxHeight="92dvh">
+    <Sheet open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) { setQuery(""); setDrill(null); } }} nested title="Choose a category" maxHeight="var(--sheet-max)">
       <div className="vaul-body">
         <div className="sheet-head">
           {drilled

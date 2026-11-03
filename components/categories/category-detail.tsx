@@ -134,7 +134,7 @@ function MergeSheet({ open, onOpenChange, source, onDone }: { open: boolean; onO
     await onDone(target);
   };
   return (
-    <Sheet open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) { setTarget(null); setError(undefined); } }} title="Merge into another category" maxHeight="92dvh">
+    <Sheet open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) { setTarget(null); setError(undefined); } }} title="Merge into another category" maxHeight="var(--sheet-max)">
       <div className="vaul-body">
         <div className="sheet-head"><button className="txt" onClick={() => onOpenChange(false)}>Cancel</button><span className="t">Merge into…</span><span /></div>
         <p className="sub" style={{ marginBottom: 12 }}>Every transaction in {source.name} moves to the category you choose{kids.length ? ", and its sub-categories move under it" : ""}, then {source.name} is archived.</p>

@@ -38,7 +38,7 @@ function MobileSheet({ open, onOpenChange, title, children, nested, dismissible 
         <Drawer.Overlay />
         <Drawer.Content
           className={`vaul-content ${className ?? ""}`}
-          style={{ bottom: bottomInset, maxHeight: maxHeight ?? "96dvh" }}
+          style={{ bottom: bottomInset, maxHeight: maxHeight ?? "var(--sheet-max)" }}
         >
           {handle && <Drawer.Handle className="grabber" style={{ background: "var(--surface-3)", height: 5, width: 36, margin: "0 auto 14px", opacity: 1 }} />}
           <Drawer.Title className="sr-only">{title}</Drawer.Title>

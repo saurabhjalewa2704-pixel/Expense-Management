@@ -35,7 +35,7 @@ export function ExtraSheet({ open, onOpenChange, month, data }: { open: boolean;
   };
   return (
     <Sheet open={open} onOpenChange={onOpenChange} title="Something you’re planning" nested>
-      <div className="vaul-body" data-testid="extra-sheet" style={{ maxHeight: "calc(96dvh - 36px)", overflowY: "auto" }}>
+      <div className="vaul-body" data-testid="extra-sheet" style={{ maxHeight: "calc(var(--sheet-max) - 36px)", overflowY: "auto" }}>
         <div className="sheet-head">
           <button className="txt" onClick={() => onOpenChange(false)}>Cancel</button><span className="t">Something you’re planning</span>
           <button className="txt" data-testid="extra-save" disabled={!valid} style={{ color: "var(--ink)", fontWeight: 600, opacity: valid ? 1 : 0.4 }} onClick={save}>Add</button>

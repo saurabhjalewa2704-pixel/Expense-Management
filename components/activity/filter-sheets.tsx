@@ -102,7 +102,7 @@ export function CategoriesFilterSheet({ open, onOpenChange, value, onChange }: {
   };
   const toggleOne = (id: string) => onChange(set.has(id) ? value.filter((v) => v !== id) : [...value, id]);
   return (
-    <Sheet open={open} onOpenChange={onOpenChange} title="Filter by category" maxHeight="92dvh">
+    <Sheet open={open} onOpenChange={onOpenChange} title="Filter by category" maxHeight="var(--sheet-max)">
       <div className="vaul-body">
         <div className="sheet-head"><button className="txt" onClick={() => onChange([])}>Clear</button><span className="t">Category</span><button className="txt" style={{ color: "var(--ink)", fontWeight: 600 }} onClick={() => onOpenChange(false)}>Done</button></div>
         <div className="seg" role="tablist" aria-label="Category type" style={{ marginBottom: 14 }}>
