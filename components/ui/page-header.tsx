@@ -10,7 +10,7 @@ export function PageHeader({ title, back, backLabel, right }: { title: string; b
         {back && <Link className="back" href={back}><UI.ChevronLeft size={22} strokeWidth={1.75} aria-hidden />{backLabel ?? "Back"}</Link>}
         {right}
       </div>
-      <h1 className="large-title">{title}</h1>
+      {title ? <h1 className="large-title">{title}</h1> : null}
     </>
   );
 }

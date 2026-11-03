@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import type { LimitView } from "@/lib/budget";
 import type { BudgetStatus } from "@/lib/forecast/measures";
 import { CategoryIcon } from "@/lib/icons";
+import { useFirstPaint } from "@/lib/first-paint";
 import { formatGBP } from "@/lib/money";
 
 const whole = (p: number) => formatGBP(p, { whole: true });
@@ -18,6 +19,7 @@ export function StatusPill({ status }: { status: BudgetStatus }) {
 
 /** Spent (solid), bills still to come (hatched), the rest of the forecast (outlined), the plan-by-today tick and the budget tick. */
 export function BudgetMeter({ v }: { v: LimitView }) {
+  const first = useFirstPaint("budget-meter");
   const f = v.forecast;
   const scale = Math.max(v.amount, f.forecast, v.spent, 1) * 1.04;
   const w = (p: number) => `${Math.max(0, Math.min(100, (p / scale) * 100))}%`;
@@ -26,7 +28,7 @@ export function BudgetMeter({ v }: { v: LimitView }) {
   const rest = Math.max(0, f.forecast - spent - bills);
   return (
     <>
-      <div className="meter" role="img" aria-label={`Spent ${whole(spent)} of ${whole(v.amount)}; plan by today ${whole(v.plan)}`}>
+      <div className={first ? "meter meter-in" : "meter"} role="img" aria-label={`Spent ${whole(spent)} of ${whole(v.amount)}; plan by today ${whole(v.plan)}`}>
         <span className="seg ms" style={{ left: 0, width: w(spent) }} />
         {f.available && !f.closed && <span className="seg mc" style={{ left: w(spent), width: w(bills) }} />}
         {f.available && !f.closed && <span className="seg mf" style={{ left: w(spent + bills), width: w(rest) }} />}

@@ -105,7 +105,7 @@ export function ForecastWhy({ data, onAdd }: { data: NonNullable<ReturnType<type
   })();
 
   return (
-    <div data-testid="why-body">
+    <div data-testid="why-body" className="stagger">
       <div style={{ textAlign: "center", marginTop: 4 }}>
         {!closed && <ConfidencePill f={f} />}
         <div className="num" data-testid="why-headline" style={{ fontSize: 44, fontWeight: 600, letterSpacing: "-.035em", lineHeight: 1.1, marginTop: 12 }}>

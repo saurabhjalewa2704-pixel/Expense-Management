@@ -22,18 +22,21 @@ function SwipeRow({ children, onRemove }: { children: React.ReactNode; onRemove:
   const [dx, setDx] = useState(0);
   const [dragging, setDragging] = useState(false);
   const start = useRef<{ x: number; y: number; open: boolean } | null>(null);
+  const last = useRef<{ x: number; t: number; v: number }>({ x: 0, t: 0, v: 0 }); // release velocity, px/ms (negative = leftwards)
   const W = 120;
   return (
     <div style={{ position: "relative", overflow: "hidden" }} data-testid="swipe-row">
       <button className="btn" style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: W, borderRadius: 0, background: "var(--surface-3)", color: "var(--ink)", fontSize: 14 }} tabIndex={dx < -20 ? 0 : -1} onClick={onRemove} data-testid="remove-from-trip">Remove from trip</button>
-      <div style={{ transform: `translateX(${dx}px)`, transition: dragging ? "none" : "transform 200ms var(--spring)", background: "var(--surface)", position: "relative" }}
-        onPointerDown={(e) => { start.current = { x: e.clientX, y: e.clientY, open: dx < 0 }; setDragging(true); }}
+      <div style={{ transform: `translateX(${dx}px)`, transition: dragging ? "none" : "transform var(--dur-ui) var(--ease-out)", background: "var(--surface)", position: "relative" }}
+        onPointerDown={(e) => { start.current = { x: e.clientX, y: e.clientY, open: dx < 0 }; last.current = { x: e.clientX, t: e.timeStamp, v: 0 }; setDragging(true); }}
         onPointerMove={(e) => {
           const s = start.current; if (!s || e.pointerType === "mouse") return;
           const mx = e.clientX - s.x;
+          const dt = e.timeStamp - last.current.t;
+          if (dt > 0) last.current = { x: e.clientX, t: e.timeStamp, v: (e.clientX - last.current.x) / dt };
           if (Math.abs(mx) > Math.abs(e.clientY - s.y)) setDx(Math.max(-W, Math.min(0, (s.open ? -W : 0) + mx)));
         }}
-        onPointerUp={() => { start.current = null; setDragging(false); setDx((v) => (v < -W / 2 ? -W : 0)); }}
+        onPointerUp={() => { start.current = null; setDragging(false); const v = last.current.v; setDx((x) => (Math.abs(v) > 0.11 ? (v < 0 ? -W : 0) : x < -W / 2 ? -W : 0)); }}
         onPointerCancel={() => { start.current = null; setDragging(false); setDx(0); }}>
         {children}
       </div>

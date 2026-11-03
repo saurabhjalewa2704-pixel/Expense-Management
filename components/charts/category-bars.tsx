@@ -1,4 +1,5 @@
 "use client";
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { CategoryIcon } from "@/lib/icons";
 import { deltaFlag } from "@/lib/analytics";
@@ -32,7 +33,7 @@ export function CategoryBars({ rows, fixedIds, showUsual, href, total }: {
               <div className="cbar-name">{r.name}{flag && <span className="delta" data-testid="delta">↑ {flag.pct}%</span>}</div>
               <div className="cbar-amt num">{r.total_pence < 0 ? <>£0.00<small style={{ display: "block", color: "var(--ink-3)", fontWeight: 400 }} data-testid="net-refund">net refund {formatGBP(-r.total_pence)}</small></> : formatGBP(r.total_pence)}</div>
               <div className="cbar-track" aria-hidden>
-                <div className="b" style={{ width: `${(Math.max(0, r.total_pence) / scale) * 100}%`, background: flag ? "var(--caution)" : undefined, transition: "width 280ms var(--spring)" }} />
+                <div className="b bw" style={{ "--w": `${(Math.max(0, r.total_pence) / scale) * 100}%`, background: flag ? "var(--caution)" : undefined } as CSSProperties} />
                 {showUsual && r.norm_pence != null && r.norm_pence > 0 && <div className="n" style={{ left: `${(r.norm_pence / scale) * 100}%` }} />}
               </div>
             </Link>
