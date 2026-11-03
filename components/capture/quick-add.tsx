@@ -463,7 +463,7 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
   return (
     <Sheet
       open={open} onOpenChange={requestClose} title={editing ? "Edit transaction" : "Add transaction"}
-      bottomInset={isDesktop ? 0 : inset} maxHeight={!isDesktop && viewportHeight ? `${Math.floor(viewportHeight - 8)}px` : undefined} handle={false}
+      bottomInset={isDesktop ? 0 : inset} maxHeight={!isDesktop && viewportHeight ? `calc(${Math.floor(viewportHeight)}px - var(--safe-top) - 12px)` : undefined} handle={false} className="qa-sheet"
     >
       <div className="vaul-body" onKeyDown={onKeyDown} data-testid="quick-add" style={{ paddingBottom: 4 }}>
         <div className="qa-head">

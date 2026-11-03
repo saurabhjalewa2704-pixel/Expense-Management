@@ -221,7 +221,7 @@ export function ForecastWhySheet({ open, onOpenChange, month }: { open: boolean;
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange} title="Why this forecast?">
-        <div className="vaul-body" data-testid="why-sheet" style={{ maxHeight: "calc(96dvh - 36px)", overflowY: "auto", paddingBottom: 28 }}>
+        <div className="vaul-body" data-testid="why-sheet" style={{ maxHeight: "calc(var(--sheet-max) - 36px)", overflowY: "auto", paddingBottom: 28 }}>
           <div className="sheet-head"><span /><span className="t">Why this forecast?</span><button className="txt" style={{ color: "var(--ink)", fontWeight: 600 }} onClick={() => onOpenChange(false)}>Done</button></div>
           {q.data ? <ForecastWhy data={q.data} onAdd={() => setAdding(true)} /> : <div className="skeleton" style={{ height: 260 }} aria-busy />}
         </div>

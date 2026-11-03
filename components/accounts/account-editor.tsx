@@ -81,7 +81,7 @@ export function AccountEditor({ open, onOpenChange, account, balancePence, onSav
   const hasBalance = !!account && (balancePence ?? 0) !== 0;
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange} title={account ? "Edit account" : "New account"} maxHeight="94dvh">
+    <Sheet open={open} onOpenChange={onOpenChange} title={account ? "Edit account" : "New account"} maxHeight="var(--sheet-max)">
       <div className="vaul-body" data-testid="account-editor">
         <div className="sheet-head">
           <button className="txt" onClick={() => onOpenChange(false)}>Cancel</button>

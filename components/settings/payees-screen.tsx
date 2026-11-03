@@ -37,7 +37,7 @@ export function PayeesScreen() {
           </button>
         ))}
       </div>
-      <Sheet open={!!from} onOpenChange={(o) => !o && setFrom(null)} title="Merge payee" maxHeight="92dvh">
+      <Sheet open={!!from} onOpenChange={(o) => !o && setFrom(null)} title="Merge payee" maxHeight="var(--sheet-max)">
         <div className="vaul-body">
           <div className="sheet-head"><button className="txt" onClick={() => setFrom(null)}>Cancel</button><span className="t">Merge {from?.name}</span><span /></div>
           <p className="sub" style={{ marginBottom: 12 }}>Everything paid to {from?.name} moves to the payee you choose, and {from?.name} is removed.</p>
