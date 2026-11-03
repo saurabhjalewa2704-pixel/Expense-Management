@@ -225,3 +225,8 @@ Record judgement calls here as: date · decision · reason.
 - `--sheet-max` (`100dvh − --safe-top − 12px`, in `globals.css`) is the height limit for every sheet. Sheets that passed their own 92–96dvh limits now use it. Add expense uses the visual-viewport height minus the same gap, so it holds with the keyboard up.
 - **Add expense is a little more compact on phones under 880px tall** (keys 48px instead of 52, tighter gaps above the keypad, 24px under the button) so it fits in that space without scrolling; a scrolling sheet is itself a candidate for the edge effect. Checked at 393×852 with a 54px status bar: sheet top 66pt, no overflow. Phones taller than 880px are unchanged.
 - **Not changed:** pages that scroll full-bleed under the translucent status bar still show iOS's own edge fade as content passes under the clock. That is the system's standard behaviour and not something the app draws.
+
+## Bottom clearance
+
+- **3 Nov 2026 · Five screens could not scroll their last card clear of the tab bar · owner report (Budget screen cut off at the bottom, "no scroll available").** Budget, Budget setup, Cash, Trip detail and Analytics › Budgets set their own `paddingBottom` (48 or 56px) inline, which replaced the shared `.scroll` padding (tab bar height + 40px). The tab bar is about 88px tall on a phone, so the last 40px or more sat behind it with nothing left to scroll. The inline overrides are removed; every `.scroll` page now uses the shared padding.
+- A scan of 21 routes at 390×844 (scrolled to the end, last content line against the tab bar top) found exactly those screens cut; after the fix none are. `tests/e2e/29-bottom-clearance.spec.ts` guards seven screens.

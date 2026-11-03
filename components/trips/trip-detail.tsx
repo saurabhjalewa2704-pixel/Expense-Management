@@ -36,7 +36,7 @@ export function TripDetail({ id }: { id: string }) {
   const count = txns?.length;
 
   return (
-    <div className="scroll" data-testid="trip-detail" style={{ paddingBottom: 48 }}>
+    <div className="scroll" data-testid="trip-detail">
       <div className="navbar" style={{ justifyContent: "space-between" }}>
         <Link className="back" href="/trips"><UI.ChevronLeft size={22} strokeWidth={1.75} aria-hidden />Trips</Link>
         <Link className="icon-btn" href={`/trips/${id}/edit`} aria-label="Edit trip" data-testid="trip-edit"><UI.Pencil size={18} strokeWidth={1.75} aria-hidden /></Link>

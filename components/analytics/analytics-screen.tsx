@@ -65,7 +65,7 @@ export function AnalyticsScreen() {
       <button role="tab" aria-selected={tab === "budgets"} className={tab === "budgets" ? "on" : ""} onClick={() => setTab("budgets")} data-testid="tab-budgets">Budgets</button>
     </div>
   );
-  if (tab === "budgets") return <div className="scroll" style={{ paddingBottom: 48 }}><div className="topbar" style={{ justifyContent: "flex-end" }} /><h1 className="large-title">Analytics</h1>{seg}<AnalyticsBudgets /></div>;
+  if (tab === "budgets") return <div className="scroll"><div className="topbar" style={{ justifyContent: "flex-end" }} /><h1 className="large-title">Analytics</h1>{seg}<AnalyticsBudgets /></div>;
   return <SpendingScreen tabs={seg} />;
 }
 
