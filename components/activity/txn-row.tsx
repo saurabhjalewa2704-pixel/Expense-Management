@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { useQuickAdd } from "@/components/capture/quick-add";
 import { OneOffChip } from "@/components/forecast/one-off";
 import { addDays, formatShort, londonTime, todayLondon, type ISODate } from "@/lib/dates";
@@ -6,6 +7,7 @@ import { rowSubtitle, rowTitle } from "@/lib/categories";
 import { CategoryIcon, UI } from "@/lib/icons";
 import { formatMinor } from "@/lib/fx";
 import { formatGBP } from "@/lib/money";
+import { isFresh } from "@/lib/fresh-rows";
 import type { TxnRow } from "@/lib/types";
 
 /** The little "when" on Home rows: a time for today, "Yesterday", else the weekday. */
@@ -29,12 +31,13 @@ export const notInBalance = (r: Pick<TxnRow, "type" | "counts_in_balance" | "cou
 /** One transaction. Tapping opens it in Quick Add to edit (CAP-04). */
 export function TxnItem({ row, subtitle }: { row: TxnRow; subtitle?: string }) {
   const { open } = useQuickAdd();
+  const [fresh] = useState(() => isFresh(row.client_id));
   const amt = rowAmount(row);
   const icon = row.type === "transfer" ? <UI.ArrowLeftRight size={20} strokeWidth={1.75} aria-hidden />
     : row.type === "adjustment" ? <UI.SlidersHorizontal size={20} strokeWidth={1.75} aria-hidden />
     : <CategoryIcon name={row.category_icon ?? undefined} size={20} />;
   return (
-    <button className="row" style={{ width: "100%", textAlign: "left" }} onClick={() => open({ edit: row })} data-testid="txn-row" data-pending={row.pending ? "" : undefined}>
+    <button className={fresh ? "row row-new" : "row"} style={{ width: "100%", textAlign: "left" }} onClick={() => open({ edit: row })} data-testid="txn-row" data-pending={row.pending ? "" : undefined}>
       <div className={`tile ${row.type === "income" ? "pos" : ""}`}>{icon}</div>
       <div className="row-main">
         <div className="row-t">{rowTitle(row)}{row.recurring_id && <UI.Repeat size={13} strokeWidth={1.75} aria-label="Recurring" className="faint" style={{ marginLeft: 6, verticalAlign: "-1px" }} data-testid="recurring-glyph" />}{row.is_estimate && <span className="est" data-testid="est">EST</span>}{row.type === "expense" && !row.pending && <OneOffChip id={row.id} />}</div>

@@ -15,6 +15,7 @@ import { cachedRate, fetchRate, warmRates } from "@/lib/fx-client";
 import { convertToPence, currencySymbol, effectiveRate, exponentOf, formatMinor, parseMinor, pressKeyFx, rateLabel } from "@/lib/fx";
 import { fetchRecurringDuplicate } from "@/lib/queries/fetchers";
 import { supabaseBrowser } from "@/lib/supabase/client";
+import { markFresh } from "@/lib/fresh-rows";
 import { discard, enqueue, flushIdle, getItem, newClientId, updatePending } from "@/lib/outbox";
 import { useAccounts, useCategoryTree, useLastIncomeAccount, useOutbox, usePayees, useProfile, useSuggestHistory, useTripStops, useTrips, useTripTxns } from "@/lib/queries/hooks";
 import { TxnInput } from "@/lib/schemas/transaction";
@@ -385,6 +386,7 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
     }
 
     await enqueue(input, pendingFlags(mode, date, account, mode === "transfer" ? counter : undefined, { a: flagAnswer }), feeBps);
+    markFresh(input.client_id);
     close();
     const catName = category ? tree.byId.get(category)?.name : undefined;
     const message = mode === "transfer"
