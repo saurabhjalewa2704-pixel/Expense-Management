@@ -212,6 +212,6 @@ Nothing will be implemented until you approve (or edit) this plan.
 | P2-6 user-select | Done |
 | P2-7 subtitles | Decided: keep ellipsis |
 | P2-8 big figures | Already handled by `figureSize` |
-| P2-9 break-ui data sweep | Partly done; see the PR notes |
+| P2-9 break-ui data sweep | Done: worst-case, empty and 1,500-row scenarios at 390×844. Two overflow bugs fixed; the £1bn+ hero clip is left for your decision (EC-M6 conflict). See DECISIONS.md |
 | P2-10 chip fade | Decided against (see DECISIONS.md) |
-| §3 #2, #4, #6 | Deferred |
+| §3 #2, #4, #6 | Done (saved-row entrance, meter first-paint fill, Why-sheet stagger) |

@@ -160,8 +160,8 @@ input,textarea,select{font:inherit;color:inherit}
 .radio.on{background:var(--ink);box-shadow:none;color:var(--on-ink)}
 
 /* ---------- charts ---------- */
-.chart-card .finding{font-size:var(--t-headline);font-weight:600;letter-spacing:-.01em;line-height:1.3}
-.chart-card .finding-sub{font-size:var(--t-sub);color:var(--ink-2);margin-top:4px}
+.chart-card .finding{overflow-wrap:anywhere;font-size:var(--t-headline);font-weight:600;letter-spacing:-.01em;line-height:1.3}
+.chart-card .finding-sub{overflow-wrap:anywhere;font-size:var(--t-sub);color:var(--ink-2);margin-top:4px}
 .chart{display:block;margin-top:16px;overflow:visible}
 .chart text{font-family:var(--font);font-variant-numeric:tabular-nums}
 .cbar-row{display:grid;grid-template-columns:28px 1fr auto;gap:4px 12px;align-items:center;padding:10px 0}
@@ -437,7 +437,7 @@ td + td{padding-left:14px}
 .cb{display:grid;grid-template-columns:28px minmax(0,1fr) auto;column-gap:12px;row-gap:4px;align-items:center;padding:12px 0}
 .cb + .cb{border-top:1px solid var(--rule)}
 .cb .tile{width:28px;height:28px;border-radius:8px;grid-row:1/span 3;align-self:start}
-.cb .n{font-size:15px;font-weight:500;display:flex;align-items:center;gap:8px}
+.cb .n{font-size:15px;font-weight:500;display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cb .r{font-size:15px;font-weight:500;text-align:right;font-variant-numeric:tabular-nums}
 .cb .bar{grid-column:2/4;position:relative;height:6px;border-radius:3px;background:var(--surface-3);margin-top:4px}
 .cb .bar .s{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:var(--ink)}
