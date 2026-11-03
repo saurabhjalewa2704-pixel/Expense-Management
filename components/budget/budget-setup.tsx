@@ -111,7 +111,7 @@ export function BudgetSetup() {
   const shown = more ? parents : parents.slice(0, 8);
   const editing = edit ? tree.byId.get(edit) : null;
   return (
-    <div className="scroll" style={{ paddingBottom: 56 }} data-testid="budget-setup">
+    <div className="scroll" data-testid="budget-setup">
       <div style={{ display: "grid", gridTemplateColumns: "72px 1fr 72px", alignItems: "center", padding: "50px 16px 4px" }}>
         <Link className="icon-btn" href={hadBudget ? "/budget" : "/"} aria-label="Close" style={{ justifySelf: "start" }}><UI.X size={18} strokeWidth={1.75} aria-hidden /></Link>
         <span style={{ textAlign: "center", fontSize: 17, fontWeight: 600 }}>Budgets</span>

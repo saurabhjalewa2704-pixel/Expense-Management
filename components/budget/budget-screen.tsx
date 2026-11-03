@@ -43,7 +43,7 @@ export function BudgetScreen() {
   );
 
   return (
-    <div className="scroll" style={{ paddingBottom: 48 }} data-testid="budget-screen">
+    <div className="scroll" data-testid="budget-screen">
       <PageHeader title="" back="/" backLabel="Home" right={<Link className="icon-btn" style={{ marginRight: 8 }} href="/budget/setup" aria-label="Edit budgets"><UI.Pencil size={18} strokeWidth={1.75} aria-hidden /></Link>} />
       <div style={{ marginTop: 6 }}>{nav}</div>
       {q.isLoading ? <div className="skeleton" style={{ height: 320, margin: 16 }} aria-busy /> : !v ? (

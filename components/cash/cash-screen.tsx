@@ -53,7 +53,7 @@ export function CashScreen() {
   const n = (c: number | undefined, word: string) => (c === undefined ? "" : `${c} ${word}${c === 1 ? "" : "s"}`);
 
   return (
-    <div className="scroll" style={{ paddingBottom: 48 }}>
+    <div className="scroll">
       <PageHeader title="" back="/" backLabel="Home"
         right={<button className="icon-btn" style={{ marginRight: 8 }} aria-label="Pick a date" onClick={() => setPicking(true)}><UI.Calendar size={18} strokeWidth={1.75} aria-hidden /></button>} />
       <div className="hero" style={{ marginTop: 6 }}>
