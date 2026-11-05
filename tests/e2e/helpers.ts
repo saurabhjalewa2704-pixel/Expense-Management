@@ -2,12 +2,14 @@ import { expect, type Page } from "@playwright/test";
 
 const GATEWAY = "http://127.0.0.1:54321";
 export const OWNER = "owner@sterling.local";
+export const PARTNER = "partner@sterling.local";
 
 /** Wipe the database and recreate the owner. seed: "demo" loads supabase/seed.sql; onboarded skips first-run setup. */
-export async function resetDb(opts: { seed?: "demo" | "budget" | "trip"; onboarded?: boolean } = {}) {
+export async function resetDb(opts: { seed?: "demo" | "budget" | "trip"; onboarded?: boolean; partner?: boolean } = {}) {
   const q = new URLSearchParams();
   if (opts.seed) q.set("seed", opts.seed);
   if (opts.onboarded) q.set("onboarded", "1");
+  if (opts.partner) q.set("partner", "1");
   const r = await fetch(`${GATEWAY}/__test/reset?${q}`, { method: "POST" });
   if (!r.ok) throw new Error(`reset failed: ${r.status} ${await r.text()}`);
   return (await r.json()) as { user_id: string };

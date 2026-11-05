@@ -43,7 +43,7 @@ export function DataScreen() {
 
       <div className="eyebrow group-label" style={{ marginTop: 32 }}>Delete everything</div>
       <div className="card">
-        <p className="callout">This permanently erases every account, transaction, payee and insight, and returns {`Sterling`} to first-run setup. Export a backup first.</p>
+        <p className="callout">This permanently erases every account, transaction, payee and insight, and returns {`Sterling`} to first-run setup. Only your own data is erased: the shared category list stays. Export a backup first.</p>
         <label className="field" style={{ marginTop: 14 }}>
           <input style={{ flex: 1, background: "none", border: 0, outline: "none" }} placeholder='Type DELETE to confirm' aria-label="Type DELETE to confirm" value={typed} onChange={(e) => setTyped(e.target.value)} autoCapitalize="characters" autoComplete="off" />
         </label>

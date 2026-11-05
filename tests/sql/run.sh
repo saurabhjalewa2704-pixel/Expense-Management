@@ -4,9 +4,11 @@
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../harness/db.sh"
 pg_start
-fresh_db sterling_test
 status=0
+# every file gets a database of its own: the category list is shared between people, so users created by one file must not
+# inherit (or be missing) the list another file changed
 for f in "$ROOT"/tests/sql/*.test.sql; do
+  fresh_db sterling_test >/dev/null 2>&1
   printf '• %s ... ' "$(basename "$f")"
   if out=$(psql -q -v ON_ERROR_STOP=1 -d sterling_test -f "$f" 2>&1); then echo ok; else echo FAILED; echo "$out"; status=1; fi
 done

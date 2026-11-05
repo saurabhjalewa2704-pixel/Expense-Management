@@ -31,7 +31,7 @@ sleep 1
 PGRST_DB_URI="postgres://authenticator:authenticator@127.0.0.1:$PGPORT/sterling_dev" PGRST_DB_SCHEMAS=public \
 PGRST_DB_ANON_ROLE=anon PGRST_JWT_SECRET="$SECRET" PGRST_SERVER_PORT=54323 PGRST_SERVER_HOST=127.0.0.1 \
   nohup "$PGRST_BIN" > "$STACK/pgrst.log" 2>&1 & echo $! > "$STACK/pgrst.pid"
-JWT_SECRET="$SECRET" DATABASE_URL="postgres://postgres@127.0.0.1:$PGPORT/sterling_dev" ALLOWED_EMAIL="${ALLOWED_EMAIL:-owner@sterling.local}" \
+JWT_SECRET="$SECRET" DATABASE_URL="postgres://postgres@127.0.0.1:$PGPORT/sterling_dev" ALLOWED_EMAIL="${ALLOWED_EMAIL:-owner@sterling.local,partner@sterling.local}" \
   nohup node "$HARNESS_DIR/gateway.mjs" > "$STACK/gateway.log" 2>&1 & echo $! > "$STACK/gateway.pid"
 
 for _ in $(seq 1 60); do
@@ -45,7 +45,7 @@ cat > "$STACK/env" <<ENV
 NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
 NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON
 SUPABASE_SERVICE_ROLE_KEY=$SERVICE
-ALLOWED_EMAIL=${ALLOWED_EMAIL:-owner@sterling.local}
+ALLOWED_EMAIL=${ALLOWED_EMAIL:-owner@sterling.local,partner@sterling.local}
 CRON_SECRET=local-cron-secret
 ENV
 echo "stack up: gateway http://127.0.0.1:54321 (env in .stack/env)"

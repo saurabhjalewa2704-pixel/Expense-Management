@@ -30,7 +30,7 @@ begin
   insert into trips (name, currency, start_on, end_on) values ('Rome', 'EUR', '2026-05-01', '2026-05-05') returning id into trp;
   insert into trip_stops (trip_id, name, start_on, end_on) values (trp, 'Rome', '2026-05-01', '2026-05-03');
   insert into trip_category_budgets (trip_id, category_id, amount_pence) values (trp, cat, 10000);
-  insert into category_redirects (from_id, to_id) values (gen_random_uuid(), cat);
+  insert into category_redirects (from_id, to_id) values (gen_random_uuid(), cat);   -- merges are remembered for everyone: both people read this table (see 12_two_users)
   insert into api_tokens (name, token_hash) values ('t', 'hash-a');
   insert into push_subscriptions (endpoint, p256dh, auth) values ('https://push.example/a', 'p', 'a');
   insert into no_spend_days (day) values ('2026-02-02');
@@ -48,13 +48,13 @@ begin
   -- user B sees nothing, anywhere
   perform set_config('request.jwt.claims', json_build_object('sub', ub, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  foreach t in array array['accounts','payees','transactions','recurring_items','recurring_occurrences','recurring_dismissed','trips','trip_stops','trip_category_budgets','category_redirects','budgets','budget_overrides','budget_forecast_log','budget_alerts_sent','forecast_params','forecast_param_log','forecast_backtest','forecast_snapshots','planned_extras','planned_extra_answers','insight_runs',
+  foreach t in array array['accounts','payees','transactions','recurring_items','recurring_occurrences','recurring_dismissed','trips','trip_stops','trip_category_budgets','budgets','budget_overrides','budget_forecast_log','budget_alerts_sent','forecast_params','forecast_param_log','forecast_backtest','forecast_snapshots','planned_extras','planned_extra_answers','insight_runs',
                            'insight_feedback','api_tokens','push_subscriptions','no_spend_days','pots','ask_turns'] loop
     execute format('select count(*) from %I', t) into n;
     assert n = 0, 'B can read ' || t;
   end loop;
   assert (select count(*) from profiles) = 1 and (select id from profiles) = ub, 'B sees only own profile';
-  assert (select count(*) from categories where user_id = ua) = 0, 'B cannot read A categories';
+  assert (select count(*) from categories) = 69, 'the category list is shared: B reads the same 69 categories';
   assert (select count(*) from txn_effects) = 0, 'view is security invoker';
   assert available_cash() = 0, 'available_cash ignores other users';
   assert (select count(*) from account_balances()) = 0, 'balances ignore other users';
