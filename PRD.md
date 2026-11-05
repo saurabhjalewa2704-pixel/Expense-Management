@@ -1412,7 +1412,7 @@ alter table transactions add column is_one_off boolean;                         
 | MOB-01 | **Standalone PWA**: `display: standalone`, `theme_color` and `background_color` `#0C0D0C`, `apple-mobile-web-app-status-bar-style: black-translucent`, dark iOS splash screens, `apple-touch-icon` 180 px. Set `color-scheme: dark` on `:root` so form controls and scrollbars render dark. |
 | MOB-02 | **Safe areas**: respect `env(safe-area-inset-*)`; the tab bar sits above the home indicator; sheets extend under it. |
 | MOB-03 | **Bottom sheets** via **Vaul** (drag to dismiss, snap points, background scales to 0.94 with a rounded top, as in iOS). Filters, date picker and account picker are sheets. **Add expense and Choose category are not sheets**: they are a full-screen modal with a Close button (CAP-01). |
-| MOB-04 | **Touch targets ≥ 44 × 44 pt**; keypad keys ≥ 64 × 52 pt. |
+| MOB-04 | **Touch targets ≥ 44 × 44 pt**; keypad keys ≥ 64 × 52 pt (64 × 48 on phones under 880 px tall, so Add expense fits below the status bar without scrolling; see DECISIONS.md › Sheets clear of the status bar). |
 | MOB-05 | **Gestures**: swipe rows (delete / duplicate), pull-to-refresh on Activity and Insights, long-press ＋ for favourites, horizontal swipe on Analytics period. |
 | MOB-06 | **Motion**: spring transitions (stiffness 400, damping 34); the hero figure animates numerically; respect `prefers-reduced-motion`. |
 | MOB-07 | **Haptics**: iOS Safari does not expose `navigator.vibrate`, so do not depend on it. Use it where supported (Android) and design so that nothing relies on it. |

@@ -15,11 +15,11 @@ for (const width of [375, 390, 430]) {
   });
 }
 
-test("MOB-04: primary touch targets are at least 44×44 (keypad keys 64×52)", async ({ page }) => {
+test("MOB-04: primary touch targets are at least 44×44 (keypad keys 64×48 on a 844px-tall phone, 64×52 on taller ones)", async ({ page }) => {
   await startDemo(page);
   const tab = (await page.locator(".tab-add").boundingBox())!;
   expect(tab.width).toBeGreaterThanOrEqual(44); expect(tab.height).toBeGreaterThanOrEqual(44);
   for (const t of await page.locator(".tab").all()) { const b = (await t.boundingBox())!; expect(b.width).toBeGreaterThanOrEqual(44); expect(b.height).toBeGreaterThanOrEqual(44); }
   await page.getByRole("button", { name: "Add transaction" }).click();
-  for (const k of await page.locator(".key").all()) { const b = (await k.boundingBox())!; expect(b.width).toBeGreaterThanOrEqual(64); expect(b.height).toBeGreaterThanOrEqual(52); }
+  for (const k of await page.locator(".key").all()) { const b = (await k.boundingBox())!; expect(b.width).toBeGreaterThanOrEqual(64); expect(b.height).toBeGreaterThanOrEqual(48); }
 });
