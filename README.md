@@ -30,10 +30,23 @@ Not built (P1, PRD §M5): natural-language entry, Shortcuts endpoint, other push
    - Email templates → Magic Link / OTP: make the body show the code, e.g. `Your Sterling code is {{ .Token }}`.
    - Sessions: set the refresh-token / inactivity timeout to at least 30 days (AUTH-01).
 3. **Environment variables** (Vercel → Project → Settings, and `.env.local` for local work; see `.env.example`):
-   `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ALLOWED_EMAIL`, `CRON_SECRET` (any long random string), `ANTHROPIC_API_KEY` (optional: without it insights are written from templates), `AI_MONTHLY_TOKEN_CAP`, and for reminders `npx web-push generate-vapid-keys` → `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (same value as the public key).
-4. **Create yourself once.** Either `node scripts/bootstrap-owner.mjs` (reads the same variables; it refuses to create a second user), or with no terminal: Supabase → Authentication → Users → **Add user → Create new user**, your `ALLOWED_EMAIL`, a password, **Auto Confirm User** ticked. The database trigger creates your profile and categories either way.
+   `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ALLOWED_EMAIL` (one address, or several separated by commas for two people), `CRON_SECRET` (any long random string), `ANTHROPIC_API_KEY` (optional: without it insights are written from templates), `AI_MONTHLY_TOKEN_CAP`, and for reminders `npx web-push generate-vapid-keys` → `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (same value as the public key).
+4. **Create each person once.** Either `node scripts/bootstrap-owner.mjs` (reads the same variables and creates every address listed in `ALLOWED_EMAIL` that does not exist yet), or with no terminal: Supabase → Authentication → Users → **Add user → Create new user**, the person's address from `ALLOWED_EMAIL`, a password, **Auto Confirm User** ticked. The database trigger creates their profile either way; the category list is created once, for whoever is first.
    Sign in with that e-mail and password. The e-mailed-code option ("E-mail me a code instead") needs the template change in step 2, and on Supabase's built-in e-mail sender that may require custom SMTP.
 5. **Deploy to Vercel**, then open the site on your iPhone in Safari → Share → **Add to Home Screen** and sign in from the installed app (reminders only work from there).
+
+## Two people on one app
+
+Sterling can be shared by two people (a couple, say). Each person signs in as themselves and keeps entirely separate accounts, payees, transactions, budgets, trips, pots, bills, insights, reminders and devices; nothing is shared except **the category list** (names, icons, order, archived or not, "Travel-like"). Renaming, adding, hiding or merging a category changes it for both people; a merge also moves both people's entries and limits.
+
+To add the second person to a running app:
+
+1. **Supabase → SQL editor:** run `supabase/migrations/20261105000001_two_users.sql` once. Existing data is kept; the existing category list simply becomes the shared one.
+2. **Vercel → Settings → Environment Variables:** change `ALLOWED_EMAIL` to both addresses separated by a comma, e.g. `you@example.com,partner@example.com`, then redeploy.
+3. **Supabase → Authentication → Users → Add user → Create new user:** the second person's e-mail, a password, **Auto Confirm User** ticked.
+4. The second person opens the site, signs in with that e-mail and password, adds it to their Home Screen and works through the first-run set-up (their own accounts and opening balances). Reminders and bill notifications are per device, so they turn them on on their own phone.
+
+Nothing else changes: the scheduled jobs run for both people in turn, each with their own figures. A person not listed in `ALLOWED_EMAIL` cannot sign in even if they exist in Supabase.
 
 ## Scheduled jobs
 

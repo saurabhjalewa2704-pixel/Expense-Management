@@ -1,4 +1,6 @@
 "use client";
+import { useQueryClient } from "@tanstack/react-query";
+import { del } from "idb-keyval";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import { requestCode, signInWithPassword, verifyCode } from "./actions";
@@ -6,6 +8,9 @@ import { APP_NAME } from "@/lib/env";
 
 export function SignInForm({ next, initialError }: { next: string; initialError?: string }) {
   const router = useRouter();
+  const qc = useQueryClient();
+  // whoever signs in starts from an empty cache: a session that expired on a shared browser must never show the last person's figures
+  const clearCache = async () => { qc.clear(); await del("sterling-query-cache").catch(() => {}); };
   const [email, setEmail] = useState("");
   const [step, setStep] = useState<"password" | "email" | "code">("password");
   const [password, setPassword] = useState("");
@@ -31,6 +36,7 @@ export function SignInForm({ next, initialError }: { next: string; initialError?
     start(async () => {
       const r = await signInWithPassword(email, password);
       if (!r.ok) { setError(r.error); setPassword(""); return; }
+      await clearCache();
       router.replace(next);
       router.refresh();
     });
@@ -45,6 +51,7 @@ export function SignInForm({ next, initialError }: { next: string; initialError?
         setCode("");
         return;
       }
+      await clearCache();
       router.replace(next);
       router.refresh();
     });

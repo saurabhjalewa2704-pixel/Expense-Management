@@ -83,7 +83,7 @@ begin
   perform set_config('request.jwt.claims', json_build_object('sub', ub, 'role', 'authenticated')::text, true);
   set local role authenticated;
   insert into accounts (name, type, opening_balance_pence, opening_date) values ('B', 'current', 1000000, '2026-01-01') returning id into accb;
-  select id into cat from categories where name = 'Groceries' and parent_id is null and user_id = ub;
+  select id into cat from categories where name = 'Groceries' and parent_id is null;
   assert (select count(*) from pots) = 0, 'B sees A pots';
   assert (select count(*) from pot_summary()) = 0, 'B pot_summary';
   denied := false;
@@ -100,7 +100,7 @@ begin
   -- closed pots take no new transactions, but history stays editable; pots with history cannot be deleted
   perform set_config('request.jwt.claims', json_build_object('sub', ua, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  select id into cat from categories where name = 'Groceries' and parent_id is null and user_id = ua;
+  select id into cat from categories where name = 'Groceries' and parent_id is null;
   tx := create_transaction(gen_random_uuid(), 'expense', 500, acc, null, cat, null, null, '{}', '2026-02-03', null, 'app', false, false, pota);
   assert tx.pot_id = pota;
   denied := false;

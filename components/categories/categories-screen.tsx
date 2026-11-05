@@ -43,6 +43,7 @@ export function CategoriesScreen() {
         right={<span style={{ display: "flex", gap: 8, marginRight: 8 }}>
           {kind === "expense" && <button className={`icon-btn`} aria-label={reordering ? "Done reordering" : "Reorder categories"} aria-pressed={reordering} onClick={() => setReordering((r) => !r)} style={reordering ? { background: "var(--ink)", color: "var(--on-ink)" } : undefined}><UI.GripVertical size={16} strokeWidth={1.75} aria-hidden /></button>}
           <button className="icon-btn" aria-label="New category" onClick={() => setCreating(true)}><UI.Plus size={18} strokeWidth={2} aria-hidden /></button></span>} />
+      <p className="sub" style={{ marginTop: 4 }}>The category list is shared with anyone else who uses this Sterling. Everything else is private to you.</p>
       <div className="seg" role="tablist" aria-label="Category type" style={{ marginTop: 14 }}>
         <button role="tab" aria-selected={kind === "expense"} className={kind === "expense" ? "on" : ""} onClick={() => { setKind("expense"); setReordering(false); }}>Expense · {count("expense")}</button>
         <button role="tab" aria-selected={kind === "income"} className={kind === "income" ? "on" : ""} onClick={() => { setKind("income"); setReordering(false); }}>Income · {count("income")}</button>

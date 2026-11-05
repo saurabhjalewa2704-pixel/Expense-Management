@@ -4,7 +4,7 @@ import { addDays, londonParts } from "@/lib/dates";
 import { periodFor } from "@/lib/ai/facts";
 import { runDigest, serverToday } from "@/lib/ai/server";
 import { ensureTripInsights, sendWrapUp } from "@/lib/ai/trip-server";
-import { supabaseService } from "@/lib/supabase/server";
+import { supabaseAsUser, supabaseService } from "@/lib/supabase/server";
 import type { Trip } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +26,9 @@ export async function GET(req: NextRequest) {
   }
   const db = supabaseService();
   const { data: users } = await db.from("profiles").select("id, ai_include_notes").eq("ai_enabled", true);
+  // each person is worked through with their own session, so the SQL functions only ever see that person's rows
+  const asUser = new Map<string, ReturnType<typeof supabaseAsUser>>();
+  const userDb = (id: string) => { if (!asUser.has(id)) asUser.set(id, supabaseAsUser(id)); return asUser.get(id)!; };
   const ran: { user: string; scope: string; run?: string; skipped?: string; error?: string }[] = [];
   for (const u of (users ?? []) as { id: string; ai_include_notes: boolean }[]) {
     for (const scope of scopes) {
@@ -34,7 +37,7 @@ export async function GET(req: NextRequest) {
       const { data: existing } = await db.from("insight_runs").select("id").eq("user_id", u.id).eq("scope", scope).eq("period_start", period.from).eq("stale", false).limit(1);
       if (existing?.length) { ran.push({ user: u.id, scope, skipped: "already generated" }); continue; }
       try {
-        const run = await runDigest(db, u.id, scope, { includeNotes: u.ai_include_notes, today });
+        const run = await runDigest(await userDb(u.id), u.id, scope, { includeNotes: u.ai_include_notes, today });
         ran.push({ user: u.id, scope, run: run.id });
       } catch (e) {
         console.error("[cron/digest]", e);
@@ -52,8 +55,8 @@ export async function GET(req: NextRequest) {
       try {
         const { data: prof } = await db.from("profiles").select("ai_enabled").eq("id", t.user_id).single();
         let reason = "ai off";
-        if (!prof || (prof as { ai_enabled: boolean }).ai_enabled !== false) reason = (await ensureTripInsights(db, t.user_id, t.id, { today })).reason;
-        trips.push({ trip: t.id, reason, wrapup: await sendWrapUp(db, t.user_id, t, today) });
+        if (!prof || (prof as { ai_enabled: boolean }).ai_enabled !== false) reason = (await ensureTripInsights(await userDb(t.user_id), t.user_id, t.id, { today })).reason;
+        trips.push({ trip: t.id, reason, wrapup: await sendWrapUp(await userDb(t.user_id), t.user_id, t, today) });
       } catch (e) {
         console.error("[cron/digest] trip", e);
         trips.push({ trip: t.id, error: String(e) });

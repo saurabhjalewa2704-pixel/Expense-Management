@@ -27,7 +27,7 @@ pg_stop() { as_pg "$PGBIN/pg_ctl" -D "$PGDATA" -m fast stop >/dev/null 2>&1 || t
 
 # fresh_db <name>: drop and recreate a database with the stub + all migrations applied.
 fresh_db() {
-  local db="$1"
+  local db="$1" f
   psql -q -d postgres -c "drop database if exists $db with (force)" -c "create database $db"
   psql -q -v ON_ERROR_STOP=1 -d "$db" -c "alter database $db set search_path = public, extensions" \
        -f "$HARNESS_DIR/auth_stub.sql"

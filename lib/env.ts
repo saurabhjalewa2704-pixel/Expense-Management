@@ -11,7 +11,11 @@ export const supabaseAnonKey = () => need("NEXT_PUBLIC_SUPABASE_ANON_KEY", proce
 
 // Server only.
 export const serviceRoleKey = () => need("SUPABASE_SERVICE_ROLE_KEY", process.env.SUPABASE_SERVICE_ROLE_KEY);
-export const allowedEmail = () => need("ALLOWED_EMAIL", process.env.ALLOWED_EMAIL).trim().toLowerCase();
+/** ALLOWED_EMAIL is one address or several separated by commas (AUTH-01): everyone listed may sign in, everyone else is refused. */
+export const parseAllowList = (raw: string | undefined): string[] =>
+  (raw ?? "").split(/[,;\s]+/).map((e) => e.trim().toLowerCase()).filter(Boolean);
+export const allowedEmails = (): string[] => parseAllowList(need("ALLOWED_EMAIL", process.env.ALLOWED_EMAIL));
+export const isAllowedEmail = (email: string | null | undefined): boolean => !!email && allowedEmails().includes(email.trim().toLowerCase());
 export const cronSecret = () => need("CRON_SECRET", process.env.CRON_SECRET);
 
 export const APP_NAME = "Sterling";

@@ -37,6 +37,7 @@ const anonKey = sign({ role: "anon", iss: "supabase-local", exp: 4102444800 });
 const serviceKey = sign({ role: "service_role", iss: "supabase-local", exp: 4102444800 });
 
 const codes = new Map();
+const linkTokens = new Map();      // hashed_token -> email, from admin generate_link (used to act as a user without their password)
 const userJson = (u) => ({
   id: u.id, aud: "authenticated", role: "authenticated", email: u.email, email_confirmed_at: u.created_at,
   phone: "", app_metadata: { provider: "email", providers: ["email"] }, user_metadata: u.raw_user_meta_data ?? {},
@@ -75,6 +76,13 @@ async function auth(req, res, url) {
     codes.set(email, { code: OTP, exp: Date.now() + 3600_000 });
     return send(res, 200, {});
   }
+  if (route === "/verify" && req.method === "POST" && body.token_hash) {
+    const email = linkTokens.get(String(body.token_hash));
+    const u = email ? await findUser("email", email) : null;
+    if (!u) return gotrueError(res, 403, "otp_expired", "Email link is invalid or has expired");
+    linkTokens.delete(String(body.token_hash));
+    return send(res, 200, session(u));
+  }
   if (route === "/verify" && req.method === "POST") {
     const email = String(body.email ?? "").trim().toLowerCase();
     const c = codes.get(email);
@@ -104,6 +112,21 @@ async function auth(req, res, url) {
     return send(res, 200, session(u));
   }
   if (route === "/logout") return send(res, 204);
+  if (route === "/admin/generate_link" && req.method === "POST") {
+    if (verify(bearer(req))?.role !== "service_role") return gotrueError(res, 403, "not_admin", "User not allowed");
+    const email = String(body.email ?? "").trim().toLowerCase();
+    const u = await findUser("email", email);
+    if (!u) return gotrueError(res, 404, "user_not_found", "User not found");
+    const hashed = crypto.randomBytes(24).toString("hex");
+    linkTokens.set(hashed, email);
+    return send(res, 200, { ...userJson(u), action_link: "http://localhost/verify", email_otp: OTP, hashed_token: hashed, verification_type: "magiclink", redirect_to: "" });
+  }
+  const byId = route.match(/^\/admin\/users\/([0-9a-f-]{36})$/);
+  if (byId && req.method === "GET") {
+    if (verify(bearer(req))?.role !== "service_role") return gotrueError(res, 403, "not_admin", "User not allowed");
+    const u = await findUser("id", byId[1]);
+    return u ? send(res, 200, userJson(u)) : gotrueError(res, 404, "user_not_found", "User not found");
+  }
   if (route.startsWith("/admin/users")) {
     if (verify(bearer(req))?.role !== "service_role") return gotrueError(res, 403, "not_admin", "User not allowed");
     if (req.method === "POST") {
@@ -125,12 +148,15 @@ async function auth(req, res, url) {
 //   ?seed=trip      run supabase/seed_trip.sql (the USA trip) for the owner
 //   ?onboarded=1    mark first-run setup as done
 //   ?user=none      leave the database without any user
+//   ?partner=1      also create the second person (second address in ALLOWED_EMAIL, else partner@sterling.local)
 async function testHook(req, res, url) {
   if (url.pathname === "/__test/reset") {
     await pool.query("truncate auth.users cascade");
-    const email = (process.env.ALLOWED_EMAIL ?? "owner@sterling.local").toLowerCase();
+    const emails = (process.env.ALLOWED_EMAIL ?? "owner@sterling.local").toLowerCase().split(/[,;\s]+/).filter(Boolean);
     let user = null;
-    if (url.searchParams.get("user") !== "none") user = await createUser(email, { display_name: "Saurabh" });
+    if (url.searchParams.get("user") !== "none") user = await createUser(emails[0], { display_name: "Saurabh" });
+    // ?partner=1 adds the second person (the next address in ALLOWED_EMAIL) with a profile of their own and no data
+    if (user && url.searchParams.get("partner") === "1") await createUser(emails[1] ?? "partner@sterling.local", { display_name: "Partner" });
     if (url.searchParams.get("seed") === "demo") {
       await pool.query(fs.readFileSync(SEED_FILE, "utf8"));
     } else if (url.searchParams.get("seed") === "budget") {

@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { serverToday } from "@/lib/ai/server";
 import { runNightly } from "@/lib/forecast/backtest-server";
 import { cronSecret } from "@/lib/env";
-import { supabaseService } from "@/lib/supabase/server";
+import { supabaseAsUser, supabaseService } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   const { data: users } = await db.from("profiles").select("id").not("onboarded_at", "is", null);
   const out: { user: string; months?: number; rows?: number; tuned?: boolean; error?: string }[] = [];
   for (const u of (users ?? []) as { id: string }[]) {
-    try { const r = await runNightly(db, u.id, today); out.push({ user: u.id, ...r }); }
+    try { const r = await runNightly(await supabaseAsUser(u.id), u.id, today); out.push({ user: u.id, ...r }); }
     catch (e) { console.error("[cron/forecast]", e); out.push({ user: u.id, error: String(e) }); }
   }
   return NextResponse.json({ today, results: out });

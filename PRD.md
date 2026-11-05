@@ -190,7 +190,7 @@ Use Supabase Auth email OTP *codes*, not magic links. Magic links opened from Ma
 in Safari rather than in the installed PWA. The PWA has separate storage from Safari, so the user
 would never actually get signed in. Codes avoid this entirely.
 - Accept: entering the e-mail sends a code; a correct code signs in and lands on Home; a wrong code shows an inline error; sessions persist for at least 30 days on the installed PWA (refresh tokens).
-- Accept: only the owner's e-mail can sign in. Disable public sign-ups in Supabase and set the allow-list via the env var `ALLOWED_EMAIL`, checked in a server action before the OTP is sent.
+- Accept: only the e-mails listed in `ALLOWED_EMAIL` (one, or several separated by commas for two people) can sign in. Disable public sign-ups in Supabase and set the allow-list via the env var `ALLOWED_EMAIL`, checked in a server action before the OTP is sent. Each person's data is private to them (row-level security); the category list is the one thing shared (migration `20261105000001_two_users.sql`).
 
 **AUTH-02 First-run setup (P0).** A three-step flow, every step skippable except step 1:
 1. *Your accounts*: add at least one account, with name, type and current balance (as of today).
@@ -1412,7 +1412,7 @@ alter table transactions add column is_one_off boolean;                         
 | MOB-01 | **Standalone PWA**: `display: standalone`, `theme_color` and `background_color` `#0C0D0C`, `apple-mobile-web-app-status-bar-style: black-translucent`, dark iOS splash screens, `apple-touch-icon` 180 px. Set `color-scheme: dark` on `:root` so form controls and scrollbars render dark. |
 | MOB-02 | **Safe areas**: respect `env(safe-area-inset-*)`; the tab bar sits above the home indicator; sheets extend under it. |
 | MOB-03 | **Bottom sheets** via **Vaul** (drag to dismiss, snap points, background scales to 0.94 with a rounded top, as in iOS). Filters, date picker and account picker are sheets. **Add expense and Choose category are not sheets**: they are a full-screen modal with a Close button (CAP-01). |
-| MOB-04 | **Touch targets ≥ 44 × 44 pt**; keypad keys ≥ 64 × 52 pt. |
+| MOB-04 | **Touch targets ≥ 44 × 44 pt**; keypad keys ≥ 64 × 52 pt (64 × 48 on phones under 880 px tall, so Add expense fits below the status bar without scrolling; see DECISIONS.md › Sheets clear of the status bar). |
 | MOB-05 | **Gestures**: swipe rows (delete / duplicate), pull-to-refresh on Activity and Insights, long-press ＋ for favourites, horizontal swipe on Analytics period. |
 | MOB-06 | **Motion**: spring transitions (stiffness 400, damping 34); the hero figure animates numerically; respect `prefers-reduced-motion`. |
 | MOB-07 | **Haptics**: iOS Safari does not expose `navigator.vibrate`, so do not depend on it. Use it where supported (Android) and design so that nothing relies on it. |
@@ -2202,7 +2202,7 @@ This is the single checklist of awkward situations and how Sterling must behave 
 | EC-P4 | Several devices subscribed | Send to all. The evening reminder checks "logged today" once, server-side. | NOT-01 |
 | EC-P5 | Bills and the reminder on the same evening | The reminder treats auto-logged bills as **not** user activity, so it still nudges if nothing was logged manually. | NOT-01 (new) |
 | EC-P6 | Shortcuts API token revoked or leaked | Revoking takes effect immediately (401); tokens are stored hashed; per-token rate limit of 60 per hour. | CAP-08 |
-| EC-P7 | Second user tries to sign in | Blocked by `ALLOWED_EMAIL`; RLS proves isolation in tests. | AUTH-01 |
+| EC-P7 | A person not on the allow-list tries to sign in | Blocked by `ALLOWED_EMAIL`; a listed second person signs in to data of their own. RLS proves isolation in tests, with the category list the only shared table (`tests/sql/12_two_users.test.sql`, `tests/e2e/30-two-users.spec.ts`). | AUTH-01 |
 | EC-P8 | "Delete all data" | Cascades every user table, including push subscriptions, trips, bills, FX overrides and AI runs; signs out everywhere. | SET-05 |
 
 ### 18.10 Budgets and forecasting

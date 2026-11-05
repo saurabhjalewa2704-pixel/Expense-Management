@@ -141,7 +141,7 @@ begin
   reset role;
   assert (select count(*) from push_subscriptions where user_id = ua) = 0 and (select count(*) from api_tokens where user_id = ua) = 0, 'EC-P8 devices and tokens are deleted';
   assert (select count(*) from trips where user_id = ua) = 0 and (select count(*) from insight_runs where user_id = ua) = 0 and (select count(*) from transactions where user_id = ua) = 0, 'EC-P8 trips, AI runs and transactions are deleted';
-  assert (select count(*) from categories where user_id = ua) > 0, 'EC-P8 the app returns to first run with the default categories';
+  assert (select count(*) from categories ) > 0, 'EC-P8 the app returns to first run with the default categories';
 end $$;
 
 -- EC-N2: with fewer than three earlier periods there is no "usual"
