@@ -22,7 +22,7 @@ export function CloseCard() {
   const [later, setLater] = useState<Record<string, number>>({});
   useEffect(() => setLater(readLater()), []);
   if (!oldest) return null;
-  const mode = cardMode(oldest, today, later[oldest.month] ?? null, now);
+  const mode = cardMode(oldest, today, later[oldest.month] ?? null, now, months.at(-1));
   if (mode === "hidden") return null;
   const name = monthName(oldest.month);
   const c = checks.data;

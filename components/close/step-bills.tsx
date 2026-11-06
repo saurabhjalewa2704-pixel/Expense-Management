@@ -18,7 +18,7 @@ export function StepBills({ param }: { param: string }) {
 
 function Body({ month }: { month: ISODate }) {
   const f = useCloseFlow(month);
-  const bills = f.checks.data!.bills;
+  const bills = [...f.checks.data!.bills].sort((a, b) => Number(b.status === "estimate" || b.answer === "confirmed") - Number(a.status === "estimate" || a.answer === "confirmed") || a.due_on.localeCompare(b.due_on));    // MC-20: estimates first, then payments waiting for the owner
   const open = bills.filter((b) => !b.answer).length;
   const answered = bills.length - open;
   const est = bills.filter((b) => b.status === "estimate" || b.answer === "confirmed").length;

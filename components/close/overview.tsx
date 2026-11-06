@@ -1,29 +1,29 @@
 "use client";
 // MC02: the overview of the six steps, with what is waiting in each.
-import { useEffect } from "react";
-import { estimateMinutes, firstUnfinishedStep, monthName, stepStatus, balancesShown } from "@/lib/close/logic";
-import { STEPS, type StepKey } from "@/lib/close/types";
-import { UI } from "@/lib/icons";
-import { monthFromParam } from "@/lib/close/logic";
-import { CloseGate, CloseShell, StepHead, useCloseFlow } from "./common";
-import { useCloseActions } from "@/lib/close/data";
-import { closeOnline } from "@/lib/close/data";
 import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useToast } from "@/components/ui/toast";
+import { closeOnline, useCloseState } from "@/lib/close/data";
+import { balancesShown, estimateMinutes, firstUnfinishedStep, monthFromParam, monthsToClose, stepStatus } from "@/lib/close/logic";
+import { STEPS, type StepKey } from "@/lib/close/types";
 import type { ISODate } from "@/lib/dates";
+import { UI } from "@/lib/icons";
+import { CloseGate, CloseShell, useCloseFlow } from "./common";
 
 export function CloseOverview({ param, resume }: { param: string; resume: boolean }) {
   const month = monthFromParam(param);
   if (!month) return null;
-  return <CloseGate month={month}>{({ checks }) => <Overview month={month} checksData={checks} resume={resume} />}</CloseGate>;
+  return <CloseGate month={month}>{() => <Overview month={month} resume={resume} />}</CloseGate>;
 }
 
-function Overview({ month, resume }: { month: ISODate; checksData: unknown; resume: boolean }) {
+function Overview({ month, resume }: { month: ISODate; resume: boolean }) {
   const f = useCloseFlow(month);
   const toast = useToast();
   const qc = useQueryClient();
   const [busy, setBusy] = useState(false);
+  const state = useCloseState();
+  const waiting = monthsToClose(state.data);
+  const newerWaiting = waiting.some((m) => m.month > month);                 // §10.4: only an older month, while a newer one is also waiting
   const counts = f.counts!;
   const c = f.checks.data!;
   const minutes = estimateMinutes({ missing: counts.missing_days.open, bills: counts.bills.open, tidy: counts.tidy_up.open, accounts: balancesShown(c.balances, f.checkSavings).length });
@@ -46,13 +46,11 @@ function Overview({ month, resume }: { month: ISODate; checksData: unknown; resu
     await qc.invalidateQueries();
     f.router.push("/");
   };
-  const olderOpen = false;
-  void olderOpen; void useCloseActions;
   return (
     <CloseShell month={month} index={0 + 1} footer={
       <>
         <button className="btn" data-testid="close-start" onClick={() => f.go(first ?? "review")}>{first ? `Start with ${STEPS.find((s) => s.key === first)!.title.toLowerCase()}` : "Review and close"}</button>
-        <div className="link-row"><button className="mc-act ghost" data-testid="close-quick" disabled={busy || !navigator.onLine} onClick={quickClose}>Close without review</button></div>
+        {newerWaiting && <div className="link-row"><button className="mc-act ghost" data-testid="close-quick" disabled={busy} onClick={quickClose}>Close without review</button></div>}
       </>
     }>
       <h1 className="mc-h1" style={{ marginTop: 14 }} data-testid="close-title">Let’s close {f.name}</h1>
@@ -73,8 +71,6 @@ function Overview({ month, resume }: { month: ISODate; checksData: unknown; resu
       </div>
       <p className="mc-note" data-testid="close-estimate">Steps with nothing to check are ticked for you. About {minutes} {minutes === 1 ? "minute" : "minutes"} in total.</p>
       {f.queued > 0 && <p className="mc-note">{f.queued} {f.queued === 1 ? "answer is" : "answers are"} waiting for a connection.</p>}
-      <span hidden>{monthName(month)}</span>
     </CloseShell>
   );
 }
-void StepHead;

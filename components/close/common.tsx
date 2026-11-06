@@ -41,11 +41,13 @@ export function useCloseFlow(month: ISODate) {
 
   /** MC-06: Continue is always enabled; unanswered items mark the step skipped, and it moves to the next step that has something. */
   const finishStep = async (key: StepKey) => {
-    if (counts) {
-      const st = counts[key];
+    const latest = qc.getQueryData<CloseChecks>(ck.checks(month, today));            // the answers just given, not the render before them
+    const fresh = latest ? stepCounts(latest, checkSavings) : counts;
+    if (fresh) {
+      const st = fresh[key];
       await actions.setStep(key, st.total === 0 ? "nothing" : st.open > 0 ? "skipped" : "done");
     }
-    const after = counts ? nextStepAfter(key, { ...(stepState ?? {}), [key]: "done" }, counts) : null;
+    const after = fresh ? nextStepAfter(key, { ...(stepState ?? {}), [key]: "done" }, fresh) : null;
     if (after) go(after); else go("overview");
   };
   return { router, today, month, name, next, checks, row, counts, stepState, checkSavings, ended, closed, actions, queued, go, finishStep, profile };

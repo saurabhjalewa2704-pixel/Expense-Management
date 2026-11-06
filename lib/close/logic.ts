@@ -138,10 +138,11 @@ export function monthsToClose(state: CloseState | undefined): CloseMonthState[] 
 
 /** MC-01: the card's three faces. `later` is "hidden until 06:00 tomorrow" (MC-35); after 14 days unclosed it becomes the slim row. */
 export type CardMode = "hidden" | "ready" | "in_progress" | "slim";
-export function cardMode(m: CloseMonthState | undefined, today: ISODate, laterUntil: number | null, nowMs: number): CardMode {
+export function cardMode(m: CloseMonthState | undefined, today: ISODate, laterUntil: number | null, nowMs: number, ageOf: CloseMonthState | undefined = m): CardMode {
   if (!m || isClosed(m.status)) return "hidden";
   if (laterUntil !== null && nowMs < laterUntil) return "hidden";
-  const unclosedDays = Math.round((Date.parse(today) - Date.parse(addMonths(m.month, 1))) / 86400000);
+  // how long it has been waiting is judged by the newest month that is due: with several waiting, the card stays full until even the latest is 14 days old
+  const unclosedDays = Math.round((Date.parse(today) - Date.parse(addMonths((ageOf ?? m).month, 1))) / 86400000);
   if (unclosedDays >= 14) return "slim";
   return m.status === "in_progress" && m.started_at ? "in_progress" : "ready";
 }

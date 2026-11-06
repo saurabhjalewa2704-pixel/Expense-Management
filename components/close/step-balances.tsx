@@ -47,8 +47,6 @@ function Body({ month }: { month: ISODate }) {
     await qc.invalidateQueries();
     return true;
   };
-  const sub = (n: number) => `${accounts.length - done} to ${n ? "sort out" : "check"}`;
-  void sub;
   return (
     <CloseShell month={month} index={3} back={() => f.go("overview")}
       hint={accounts.length ? `${matches} of ${accounts.length} match${done - matches ? ` · ${done - matches} resolved` : ""}${accounts.length - done ? ` · ${accounts.length - done} to check` : ""}` : undefined}

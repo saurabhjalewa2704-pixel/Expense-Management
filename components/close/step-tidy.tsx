@@ -33,7 +33,9 @@ function Body({ month }: { month: ISODate }) {
     ...c.large.map((t) => ({ kind: "large" as const, amount: t.amount_pence, t })),
     ...c.one_offs.map((t) => ({ kind: "one_off" as const, amount: t.amount_pence, t })),
   ].sort((a, b) => b.amount - a.amount);
-  const shown = showAll ? entries : entries.slice(0, 10);
+  // the ten largest, shown in the order of §8: duplicates, then large purchases, then automatic one-offs
+  const KIND = { duplicate: 0, large: 1, one_off: 2 } as const;
+  const shown = (showAll ? entries : entries.slice(0, 10)).sort((a, b) => KIND[a.kind] - KIND[b.kind] || b.amount - a.amount);
   const open = entries.filter((e) => !(e.kind === "duplicate" ? e.d.answer : e.t.answer)).length;
   const answered = entries.length - open;
   const title = entries.length === 0 ? "Nothing to tidy" : open === 0 ? `${entries.length} ${entries.length === 1 ? "thing" : "things"} reviewed` : `${open} ${open === 1 ? "thing" : "things"} to look at`;

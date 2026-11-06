@@ -62,7 +62,7 @@ test.describe("month close: the §15 scenario", () => {
     const amex = page.getByTestId("balance-item").filter({ hasText: "Amex Gold" });
     await expect(amex.getByTestId("sterling-says")).toHaveText("£1,436.80 owed");
     await amex.getByTestId("balance-matches").click();
-    await expect(page.getByTestId("balance-item").filter({ hasText: "Monzo" })).toHaveAttribute("data-answer", "match");
+    await expect(amex).toHaveAttribute("data-answer", "match");
     await page.getByTestId("close-continue").click();
 
     // step 4: the two Pret coffees are both real; John Lewis is normal spending

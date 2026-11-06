@@ -130,6 +130,11 @@ describe("the Home card, notifications and chips", () => {
     expect(cardMode(month(), "2026-12-14", null, nowMs)).toBe("ready");
     expect(cardMode(month({ status: "closed" }), "2026-12-01", null, nowMs)).toBe("hidden");
   });
+  it("with several months waiting the card stays full until even the newest is 14 days old", () => {
+    const old = month({ month: "2026-10-01" }), recent = month({ month: "2026-11-01" });
+    expect(cardMode(old, "2026-12-01", null, nowMs, recent)).toBe("ready");
+    expect(cardMode(old, "2026-12-15", null, nowMs, recent)).toBe("slim");
+  });
   it("EC-MC35 Later hides the card until 06:00 the next day, and it returns then", () => {
     const until = laterUntilMs("2026-12-01");
     expect(new Date(until).toISOString()).toBe("2026-12-02T06:00:00.000Z");
