@@ -614,7 +614,7 @@ declare cur date := date_trunc('month', p_today)::date; v_track date; v_since da
 begin
   if auth.uid() is null then raise exception 'Not signed in' using errcode = '28000'; end if;
   select p.tracking_started_on, p.close_since into v_track, v_since from profiles p where p.id = auth.uid();
-  if v_track is null then return jsonb_build_object('current', cur, 'since', null, 'months', '[]'); end if;
+  if v_track is null then return jsonb_build_object('current', cur, 'since', null, 'months', '[]'::jsonb, 'closed_count', 0); end if;
   first_m := date_trunc('month', v_track)::date;
   if v_since is null and first_m < cur then
     v_since := (cur - interval '1 month')::date;

@@ -7,6 +7,10 @@ declare ua uuid := gen_random_uuid(); ub uuid := gen_random_uuid(); acc uuid; n 
 begin
   insert into auth.users (id, email) values (ua, 'mca@test.local'), (ub, 'mcb@test.local');
   assert not exists (select 1 from pg_tables where schemaname = 'public' and tablename in ('month_closes', 'month_close_answers', 'account_reconciliations') and not rowsecurity), 'RLS is on for the three new tables';
+  -- a brand-new person with no accounts yet has nothing to close: the state is still a real list (the Home card reads it as one)
+  perform pg_temp.as_user(ub); set local role authenticated;
+  assert jsonb_typeof(month_close_state('2026-12-01')->'months') = 'array' and jsonb_array_length(month_close_state('2026-12-01')->'months') = 0, 'a new person has an empty list of months, not text';
+  reset role;
   perform pg_temp.as_user(ua); set local role authenticated;
   insert into accounts (name, type, opening_balance_pence, opening_date) values ('Cash', 'cash', 18000, '2026-10-01') returning id into acc;
   update profiles set tracking_started_on = '2026-10-01' where id = ua;

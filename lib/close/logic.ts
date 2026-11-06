@@ -133,7 +133,7 @@ export const monthFromParam = (p: string): ISODate | null => (/^\d{4}-(0[1-9]|1[
 
 /** The months that need closing now, oldest first: prompted, ended, not closed (MC-04, §10.4). */
 export function monthsToClose(state: CloseState | undefined): CloseMonthState[] {
-  return (state?.months ?? []).filter((m) => m.prompted && !isClosed(m.status) && m.month < (state?.current ?? "")).sort((a, b) => a.month.localeCompare(b.month));
+  return (Array.isArray(state?.months) ? state!.months : []).filter((m) => m.prompted && !isClosed(m.status) && m.month < (state?.current ?? "")).sort((a, b) => a.month.localeCompare(b.month));
 }
 
 /** MC-01: the card's three faces. `later` is "hidden until 06:00 tomorrow" (MC-35); after 14 days unclosed it becomes the slim row. */
