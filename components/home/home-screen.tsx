@@ -5,6 +5,7 @@ import { useQuickAdd } from "@/components/capture/quick-add";
 import { Figure, cashLabel } from "@/components/money";
 import { ReminderPrompt } from "@/components/home/reminder-prompt";
 import { PotsSection } from "@/components/home/pots-section";
+import { CloseCard } from "@/components/close/home-card";
 import { BillsCard } from "@/components/home/bills-card";
 import { BudgetCard, BudgetPrompt, LimitsCard, useHasBudget } from "@/components/home/budget-cards";
 import { TripCard } from "@/components/home/trip-card";
@@ -65,6 +66,7 @@ function MobileHome() {
       </section>
 
       <div style={{ marginTop: 24 }} className="stack">
+        <CloseCard />
         <TripCard />
         {budget.loading ? <div className="bg-card"><div className="skeleton" style={{ height: 210 }} aria-busy /></div>
           : budget.view ? <><BudgetCard /><LimitsCard /></>

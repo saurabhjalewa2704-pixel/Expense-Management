@@ -61,6 +61,7 @@ export function SettingsScreen() {
 
       <div className="eyebrow group-label">Notifications and insights</div>
       <div className="list">
+        <Row href="/settings/month-close" Icon={UI.CircleCheck} title="Month close" sub="A short check on the 1st, and a history of closed months" />
         <Row href="/settings/reminders" Icon={UI.Bell} title="Reminders" sub={profile?.reminder_enabled ? `Evening reminder at ${profile.reminder_time.slice(0, 5)}` : "Off"} />
         <Row href="/settings/ai" Icon={UI.Sparkles} title="AI insights" sub={profile?.ai_enabled === false ? "Off" : "On"} />
       </div>

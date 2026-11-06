@@ -1,7 +1,9 @@
 "use client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
+import { flushCloseQueue } from "@/lib/close/queue";
 import { flushOutbox, purgeConfirmed } from "@/lib/outbox";
+import { supabaseBrowser } from "@/lib/supabase/client";
 
 const EVENT = "sterling:sync";
 /** Ask the sync engine to flush the outbox now (after a capture). */
@@ -22,6 +24,7 @@ export function SyncEngine() {
       running = true;
       try {
         const r = await flushOutbox();
+        if (!r.blocked) await flushCloseQueue(supabaseBrowser()).catch(() => 0);     // month-close answers wait in their own queue
         if (r.confirmed > 0 || (refresh && !r.blocked)) await qc.invalidateQueries();
         if (r.confirmed > 0) { await purgeConfirmed(); void fetch("/api/budget/check", { method: "POST" }).catch(() => undefined); }   // BUD-10: alerts after writes
       } catch {

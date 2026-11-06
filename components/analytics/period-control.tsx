@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { MonthChip } from "@/components/close/status-chip";
 import { Sheet } from "@/components/ui/sheet";
 import { UI } from "@/lib/icons";
 import { canStepForward, resolvePeriod, stepPeriod, type PeriodKind, type PeriodSel } from "@/lib/periods";
@@ -38,6 +39,7 @@ export function PeriodControl({ value, today, onChange }: { value: PeriodSel; to
         <span className="p" data-testid="period-label" aria-live="polite">{p.label}</span>
         <button className="icon-btn" aria-label="Next period" disabled={!canStepForward(value, today)} style={{ opacity: canStepForward(value, today) ? 1 : 0.35 }} onClick={() => onChange(stepPeriod(value, 1))}><UI.ChevronRight size={16} strokeWidth={2} aria-hidden /></button>
       </div>
+      {value.kind === "month" && <MonthChip month={p.from as ISODate} />}
       <Sheet open={custom} onOpenChange={setCustom} title="Custom range">
         <div className="vaul-body">
           <div className="sheet-head"><button className="txt" onClick={() => setCustom(false)}>Cancel</button><span className="t">Custom range</span><span /></div>

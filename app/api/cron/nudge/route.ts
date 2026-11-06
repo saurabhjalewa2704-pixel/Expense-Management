@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { londonParts, type ISODate } from "@/lib/dates";
 import { cronSecret } from "@/lib/env";
 import { decideNudge } from "@/lib/nudge";
+import { runCloseNotifications } from "@/lib/close/notify-server";
 import { sendPush } from "@/lib/push-send";
 import { supabaseService } from "@/lib/supabase/server";
 
@@ -48,5 +49,6 @@ export async function GET(req: NextRequest) {
     if (sent > 0) await db.from("profiles").update({ last_reminder_on: now.date }).eq("id", p.id);   // at most one a day
     out.push({ user: p.id, result: sent > 0 ? "sent" : "failed", sent, removed });
   }
-  return NextResponse.json({ london: now, results: out });
+  const close = await runCloseNotifications(db, now, windowMin);              // MC-80: month close, on the 1st and the 4th
+  return NextResponse.json({ london: now, results: out, close });
 }

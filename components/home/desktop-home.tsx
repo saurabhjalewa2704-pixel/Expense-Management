@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { CategoryBars } from "@/components/charts/category-bars";
 import { MonthOutlook } from "@/components/budget/month-outlook";
+import { CloseCard } from "@/components/close/home-card";
 import { BillsCard } from "@/components/home/bills-card";
 import { BudgetCard, BudgetPrompt, LimitsCard, useHasBudget } from "@/components/home/budget-cards";
 import { PaceChart } from "@/components/charts/pace-chart";
@@ -112,6 +113,7 @@ export function DesktopHome() {
           )}
         </div>
 
+        <CloseCard />
         <BillsCard />
         <div className="card chart-card" style={{ padding: "24px 28px" }}>
           <div className="row-between">

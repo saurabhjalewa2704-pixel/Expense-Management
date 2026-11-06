@@ -5,7 +5,7 @@ export const OWNER = "owner@sterling.local";
 export const PARTNER = "partner@sterling.local";
 
 /** Wipe the database and recreate the owner. seed: "demo" loads supabase/seed.sql; onboarded skips first-run setup. */
-export async function resetDb(opts: { seed?: "demo" | "budget" | "trip"; onboarded?: boolean; partner?: boolean } = {}) {
+export async function resetDb(opts: { seed?: "demo" | "budget" | "trip" | "close"; onboarded?: boolean; partner?: boolean } = {}) {
   const q = new URLSearchParams();
   if (opts.seed) q.set("seed", opts.seed);
   if (opts.onboarded) q.set("onboarded", "1");
@@ -62,6 +62,15 @@ export async function startBudget(page: P) {
 export async function startTrip(page: P) {
   await resetDb({ seed: "trip" });
   await page.context().clock.install({ time: new Date("2027-03-12T09:30:00Z") });
+  await signIn(page);
+  await page.clock.resume();
+  await expect(page.getByTestId("hero")).toBeVisible();
+}
+
+/** The month-close data (MONTH-CLOSE-PRD §15), the clock on Tue 1 December 2026 09:30, signed in. The server must run with STERLING_TEST_TODAY=2026-12-01 (E2E_CLOSE=1 does). */
+export async function startClose(page: P) {
+  await resetDb({ seed: "close" });
+  await page.context().clock.install({ time: new Date("2026-12-01T09:30:00Z") });
   await signIn(page);
   await page.clock.resume();
   await expect(page.getByTestId("hero")).toBeVisible();
