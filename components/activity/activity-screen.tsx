@@ -28,7 +28,7 @@ export function ActivityScreen() {
   const [payeeId, setPayeeId] = useState<string | undefined>(sp.get("payee") ?? undefined);
   const [trip, setTrip] = useState<string | undefined>(sp.get("trip") ?? undefined);
   const [period, setPeriod] = useState<Period>(urlFrom || urlTo ? { key: "custom", from: urlFrom, to: urlTo } : sp.get("trip") ? { key: "all" } : { key: "this-month", ...periodRange("this-month", todayLondon()) });
-  const [accountIds, setAccountIds] = useState<string[]>([]);
+  const [accountIds, setAccountIds] = useState<string[]>(sp.get("account")?.split(",").filter(Boolean) ?? []);       // month close: "Let me look first"
   const [categoryIds, setCategoryIds] = useState<string[]>(sp.get("categories")?.split(",").filter(Boolean) ?? []);
   const [types, setTypes] = useState<string[]>([]);
   const [amount, setAmount] = useState<{ min?: number; max?: number }>({});

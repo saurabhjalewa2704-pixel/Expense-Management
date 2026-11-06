@@ -22,6 +22,10 @@ export interface Profile {
   bills_notify: boolean;
   /** "‹trip› wrap-up ready" (TRIP-08). */
   trip_notify?: boolean;
+  /** Month close (MC-80/81): the notification, its time on the 1st ("09:00:00"), and whether Balances also checks savings. */
+  close_notify?: boolean;
+  close_notify_time?: string;
+  close_check_savings?: boolean;
   /** BUD-10 alert choices. */
   budget_alert_forecast?: boolean;
   budget_alert_pct80?: boolean;

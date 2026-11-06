@@ -17,6 +17,7 @@ Next.js 16 on Vercel · Supabase (Postgres, Auth, RLS) · Claude API for the ins
 | Update 2 | "New version available" banner for the installed app |
 | Update 3 | One-off pots (e.g. a home purchase), kept out of monthly spend, analytics and insights |
 | Update 4 | Ask Sterling: ask about your spending in plain English (Insights → Ask) |
+| Month-end close | A short guided check on the 1st (missing days, bills, balances, tidy-up, review, next month), a status for every month and changes tracked after closing; run `20261106000001_month_close_enum.sql` then `20261106000002_month_close.sql`; spec in `docs/MONTH-CLOSE-PRD.md` |
 | Forecast engine | The forecasting engine PRD: a credibility-weighted, self-tuning forecast behind every month-end figure, a "Why this forecast?" sheet, planned extras, one-off flags and a nightly backtest; run migration `20261103000001_forecast_engine.sql` |
 | v1.7.1 | Budgets (monthly amount, category limits, plan, forecast with range, safe-to-spend, what-ifs, alerts) and one forecast engine behind every month-end figure; run migration `20261102000001_budgets.sql` |
 
@@ -102,6 +103,7 @@ npm test                  # unit tests (Vitest)
 npm run test:sql          # RLS, cash-identity invariants, business rules, analytics, PRD Appendix A to the penny
 bash scripts/e2e-prod.sh  # production build + Playwright at 390×844 (mobile) and 1440×1024 (desktop)
 E2E_TRIPS=1 bash scripts/e2e-prod.sh   # the Trips specs, with the clock pinned to Fri 12 Mar 2027 (PRD Appendix A.2) and fixed rates (STERLING_FX_STUB)
+E2E_CLOSE=1 bash scripts/e2e-prod.sh   # the month-close specs, with the clock pinned to Tue 1 Dec 2026 (MONTH-CLOSE-PRD §15)
 npx tsx scripts/ai-check.ts 20   # needs ANTHROPIC_API_KEY + Supabase env: the PRD §12.8 check against the real model
 npx tsx scripts/ask-check.ts      # the same for Ask Sterling: nine sample questions, answers and tools printed
 ```

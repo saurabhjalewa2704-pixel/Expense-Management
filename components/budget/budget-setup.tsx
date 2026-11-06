@@ -49,7 +49,8 @@ export function BudgetSetup() {
   const [covers, setCovers] = useState<Covers>("all");
   const [limits, setLimits] = useState<Map<string, LimitDraft>>(new Map());
   const [removed, setRemoved] = useState<Set<string>>(new Set());
-  const [from, setFrom] = useState<"this" | "next">("this");
+  const sp0 = useSearchParams();
+  const [from, setFrom] = useState<"this" | "next">(sp0.get("from") === "next" ? "next" : "this");      // month close step 6 opens it for next month
   const [ready, setReady] = useState(false);
   const [edit, setEdit] = useState<string | null>(null);
   const [coversOpen, setCoversOpen] = useState(false);
@@ -100,7 +101,7 @@ export function BudgetSetup() {
     if (!r.ok) { toast({ message: r.error }); return; }
     await qc.invalidateQueries();
     toast({ message: hadBudget ? "Budget saved" : "Budget set" });
-    router.push("/budget");
+    router.push(sp.get("return") ?? "/budget");
   };
 
   const setAlert = async (key: "budget_alert_forecast" | "budget_alert_pct80" | "budget_alert_reached" | "budget_alert_weekly", v: boolean) => {

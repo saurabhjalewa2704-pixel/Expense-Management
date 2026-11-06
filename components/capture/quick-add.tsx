@@ -15,6 +15,7 @@ import { cachedRate, fetchRate, warmRates } from "@/lib/fx-client";
 import { convertToPence, currencySymbol, effectiveRate, exponentOf, formatMinor, parseMinor, pressKeyFx, rateLabel } from "@/lib/fx";
 import { fetchRecurringDuplicate } from "@/lib/queries/fetchers";
 import { supabaseBrowser } from "@/lib/supabase/client";
+import { ClosedMonthBanner } from "@/components/close/closed-banner";
 import { markFresh } from "@/lib/fresh-rows";
 import { discard, enqueue, flushIdle, getItem, newClientId, updatePending } from "@/lib/outbox";
 import { useAccounts, useCategoryTree, useLastIncomeAccount, useOutbox, usePayees, useProfile, useSuggestHistory, useTripStops, useTrips, useTripTxns } from "@/lib/queries/hooks";
@@ -609,6 +610,7 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
           </>
         )}
 
+        {mode !== "transfer" && <ClosedMonthBanner date={date} />}
         {error && <p role="alert" className="callout" style={{ color: "var(--caution)", marginTop: 10 }}>{error}</p>}
         <button className="btn" style={{ marginTop: 14, opacity: canSave && !busy ? 1 : 0.4 }} disabled={!canSave || busy} onClick={() => save()}>{buttonLabel}</button>
         {editing && (

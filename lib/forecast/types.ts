@@ -13,6 +13,8 @@ export interface DayFact {
   has_activity: boolean;                // any transaction (any type) that day, or a confirmed no-spend marker
   confirmed_zero: boolean;              // "Nothing to log"
   trip_day: boolean;                    // inside a trip's dates
+  /** "I didn't log, can't remember" (month close): not evidence, exactly like a day inside a logging gap. Absent in older fixtures. */
+  not_tracked?: boolean;
 }
 
 export type ScheduledKind = "bill" | "bill_estimate" | "future_dated" | "likely_recurring" | "extra";

@@ -57,6 +57,6 @@ export async function runNightly(db: SupabaseClient, userId: string, today: ISOD
   const ym = monthStart(y);
   const raw = await fetchRawInput(db, ym, y, endOfDay(y));
   const f = forecast(buildInput(raw, { month: ym, today: y, scope: "all", bills }));
-  await db.from("forecast_snapshots").upsert({ user_id: userId, day: y, scope: "all", category_id: null, point_pence: f.point, low_pence: f.low, high_pence: f.high, regime: f.regime, confidence: f.confidence }, { onConflict: "user_id,day,scope,category_id", ignoreDuplicates: true });
+  await db.from("forecast_snapshots").upsert({ user_id: userId, day: y, scope: "all", category_id: null, point_pence: f.point, low_pence: f.low, high_pence: f.high, regime: f.regime, confidence: f.confidence, usual_per_day_pence: f.prior.usualPerDay }, { onConflict: "user_id,day,scope,category_id", ignoreDuplicates: true });
   return { months: months.length, rows: rowsOut.length, tuned, z };
 }

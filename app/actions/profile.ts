@@ -18,6 +18,9 @@ const Patch = z.object({
   budget_alert_reached: z.boolean(),
   budget_alert_weekly: z.boolean(),
   lock_after_min: z.number().int().min(0).max(60).nullable(),
+  close_notify: z.boolean(),
+  close_notify_time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+  close_check_savings: z.boolean(),
 }).partial();
 
 export async function updateProfile(patch: unknown): Promise<ActionResult> {

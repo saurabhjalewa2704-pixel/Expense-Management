@@ -15,6 +15,7 @@ const ALLOW_SIGNUPS = process.env.ALLOW_SIGNUPS === "true";
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL ?? "postgres://postgres@127.0.0.1:54322/sterling_dev", max: 4 });
 const SEED_FILE = path.resolve(path.dirname(new URL(import.meta.url).pathname), "../../supabase/seed.sql");
 const BUDGET_SEED_FILE = path.resolve(path.dirname(new URL(import.meta.url).pathname), "../../supabase/seed_budget.sql");
+const CLOSE_SEED_FILE = path.resolve(path.dirname(new URL(import.meta.url).pathname), "../../supabase/seed_close.sql");
 const TRIP_SEED_FILE = path.resolve(path.dirname(new URL(import.meta.url).pathname), "../../supabase/seed_trip.sql");
 
 const b64 = (b) => Buffer.from(b).toString("base64url");
@@ -146,6 +147,7 @@ async function auth(req, res, url) {
 //   ?seed=demo      run supabase/seed.sql for the owner
 //   ?seed=budget    run supabase/seed.sql and then supabase/seed_budget.sql (PRD Appendix A.3)
 //   ?seed=trip      run supabase/seed_trip.sql (the USA trip) for the owner
+//   ?seed=close     run supabase/seed_close.sql (the month-close scenario of MONTH-CLOSE-PRD §15) for the owner
 //   ?onboarded=1    mark first-run setup as done
 //   ?user=none      leave the database without any user
 //   ?partner=1      also create the second person (second address in ALLOWED_EMAIL, else partner@sterling.local)
@@ -162,6 +164,8 @@ async function testHook(req, res, url) {
     } else if (url.searchParams.get("seed") === "budget") {
       await pool.query(fs.readFileSync(SEED_FILE, "utf8"));
       await pool.query(fs.readFileSync(BUDGET_SEED_FILE, "utf8"));     // PRD Appendix A.3: the budget, five limits and the designed history
+    } else if (url.searchParams.get("seed") === "close") {
+      await pool.query(fs.readFileSync(CLOSE_SEED_FILE, "utf8"));       // MONTH-CLOSE-PRD §15: closing November 2026, viewed on 1 December
     } else if (url.searchParams.get("seed") === "trip") {
       await pool.query(fs.readFileSync(TRIP_SEED_FILE, "utf8"));       // PRD Appendix A.2, the USA trip, viewed on 12 March 2027
     } else if (user && url.searchParams.get("onboarded") === "1") {

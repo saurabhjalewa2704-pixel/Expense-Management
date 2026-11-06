@@ -20,7 +20,7 @@ export const r2p = (x: Decimal.Value): number => D(x).toDecimalPlaces(0, Decimal
 
 export const posBucket = (d: ISO): 0 | 1 | 2 => { const n = Number(d.slice(8)); return n <= 10 ? 0 : n <= 20 ? 1 : 2; };
 
-/** Days in [start, end] that count as evidence: not inside a logging gap (a run of `gap_run`+ days with no activity and no confirmed zero), not trip days. */
+/** Days in [start, end] that count as evidence: not inside a logging gap (a run of `gap_run`+ days with no activity and no confirmed zero), not trip days, not days the owner marked "not tracked" (month close). */
 export function trackedDays(days: readonly DayFact[], start: ISO, end: ISO, p: EngineParams): DayFact[] {
   const sel = days.filter((x) => x.d >= start && x.d <= end);
   const out: DayFact[] = [];
@@ -31,7 +31,7 @@ export function trackedDays(days: readonly DayFact[], start: ISO, end: ISO, p: E
     out.push(x);
   }
   if (run.length && run.length < p.gap_run) out.push(...run);       // a short quiet spell at the end is genuine
-  return out.filter((x) => !x.trip_day);
+  return out.filter((x) => !x.trip_day && !x.not_tracked);
 }
 
 export interface Prior {
