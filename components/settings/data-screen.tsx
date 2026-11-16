@@ -22,6 +22,7 @@ export function DataScreen() {
     if (!r.ok) return setError(r.error);
     qc.clear();
     await del("sterling-query-cache").catch(() => {});
+    await caches.delete("pages").catch(() => {});                // the stored app shell (app/sw.ts)
     router.replace("/sign-in");
   };
 
