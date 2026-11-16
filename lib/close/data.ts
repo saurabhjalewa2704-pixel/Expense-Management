@@ -30,9 +30,12 @@ export function useCloseState() {
   return useQuery({ queryKey: ck.state(today), queryFn: () => rpc<CloseState>("month_close_state", { p_today: today }), staleTime: 15_000 });
 }
 /** Item lists are computed when a step opens and again on return to it (MC-08). */
-export function useCloseChecks(month: ISODate, enabled = true) {
+export function useCloseChecks(month: ISODate, enabled = true, opts: { glance?: boolean } = {}) {
   const today = useToday();
-  return useQuery({ queryKey: ck.checks(month, today), queryFn: () => rpc<CloseChecks>("month_close_checks", { p_month: month, p_today: today }), staleTime: 0, refetchOnMount: "always", refetchOnWindowFocus: true, enabled });
+  // `glance` is the Home card: it only decorates a line of text, so it takes what the device already has and asks again at most
+  // once a minute, instead of re-running the heaviest function in the app on every open of Home.
+  const fresh = opts.glance ? { staleTime: 60_000 } : { staleTime: 0, refetchOnMount: "always" as const, refetchOnWindowFocus: true };
+  return useQuery({ queryKey: ck.checks(month, today), queryFn: () => rpc<CloseChecks>("month_close_checks", { p_month: month, p_today: today }), ...fresh, enabled });
 }
 export function useCloseSummary(month: ISODate, enabled = true) {
   const today = useToday();

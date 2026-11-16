@@ -63,6 +63,8 @@
 }
 
 html { font-family: var(--font); font-feature-settings: "tnum"; }
+/* Behind everything, so a page that has not rendered yet (or a scroll bounce) shows the app's ground, not the browser's black. */
+html, body { background: var(--bg); }
 .num, .amt, .figure, .eq-v { font-feature-settings: "tnum"; }
 
 /* ---------- sheets (Vaul) ---------- */

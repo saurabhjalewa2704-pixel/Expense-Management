@@ -32,6 +32,7 @@ export function SettingsScreen() {
     await signOut();
     qc.clear();
     await del("sterling-query-cache").catch(() => {});
+    await caches.delete("pages").catch(() => {});                // the stored app shell (app/sw.ts), so the next open goes to the sign-in check
     router.replace("/sign-in");
     router.refresh();
   };

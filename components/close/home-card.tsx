@@ -18,7 +18,7 @@ export function CloseCard() {
   const { data: profile } = useProfile();
   const months = monthsToClose(state.data);
   const oldest = months[0];
-  const checks = useCloseChecks(oldest?.month ?? "2000-01-01", !!oldest);
+  const checks = useCloseChecks(oldest?.month ?? "2000-01-01", !!oldest, { glance: true });
   const [later, setLater] = useState<Record<string, number>>({});
   useEffect(() => setLater(readLater()), []);
   if (!oldest) return null;
