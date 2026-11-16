@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { convertToPence, currencySymbol, effectiveRate, exponentOf, formatMinor, gbpPerUnit, parseMinor, rateLabel, scaleRate } from "@/lib/fx";
+import { convertToPence, currencySymbol, effectiveRate, exponentOf, formatMinor, gbpPerUnit, parseFallbackRate, parseMinor, rateLabel, scaleRate } from "@/lib/fx";
 
 describe("foreign currency (TRIP-06, EC-M4, EC-T8)", () => {
   it("$48.60 at 0.7900 is £38.39", () => expect(convertToPence(4860, "USD", "0.7900")).toBe(3839));
@@ -74,4 +74,18 @@ describe("keypad for a foreign amount (EC-T8)", () => {
     expect(pressKeyFx("", ".", "USD")).toBe("0.");
     expect(pressKeyFx("0", "7", "USD")).toBe("7");
   });
+});
+
+describe("a rate for a currency the ECB feed does not carry (Moroccan dirham)", () => {
+  it("reads units per pound from the second source and stores pounds per unit", () => {
+    expect(parseFallbackRate({ date: "2027-03-11", gbp: { mad: 12.5, usd: 1.27 } }, "MAD")).toEqual({ on: "2027-03-11", gbp_per_unit: "0.08000000" });
+  });
+  it("is null for a missing currency, a zero or non-numeric rate, or an unexpected payload", () => {
+    expect(parseFallbackRate({ date: "2027-03-11", gbp: { usd: 1.27 } }, "MAD")).toBeNull();
+    expect(parseFallbackRate({ date: "2027-03-11", gbp: { mad: 0 } }, "MAD")).toBeNull();
+    expect(parseFallbackRate({ date: "2027-03-11", gbp: { mad: "12.5" } }, "MAD")).toBeNull();
+    expect(parseFallbackRate({ date: "yesterday", gbp: { mad: 12.5 } }, "MAD")).toBeNull();
+    expect(parseFallbackRate(null, "MAD")).toBeNull();
+  });
+  it("the symbol falls back to the code for a currency with no symbol of its own", () => expect(currencySymbol("MAD")).toBe("MAD"));
 });
