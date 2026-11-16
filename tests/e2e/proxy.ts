@@ -8,7 +8,9 @@ export function startUpdateProxy(target = `http://127.0.0.1:${process.env.E2E_PO
   let suffix = "";
   const t = new URL(target);
   const server = http.createServer((req, res) => {
-    const up = http.request({ host: t.hostname, port: t.port, path: req.url, method: req.method, headers: req.headers }, (r) => {
+    // Ask for the script uncompressed: the body is edited as text, and a gzipped body with its content-encoding header removed is garbage
+    // (Next 16.4.6 compresses the worker script; 16.4.2 did not).
+    const up = http.request({ host: t.hostname, port: t.port, path: req.url, method: req.method, headers: { ...req.headers, "accept-encoding": "identity" } }, (r) => {
       if (req.url?.split("?")[0] === "/serwist/sw.js" && suffix) {
         const chunks: Buffer[] = [];
         r.on("data", (c: Buffer) => chunks.push(c));
