@@ -13,7 +13,7 @@ test.describe("Quick Add (redesigned)", () => {
     await expect(page.getByText("Your top categories")).toBeVisible();
     await expect(page.getByRole("button", { name: "More categories" })).toContainText("All categories");
     await expect(page.getByTestId("qcard")).toHaveCount(6);
-    const { sh, ch } = await qa.evaluate((el) => ({ sh: el.scrollHeight, ch: el.clientHeight }));
+    const { sh, ch } = await qa.locator(".vaul-body").evaluate((el) => ({ sh: el.scrollHeight, ch: el.clientHeight }));   // the form; the Add button is pinned below it
     expect(sh).toBeLessThanOrEqual(ch);                                                   // nothing to scroll
     const add = (await page.getByRole("button", { name: "Add £12.80" }).boundingBox())!;
     expect(add.y + add.height).toBeLessThanOrEqual(844);                                  // Add is on screen

@@ -82,6 +82,12 @@ export function currencySymbol(currency: string): string {
   }
 }
 
+/** "$ USD" for a currency with a symbol of its own, plain "MAD" for one without (the symbol falls back to the code, so "MAD MAD" would repeat it). */
+export function currencyLabel(currency: string): string {
+  const sym = currencySymbol(currency).trim();
+  return sym && sym !== currency ? `${sym} ${currency}` : currency;
+}
+
 /** Frankfurter gives units of the currency per 1 GBP; the app stores GBP per 1 unit (8 dp). */
 export function gbpPerUnit(unitsPerGbp: number | string): string {
   const x = scaleRate(typeof unitsPerGbp === "number" ? unitsPerGbp : unitsPerGbp);
@@ -105,4 +111,16 @@ export function pressKeyFx(current: string, key: string, currency: string): stri
   const next = current + key;
   const minor = parseMinor(next, currency);
   return minor === null || minor > 99_999_999_999 ? current : next;
+}
+
+/**
+ * The second rate source (fawazahmed0 "currency-api", daily snapshots of market rates): `{ date, gbp: { mad: 12.6, … } }`, units of the
+ * currency per 1 GBP with lower-case codes. The ECB feed behind Frankfurter has about 30 currencies and no Moroccan dirham, so this covers
+ * the rest. Returns the day it describes and the GBP-per-unit rate, or null when the currency is missing or the payload is not what we expect.
+ */
+export function parseFallbackRate(payload: unknown, currency: string): { on: string; gbp_per_unit: string } | null {
+  const j = payload as { date?: unknown; gbp?: Record<string, unknown> } | null;
+  const units = j?.gbp?.[currency.toLowerCase()];
+  if (typeof j?.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(j.date) || typeof units !== "number" || !Number.isFinite(units) || units <= 0) return null;
+  return { on: j.date, gbp_per_unit: gbpPerUnit(units) };
 }

@@ -12,7 +12,7 @@ import { CategoryIcon, UI } from "@/lib/icons";
 import { formatGBP, pressKey, toPence } from "@/lib/money";
 import { ordinal } from "@/lib/recurrence";
 import { cachedRate, fetchRate, warmRates } from "@/lib/fx-client";
-import { convertToPence, currencySymbol, effectiveRate, exponentOf, formatMinor, parseMinor, pressKeyFx, rateLabel } from "@/lib/fx";
+import { convertToPence, currencyLabel, currencySymbol, effectiveRate, exponentOf, formatMinor, parseMinor, pressKeyFx, rateLabel } from "@/lib/fx";
 import { fetchRecurringDuplicate } from "@/lib/queries/fetchers";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { ClosedMonthBanner } from "@/components/close/closed-banner";
@@ -466,7 +466,8 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
       open={open} onOpenChange={requestClose} title={editing ? "Edit transaction" : "Add transaction"}
       bottomInset={isDesktop ? 0 : inset} maxHeight={!isDesktop && viewportHeight ? `calc(${Math.floor(viewportHeight)}px - var(--safe-top) - 12px)` : undefined} handle={false} className="qa-sheet"
     >
-      <div className="vaul-body" onKeyDown={onKeyDown} data-testid="quick-add" style={{ paddingBottom: 4 }}>
+      <div className="qa-body" onKeyDown={onKeyDown} data-testid="quick-add" data-compact={foreign ? "" : undefined}>
+      <div className="vaul-body" style={{ paddingBottom: 4 }}>
         <div className="qa-head">
           <button className="qa-x" aria-label="Close" onClick={() => requestClose(false)}><UI.X size={18} strokeWidth={2} aria-hidden /></button>
           <span className="t">{editing ? "Edit transaction" : mode === "income" ? "New income" : mode === "transfer" ? "New transfer" : "New expense"}</span>
@@ -487,19 +488,21 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
           <span className="caret" aria-hidden />
         </div>
         {mode !== "transfer" && (tripCur || foreign) && (
-          <div className="ae-fx" data-testid="fx-line" style={{ marginBottom: 8, flexWrap: "wrap" }}>
-            <button className="cur-chip" onClick={() => setPicker("currency")} aria-label={`Currency ${foreign ? effCur : "pounds"}. Tap to change`} data-testid="currency-chip">{foreign ? `${currencySymbol(effCur)} ${effCur}`.trim() : "£ GBP"}<UI.ChevronDown size={14} strokeWidth={2} aria-hidden /></button>
+          <div className="ae-fx" data-testid="fx-line">
+            <button className="cur-chip" onClick={() => setPicker("currency")} aria-label={`Currency ${foreign ? effCur : "pounds"}. Tap to change`} data-testid="currency-chip">{foreign ? currencyLabel(effCur) : "£ GBP"}<UI.ChevronDown size={14} strokeWidth={2} aria-hidden /></button>
             {foreign && minor !== null && minor > 0 && (fxPence !== null || savedFx) && (
-              <span data-testid="fx-conversion">≈ <button className="link num" style={{ color: "var(--ink)", fontWeight: 600 }} onClick={() => setPicker("pounds")} aria-label={`About ${formatGBP(pence)}. Tap to enter the amount in pounds`} data-testid="fx-pounds">{formatGBP(pence)}</button>
+              <span className="fx-text" data-testid="fx-conversion">≈ <button className="link num" style={{ color: "var(--ink)", fontWeight: 600 }} onClick={() => setPicker("pounds")} aria-label={`About ${formatGBP(pence)}. Tap to enter the amount in pounds`} data-testid="fx-pounds">{formatGBP(pence)}</button>
                 {" · "}{manualFx ? `effective ${effectiveRate(pence, minor, effCur)}` : `1 ${effCur} = ${rateLabel(rateNow ?? "0")} GBP`}
-                {!manualFx && fx.status === "cached" && !savedFx ? " (saved rate)" : ""}{feeBps > 0 && !manualFx ? ` + ${(feeBps / 100).toFixed(2)}% card fee` : ""}</span>
+                {!manualFx && fx.status === "cached" && !savedFx ? " (saved rate)" : ""}{feeBps > 0 && !manualFx ? ` + ${(feeBps / 100).toFixed(2)}% fee` : ""}</span>
             )}
             {foreign && fx.status === "loading" && !rateNow && !savedFx && <span>Getting the rate…</span>}
             {needsRate && fx.status !== "loading" && (
-              <span role="group" aria-label="No exchange rate available" data-testid="fx-missing" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
-                <span>No rate available. 1 {effCur} =</span>
-                <input aria-label="Exchange rate in pounds" inputMode="decimal" placeholder="0.79" value={manualRate} onChange={(e) => { setManualRate(e.target.value); setFxDirty(true); }} style={{ width: 70, textAlign: "center", background: "var(--surface)", borderRadius: 8, border: 0, color: "var(--ink)", height: 30 }} data-testid="fx-manual-rate" />
-                <span>GBP, or <button className="link" style={{ color: "var(--ink)", fontWeight: 600 }} onClick={() => { setPounds(""); setPicker("pounds"); }}>enter the £ amount</button></span>
+              // no rate for this currency or date: one row to give the rate, or the £ the statement shows
+              <span role="group" aria-label="No exchange rate available" data-testid="fx-missing" className="fx-missing">
+                <span>1 {effCur} =</span>
+                <input className="fx-rate" aria-label="Exchange rate in pounds" inputMode="decimal" placeholder="0.00" value={manualRate} onChange={(e) => { setManualRate(e.target.value); setFxDirty(true); }} data-testid="fx-manual-rate" />
+                <span>GBP</span>
+                <button className="link" style={{ color: "var(--ink)", fontWeight: 600 }} onClick={() => { setPounds(""); setPicker("pounds"); }}>or enter £</button>
               </span>
             )}
           </div>
@@ -564,14 +567,14 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
             <div className="meta">
               {mode !== "transfer" && (selTrip ? (
                 <span className="trip-chip" data-testid="trip-chip" data-origin={tripOrigin}>
-                  <button onClick={() => setPicker("trip")} style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "inherit", font: "inherit" }} aria-label={`Trip ${selTrip.name}. Tap to change`}><UI.MapPin size={15} strokeWidth={2} aria-hidden />{selTrip.name}</button>
+                  <button onClick={() => setPicker("trip")} style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "inherit", font: "inherit", minWidth: 0 }} aria-label={`Trip ${selTrip.name}. Tap to change`}><UI.MapPin size={15} strokeWidth={2} aria-hidden style={{ flex: "none" }} /><span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{selTrip.name}</span></button>
                   <button className="x" onClick={() => setTripPick({ id: null })} aria-label={`Remove from ${selTrip.name}`} data-testid="trip-chip-x"><UI.X size={11} strokeWidth={2.5} aria-hidden /></button>
                 </span>
               ) : trips.length > 0 ? (
                 <button className="chip" onClick={() => setPicker("trip")} aria-label="Add to a trip" data-testid="trip-add-chip" style={{ padding: "0 11px" }}><UI.MapPin size={16} strokeWidth={1.75} aria-hidden /></button>
               ) : null)}
               {mode !== "transfer" && (
-                <button className="chip" onClick={() => setPicker("account")} aria-label={`Account ${account?.name ?? ""}`}>
+                <button className="chip acct" onClick={() => setPicker("account")} aria-label={`Account ${account?.name ?? ""}`}>
                   <UI.CreditCard size={16} strokeWidth={1.75} aria-hidden />{account?.name ?? "Account"}
                 </button>
               )}
@@ -583,8 +586,8 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
                   <UI.PiggyBank size={16} strokeWidth={1.75} aria-hidden />{potId && <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{potName}</span>}
                 </button>
               )}
-              <button className="chip" onClick={() => setPicker("note")} aria-label="Note" style={{ maxWidth: 150, ...(potId && !note ? { padding: "0 11px" } : {}) }}>
-                <UI.FileText size={16} strokeWidth={1.75} aria-hidden />{(note || !potId) && <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{note ? note : "Note"}</span>}
+              <button className="chip" onClick={() => setPicker("note")} aria-label="Note" style={{ maxWidth: 150, ...(!note && (potId || selTrip || foreign) ? { padding: "0 11px" } : {}) }}>
+                <UI.FileText size={16} strokeWidth={1.75} aria-hidden />{(note || !(potId || selTrip || foreign)) && <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{note ? note : "Note"}</span>}
               </button>
             </div>
 
@@ -610,12 +613,15 @@ function QuickAddSheet({ open, onOpenChange, options, session }: { open: boolean
           </>
         )}
 
+      </div>
+      <div className="qa-foot">
         {mode !== "transfer" && <ClosedMonthBanner date={date} />}
         {error && <p role="alert" className="callout" style={{ color: "var(--caution)", marginTop: 10 }}>{error}</p>}
-        <button className="btn" style={{ marginTop: 14, opacity: canSave && !busy ? 1 : 0.4 }} disabled={!canSave || busy} onClick={() => save()}>{buttonLabel}</button>
+        <button className="btn" style={{ opacity: canSave && !busy ? 1 : 0.4 }} disabled={!canSave || busy} onClick={() => save()}>{buttonLabel}</button>
         {editing && (
           <button className="btn secondary" style={{ marginTop: 10, color: "var(--danger)", height: 48 }} onClick={() => setConfirm("delete")}>Delete transaction</button>
         )}
+      </div>
       </div>
 
       {confirm === "duplicate" && dup && (
