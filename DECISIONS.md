@@ -276,6 +276,12 @@ Record judgement calls here as: date · decision · reason.
 - **Judgement calls:** (a) stale-while-revalidate rather than network-first with a short timeout, because a timeout still leaves the screen black for the length of the timeout on a cold start; the cost is that a deploy reaches the device one open later, which the existing "new version" banner already covers. (b) Client-side route changes (`RSC` requests) stay network-first: they only follow an open, when the server is warm. (c) Data was not the cause: the home screen's roughly 30 requests all run in parallel, each card has its own skeleton, and a cached figure is shown while they refresh, so no calculation blocks the page.
 - **Tests:** `31-first-open.spec.ts` (`PERF-01` the shell and cached figures appear within 2.5 s while the page request takes 4 s; `PERF-02` a session that ended overnight still lands on `/sign-in`).
 
+## Next.js 16.4.2 to 16.4.6 (16 Nov 2026)
+
+- **Why:** `npm audit` flagged Next 16.3.0 to 16.4.4 (information disclosure across root params when a `use cache` function is called through `unstable_cache()`), and the Next CLI printed an upgrade reminder on every build. This app uses neither `use cache` nor `unstable_cache`, so it was not exposed; the upgrade is to stay current. `next` and `eslint-config-next` move together (patch release, no code changes needed).
+- **Not changed:** the other advisories `npm audit` lists (`fast-uri`, `glob`/`minimatch`, `zod`) sit under `@serwist/build` and its tooling, which only runs at build time, and `npm audit fix` would change versions the service-worker build depends on. They are left for a separate, deliberate change.
+- **Side effect found by the suite:** 16.4.6 gzips `/serwist/sw.js`. The test proxy that stages "a new build" (`tests/e2e/proxy.ts`) edits that script as text and removed the `content-encoding` header while keeping the compressed body, so the browser got garbage and `14-update` failed. The proxy now asks the app for the uncompressed script. No app change.
+
 ## Add expense on a trip in a foreign currency (16 Nov 2026)
 
 - **Symptom (Moroccan dirhams, Marrakech trip):** the currency chip read "MAD MAD", the rate row split over two lines, the screen ran past the bottom with the keypad cut off and no Add button in view, and the expense could not be saved.
