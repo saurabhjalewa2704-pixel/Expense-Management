@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Sheet } from "@/components/ui/sheet";
 import { CURRENCIES } from "@/lib/countries";
 import { formatShort, type ISODate } from "@/lib/dates";
-import { currencySymbol, exponentOf, pressKeyFx } from "@/lib/fx";
+import { currencyLabel, exponentOf, pressKeyFx } from "@/lib/fx";
 import { UI } from "@/lib/icons";
 import { pressKey } from "@/lib/money";
 import type { Trip } from "@/lib/types";
@@ -51,7 +51,7 @@ export function CurrencySheet({ open, onOpenChange, value, suggested, onSelect }
         <div className="subs" style={{ marginTop: 0 }}>
           {quick.map((c) => (
             <button key={c} className="row" style={{ width: "100%", textAlign: "left" }} onClick={() => pick(c)} data-testid={`cur-${c}`}>
-              <div className="row-main"><div className="row-t">{c === "GBP" ? "£ Pounds" : `${currencySymbol(c)} ${c}`}</div>{c === "GBP" && <div className="row-s">Use when the amount on your statement is already known</div>}</div>
+              <div className="row-main"><div className="row-t">{c === "GBP" ? "£ Pounds" : currencyLabel(c)}</div>{c === "GBP" && <div className="row-s">Use when the amount on your statement is already known</div>}</div>
               <span className={`radio ${value === c ? "on" : ""}`}>{value === c && <UI.Check size={14} strokeWidth={2.5} />}</span>
             </button>
           ))}
@@ -59,7 +59,7 @@ export function CurrencySheet({ open, onOpenChange, value, suggested, onSelect }
         <label className="field" style={{ marginTop: 10 }}><UI.Search size={16} strokeWidth={1.75} aria-hidden /><input aria-label="Search currencies" placeholder="Another currency" value={q} onChange={(e) => setQ(e.target.value)} style={{ flex: 1, background: "none", border: 0, outline: "none", color: "var(--ink)" }} /></label>
         {q.trim() !== "" && (
           <div className="subs" style={{ marginTop: 8, maxHeight: "30dvh", overflowY: "auto" }}>
-            {rest.map((c) => <button key={c} className="row" style={{ width: "100%", textAlign: "left" }} onClick={() => pick(c)}><div className="row-main"><div className="row-t">{currencySymbol(c)} {c}</div></div></button>)}
+            {rest.map((c) => <button key={c} className="row" style={{ width: "100%", textAlign: "left" }} onClick={() => pick(c)}><div className="row-main"><div className="row-t">{currencyLabel(c)}</div></div></button>)}
             {rest.length === 0 && <p className="sub" style={{ padding: 12 }}>No currency matches “{q}”.</p>}
           </div>
         )}
