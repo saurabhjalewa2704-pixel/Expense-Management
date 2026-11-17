@@ -39,6 +39,7 @@ test.describe("forecast UI (F5, F6)", () => {
     await page.getByRole("button", { name: "Done" }).first().click();
 
     await addExpense(12000, "Family & giving", "Hamleys");
+    await expect.poll(async () => (await sql(`select 1 from transactions where amount_pence = 12000`)).length).toBe(1);   // saved, so leaving the page cannot lose it
     await page.goto("/activity");
     await page.getByTestId("txn-row").filter({ hasText: "£120.00" }).click();
     const q = page.getByTestId("planned-match");

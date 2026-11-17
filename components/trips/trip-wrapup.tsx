@@ -21,7 +21,7 @@ export function TripWrapUp({ trip, summary, today }: { trip: Trip; summary: Trip
   const others = (overview ?? []).filter((o) => o.trip_id !== trip.id && o.end_on < today && o.on_trip_pence > 0).map((o) => ({ ...o, perDay: roundDiv(o.on_trip_pence, diffDays(o.end_on, o.start_on) + 1) }));
   const dearer = others.filter((o) => o.perDay >= perDay).sort((a, b) => b.end_on.localeCompare(a.end_on))[0];
   return (
-    <section className="card" style={{ marginTop: 16 }} data-testid="trip-wrapup">
+    <section className="card" data-testid="trip-wrapup">
       <div className="eyebrow">Wrap-up</div>
       <div className="big num" style={{ fontSize: 30, fontWeight: 600, letterSpacing: "-.035em", marginTop: 4 }} data-testid="wrapup-total">{formatGBP(figs.spent)}</div>
       <div className="sub" style={{ marginTop: 2 }}>

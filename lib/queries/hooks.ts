@@ -213,7 +213,10 @@ export const useRecurringOccurrences = (from: ISODate, to: ISODate) =>
   useQuery({ queryKey: qk.recurringOccurrences(from, to), queryFn: () => fetchRecurringOccurrences(db(), from, to), placeholderData: keepPreviousData });
 export const useItemOccurrences = (id: string) => useQuery({ queryKey: qk.itemOccurrences(id), queryFn: () => fetchItemOccurrences(db(), id) });
 export const useBankHolidays = () => useQuery({ queryKey: qk.bankHolidays, queryFn: () => fetchBankHolidays(db()), staleTime: 24 * 3600_000 });
-export const useRecurringSuggestions = () => useQuery({ queryKey: qk.recurringSuggestions, queryFn: () => fetchRecurringSuggestions(db()) });
+export function useRecurringSuggestions() {
+  const today = useToday();
+  return useQuery({ queryKey: [...qk.recurringSuggestions, today], queryFn: () => fetchRecurringSuggestions(db(), today) });
+}
 export const usePots = () => useQuery({ queryKey: qk.pots, queryFn: () => fetchPots(db()) });
 export const usePotCategories = (id: string) => useQuery({ queryKey: qk.potCategories(id), queryFn: () => fetchPotCategories(db(), id) });
 

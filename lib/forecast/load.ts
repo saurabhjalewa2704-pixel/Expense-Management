@@ -99,7 +99,7 @@ export interface ForecastResult { forecast: Forecast; input: ForecastInput }
 export async function getForecast(db: SupabaseClient, o: { scope?: Scope; month?: ISO; asOf?: ISO; categories?: string[]; bills?: BillsData; suggestions?: readonly RecurringSuggestion[] } = {}): Promise<ForecastResult> {
   const asOf = o.asOf ?? todayLondon();
   const month = monthStart(o.month ?? asOf);
-  const [raw, bills, suggestions] = await Promise.all([fetchRawInput(db, month, asOf), o.bills ?? fetchBillsData(db, month), o.suggestions ?? fetchRecurringSuggestions(db).catch(() => [] as RecurringSuggestion[])]);
+  const [raw, bills, suggestions] = await Promise.all([fetchRawInput(db, month, asOf), o.bills ?? fetchBillsData(db, month), o.suggestions ?? fetchRecurringSuggestions(db, asOf).catch(() => [] as RecurringSuggestion[])]);
   const input = buildInput(raw, { month, today: asOf, scope: o.scope, categories: o.categories, bills, suggestions });
   return { forecast: forecast(input), input };
 }
