@@ -171,7 +171,7 @@ export const fetchItemOccurrences = (db: SupabaseClient, itemId: string, limit =
 export const fetchBankHolidays = async (db: SupabaseClient) =>
   (await unwrap<{ day: ISODate }[]>(db.from("bank_holidays").select("day"))).map((h) => h.day);
 
-export const fetchRecurringSuggestions = (db: SupabaseClient) => unwrap<RecurringSuggestion[]>(db.rpc("recurring_suggestions"));
+export const fetchRecurringSuggestions = (db: SupabaseClient, today?: string) => unwrap<RecurringSuggestion[]>(db.rpc("recurring_suggestions", { p_today: today ?? null }));
 
 /** REC-08: an automatic payment for this payee due or logged within three days of `on`. */
 export const fetchRecurringDuplicate = async (db: SupabaseClient, payeeId: string, on: ISODate) =>

@@ -1,4 +1,5 @@
 "use client";
+import { useIsRestoring } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { Suspense, useEffect, type ReactNode } from "react";
 import { QuickAddProvider } from "@/components/capture/quick-add";
@@ -27,7 +28,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <SyncEngine />
           <Shortcuts />
           <Sidebar />
-          <div data-vaul-drawer-wrapper="" className="app-main">{children}</div>
+          <div data-vaul-drawer-wrapper="" className="app-main"><Restored>{children}</Restored></div>
           <TabBar />
         </QuickAddProvider>
       </Suspense>
@@ -52,6 +53,15 @@ function SessionGuard() {
   return null;
 }
 
+/**
+ * While the saved copy of the data is read back from the device (a few milliseconds), TanStack reports every query as "not loading and
+ * empty", so each screen's empty state or "Not found" showed for a moment on every open. Until it is back the page shows the same
+ * skeleton the server sends, then the real screen with its cached figures. Queries do not start before the restore either way.
+ */
+function Restored({ children }: { children: ReactNode }) {
+  return useIsRestoring() ? <ShellFallbackBody /> : <>{children}</>;
+}
+
 /** AUTH-02: until first-run setup is done, everything leads to /welcome. */
 function OnboardingGate() {
   const router = useRouter();
@@ -68,9 +78,13 @@ function OnboardingGate() {
  * away, in the same classes the real screen uses, so it hands over without a jump.
  */
 function ShellFallback() {
+  return <div className="app-main" aria-busy><ShellFallbackBody /></div>;
+}
+
+function ShellFallbackBody() {
   return (
-    <div className="app-main" aria-busy>
-      <div className="scroll">
+    <>
+      <div className="scroll" aria-busy>
         <div className="topbar"><span className="skeleton" style={{ height: 14, width: 140 }} /></div>
         <section className="hero" style={{ marginTop: 20 }}>
           <div className="skeleton" style={{ height: 14, width: 120 }} />
@@ -81,6 +95,6 @@ function ShellFallback() {
           <div className="bg-card"><div className="skeleton" style={{ height: 210 }} /></div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

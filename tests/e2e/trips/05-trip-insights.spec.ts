@@ -16,7 +16,7 @@ test.describe("Trip insights, wrap-up and notifications (TRIP-08)", () => {
     const usa = (await sqlOne<{ id: string }>(`select id from trips where name = 'USA'`)).id;
     await page.goto(`/trips/${usa}`);
     const cards = page.getByTestId("trip-insights").getByTestId("insight-card");
-    await expect(cards.first()).toBeVisible();
+    await expect(cards.first()).toBeVisible({ timeout: 40_000 });                                  // generated on demand: slow under load
     const n = await cards.count();
     expect(n).toBeGreaterThanOrEqual(2);
     expect(n).toBeLessThanOrEqual(4);

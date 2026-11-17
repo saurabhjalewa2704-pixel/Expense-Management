@@ -135,7 +135,7 @@ export async function skipNext(id: string): Promise<ActionResult<{ occurrence: s
 
 export async function unskip(occurrence: string): Promise<ActionResult> {
   const db = await supabaseServer();
-  const { error } = await db.rpc("recurring_unskip", { p_occurrence: occurrence });
+  const { error } = await db.rpc("recurring_unskip", { p_occurrence: occurrence, p_today: serverToday() });
   return error ? fail(friendlyDbError(error)) : ok(undefined);
 }
 

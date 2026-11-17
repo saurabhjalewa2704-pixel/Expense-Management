@@ -26,9 +26,9 @@ export function TripOverview({ trip, stops, today }: { trip: Trip; stops: TripSt
   const budgetCoversTrips = !!month?.find((r) => r.category_id === null && (r.covers === "all" || r.covers === "exclude_bills"));
 
   return (
-    <div data-testid="trip-overview">
+    <div className="stack" style={{ marginTop: 16 }} data-testid="trip-overview">
       <TripWrapUp trip={trip} summary={summary} today={today} />
-      <section className="tr-hero" style={{ marginTop: 16 }} data-testid="trip-budget-card">
+      <section className="tr-hero" data-testid="trip-budget-card">
         <TripTimeline trip={trip} stops={stops} today={today} />
         <div className="tr-figs">
           <div><div className="big num" data-testid="trip-spent">{formatGBP(figs.spent)}</div><div className="of">{figs.budget !== null ? `spent of ${formatGBP(figs.budget, { whole: figs.budget % 100 === 0 })} budget` : "spent in total"}</div></div>
@@ -44,7 +44,7 @@ export function TripOverview({ trip, stops, today }: { trip: Trip; stops: TripSt
       <WhereItWent trip={trip} />
       <TripInsights trip={trip} />
 
-      <section className="card" style={{ marginTop: 20, display: "flex", gap: 12, alignItems: "flex-start" }} data-testid="trip-explainer">
+      <section className="card" style={{ display: "flex", gap: 12, alignItems: "flex-start" }} data-testid="trip-explainer">
         <div className="tile"><UI.Info size={18} strokeWidth={1.75} aria-hidden /></div>
         <div style={{ fontSize: 14, lineHeight: 1.45, color: "var(--ink-2)" }}>
           <b style={{ color: "var(--ink)", fontWeight: 600 }}>Also in your monthly spending.</b>{" "}

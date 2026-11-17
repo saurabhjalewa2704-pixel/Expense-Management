@@ -101,13 +101,24 @@ begin
   -- unskip, until the due date
   set local role authenticated;
   select id into o from recurring_occurrences where item_id = it and status = 'skipped';
-  perform recurring_unskip(o);                                                    -- 27 Dec 2026 is still ahead: allowed
+  perform recurring_unskip(o, '2026-11-16');                                      -- 27 Dec 2026 is still ahead of the day it is asked on: allowed
   assert not exists (select 1 from recurring_occurrences where id = o) and (select next_due_on from recurring_items where id = it) = '2026-12-27', 'unskipped';
   reset role;
   insert into recurring_occurrences (user_id, item_id, due_on, scheduled_on, status, amount_pence) values (ua, it, '2020-01-27', '2020-01-27', 'skipped', 1299) returning id into o;
   set local role authenticated;
-  denied := false; begin perform recurring_unskip(o); exception when others then denied := true; end;
+  denied := false; begin perform recurring_unskip(o, '2026-11-16'); exception when others then denied := true; end;
   assert denied, 'a skip cannot be undone once its date has passed';
+  -- the day comes from the caller, not the database's clock: the same skip is refused when asked on or after its date
+  insert into recurring_occurrences (user_id, item_id, due_on, scheduled_on, status, amount_pence) values (ua, it, '2031-05-01', '2031-05-01', 'skipped', 1299) returning id into o;
+  set local role authenticated;
+  perform recurring_unskip(o, '2031-04-30');
+  assert not exists (select 1 from recurring_occurrences where id = o), 'undone the day before it is due';
+  reset role;
+  insert into recurring_occurrences (user_id, item_id, due_on, scheduled_on, status, amount_pence) values (ua, it, '2031-05-01', '2031-05-01', 'skipped', 1299) returning id into o;
+  set local role authenticated;
+  denied := false; begin perform recurring_unskip(o, '2031-05-01'); exception when others then denied := true; end;
+  assert denied, 'refused on its due date';
+  reset role;
   reset role;
 
   -- 8 · editing the amount changes the next occurrence only
