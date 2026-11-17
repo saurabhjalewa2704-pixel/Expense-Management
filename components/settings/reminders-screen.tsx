@@ -2,6 +2,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { updateProfile } from "@/app/actions/profile";
+import { sendTestReminder } from "@/app/actions/reminders";
 import { PageHeader } from "@/components/ui/page-header";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/toast";
@@ -23,6 +24,7 @@ export function RemindersScreen() {
   const qc = useQueryClient();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
+  const [testing, setTesting] = useState(false);
   const [problem, setProblem] = useState<string>();
   const [support, setSupport] = useState<PushSupport>("ready");
   const [denied, setDenied] = useState(false);
@@ -39,6 +41,12 @@ export function RemindersScreen() {
     setBusy(false);
     if (!r.ok) setProblem(r.error);
     await refresh();
+  }
+  async function test() {
+    setTesting(true); setProblem(undefined);
+    const r = await sendTestReminder();
+    setTesting(false);
+    if (r.ok) toast({ message: "Sent. It should arrive in a few seconds.", duration: 4000 }); else setProblem(r.error);
   }
   async function pick(t: string) {
     const r = await updateProfile({ reminder_time: t });
@@ -71,6 +79,12 @@ export function RemindersScreen() {
             </div>
           </div>
         )}
+        {on && (
+          <button className="row" style={{ width: "100%", textAlign: "left" }} onClick={test} disabled={testing} data-testid="reminder-test">
+            <div className="tile"><UI.Bell size={18} strokeWidth={1.75} aria-hidden /></div>
+            <div className="row-main"><div className="row-t">{testing ? "Sending…" : "Send a test notification"}</div><div className="row-s">Checks that this phone receives them</div></div>
+          </button>
+        )}
       </div>
       {support === "needs-install" && (
         <div className="card" style={{ marginTop: 12 }} data-testid="install-card">
@@ -84,7 +98,7 @@ export function RemindersScreen() {
           <p className="sub" style={{ marginTop: 4 }}>Open Settings → Notifications → Sterling and allow notifications, then come back and turn the reminder on. Sterling won’t ask again.</p>
         </div>
       )}
-      {problem && <p role="alert" className="sub" style={{ margin: "10px 16px 0", color: "var(--caution)" }}>{problem}</p>}
+      {problem && <p role="alert" data-testid="reminder-problem" className="sub" style={{ margin: "10px 16px 0", color: "var(--caution)" }}>{problem}</p>}
 
       <div className="eyebrow group-label">This week</div>
       <div className="card" data-testid="week" style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 6, textAlign: "center" }}>
