@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { sql } from "./db";
 import { fixClock, resetDb, signIn } from "./helpers";
-import { expectNoTouchingCards } from "./spacing";
+import { expectNoSidewaysOverflow, expectNoTouchingCards } from "./spacing";
 
 // UX: two cards stacked on a screen must never touch. This walks every screen that has data on the phone and lists any pair of cards
 // (anything that paints its own rounded surface) with under 6px between them. The trip and month-close screens have their own copies
@@ -27,5 +27,6 @@ test("UI-SP-01 no two cards touch on any phone screen", async ({ page }) => {
     await page.goto(route);
     await page.waitForTimeout(1500);
     await expectNoTouchingCards(page, route, expect as never);
+    await expectNoSidewaysOverflow(page, route, expect as never);
   }
 });

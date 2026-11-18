@@ -57,7 +57,9 @@ export async function warmRates(currency: string, today: ISODate): Promise<void>
 export async function recalcIfNewer(p: TxnInput, feeBps: number): Promise<TxnInput> {
   if (!p.original_currency || !p.original_amount_minor || p.fx_source !== "auto" || !p.fx_rate_on) return p;
   // the first request after coming back online can fail on a dead connection: one more try before settling for the cached rate
-  const fresh = (await fetchRate(p.original_currency, p.occurred_on)) ?? (await new Promise((r) => setTimeout(r, 700)).then(() => fetchRate(p.original_currency!, p.occurred_on)));
+  // bounded: a rate lookup that never answers must not hold the whole outbox (the entry is sent with the rate it has)
+  const limited = () => { const ac = new AbortController(); setTimeout(() => ac.abort(), 8000); return ac.signal; };
+  const fresh = (await fetchRate(p.original_currency, p.occurred_on, limited())) ?? (await new Promise((r) => setTimeout(r, 700)).then(() => fetchRate(p.original_currency!, p.occurred_on, limited())));
   if (!fresh || fresh.on <= p.fx_rate_on) return p;
   return { ...p, fx_rate: fresh.rate, fx_rate_on: fresh.on, amount_pence: convertToPence(p.original_amount_minor, p.original_currency, fresh.rate, feeBps) };
 }

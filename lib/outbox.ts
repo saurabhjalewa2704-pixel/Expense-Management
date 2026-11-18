@@ -4,7 +4,6 @@
 // iOS Safari has no Background Sync, so flushing is driven by launch, `online` and `visibilitychange` (lib/sync.tsx).
 import Dexie, { liveQuery, type Table } from "dexie";
 import { v7 as uuidv7 } from "uuid";
-import { createTransaction } from "@/app/actions/transactions";
 import { recalcIfNewer } from "@/lib/fx-client";
 import type { TxnInput } from "@/lib/schemas/transaction";
 
@@ -15,6 +14,8 @@ export interface OutboxItem {
   status: "pending" | "failed";
   attempts: number;
   error?: string;
+  /** Why the last send did not go through while the entry is still waiting (the server answered badly, or the session ended); offline is not an error. */
+  last_error?: string;
   /** The server accepted it at this time; hidden from views once a refetch is newer than this. */
   confirmed_at?: number;
   payload: TxnInput;
@@ -80,22 +81,50 @@ export function flushOutbox(): Promise<FlushResult> {
   return inflight;
 }
 
+/** How long one send may take before it is abandoned and retried. */
+export const SEND_TIMEOUT_MS = 20_000;
+
+type Sent = { kind: "ok" } | { kind: "refused"; error: string } | { kind: "retry"; error?: string };
+
+/** One entry to POST /api/transactions. A network failure is "offline" (no reason to show); anything the server answers badly is reported. */
+async function sendTransaction(p: TxnInput): Promise<Sent> {
+  let r: Response;
+  // A request that never answers (an iPhone suspends the app mid-request, a connection dies silently) must not hold the flush, and the lock
+  // that guards it, for ever: every later entry would wait behind it. Past the limit it is abandoned and sent again; the server ignores a repeat.
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), SEND_TIMEOUT_MS);
+  try {
+    r = await fetch("/api/transactions", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(p), credentials: "same-origin", redirect: "manual", cache: "no-store", signal: ac.signal });
+  } catch {
+    // the request never reached the server (offline: nothing to say), or it did not answer in time (online: say so)
+    return { kind: "retry", error: ac.signal.aborted && typeof navigator !== "undefined" && navigator.onLine ? "The server didn't answer in time." : undefined };
+  } finally { clearTimeout(timer); }
+  if (r.type === "opaqueredirect" || r.status === 401) return { kind: "retry", error: "You're signed out. Open Settings and sign in again to send it." };
+  let j: { ok?: boolean; error?: string; retry?: boolean } | undefined;
+  try { j = (await r.json()) as typeof j; } catch { /* not JSON: a gateway or an error page */ }
+  if (j?.ok) return { kind: "ok" };
+  if (j && j.ok === false && !j.retry && r.status < 500) return { kind: "refused", error: j.error ?? "The server refused it." };
+  return { kind: "retry", error: j?.error ?? `The server couldn't take it just now (${r.status}).` };
+}
+
 async function doFlush(): Promise<FlushResult> {
   const rows = (await db().outbox.where("status").equals("pending").sortBy("created_at")).filter((r) => !r.confirmed_at);
   let confirmed = 0;
   for (const row of rows) {
-    let res;
+    let res: Sent;
     try {
       const payload = await recalcIfNewer(row.payload, row.fee_bps ?? 0);
       if (payload !== row.payload) await db().outbox.update(row.client_id, { payload });
-      res = await createTransaction(payload);
+      res = await sendTransaction(payload);
     } catch {
       return { confirmed, blocked: true }; // offline: the request never reached the server
     }
-    if (res.ok) {
-      await db().outbox.update(row.client_id, { confirmed_at: Date.now() });
+    if (res.kind === "ok") {
+      await db().outbox.update(row.client_id, { confirmed_at: Date.now(), last_error: undefined });
       confirmed += 1;
-    } else if (res.retry) {
+    } else if (res.kind === "retry") {
+      // keep the reason, so a send that keeps failing is shown to the person rather than retried in silence
+      if (res.error) await db().outbox.update(row.client_id, { last_error: res.error, attempts: row.attempts + 1 });
       return { confirmed, blocked: true };
     } else {
       await db().outbox.update(row.client_id, { status: "failed", error: res.error, attempts: row.attempts + 1 });

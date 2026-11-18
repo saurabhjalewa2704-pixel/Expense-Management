@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { startClose } from "../helpers";
-import { expectNoTouchingCards } from "../spacing";
+import { expectNoSidewaysOverflow, expectNoTouchingCards } from "../spacing";
 
 // UX: no two cards touch on Home (with the close card), the month-close flow and its settings.
 test("UI-SP-04 no two cards touch on the month-close screens", async ({ page }) => {
@@ -10,5 +10,6 @@ test("UI-SP-04 no two cards touch on the month-close screens", async ({ page }) 
     await page.goto(route);
     await page.waitForTimeout(1800);
     await expectNoTouchingCards(page, route, expect as never);
+    await expectNoSidewaysOverflow(page, route, expect as never);
   }
 });

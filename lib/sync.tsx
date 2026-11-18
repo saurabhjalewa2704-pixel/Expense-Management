@@ -19,16 +19,23 @@ export function SyncEngine() {
   useEffect(() => {
     let running = false;
     let again = false;
+    // a send that did not go through is tried again by itself (5 s, 10 s, 20 s… up to a minute), not only when the person next opens the app
+    let retry: ReturnType<typeof setTimeout> | undefined;
+    let failures = 0;
     const run = async (refresh: boolean) => {
       if (running) { again = true; return; }
       running = true;
       try {
         const r = await flushOutbox();
+        clearTimeout(retry);
+        if (r.blocked) { if (typeof navigator === "undefined" || navigator.onLine) { retry = setTimeout(() => void run(false), Math.min(60_000, 5_000 * 2 ** failures)); failures++; } }
+        else failures = 0;
         if (!r.blocked) await flushCloseQueue(supabaseBrowser()).catch(() => 0);     // month-close answers wait in their own queue
         if (r.confirmed > 0 || (refresh && !r.blocked)) await qc.invalidateQueries();
         if (r.confirmed > 0) { await purgeConfirmed(); void fetch("/api/budget/check", { method: "POST" }).catch(() => undefined); }   // BUD-10: alerts after writes
       } catch {
         /* offline: the next trigger retries */
+        if (typeof navigator === "undefined" || navigator.onLine) { clearTimeout(retry); retry = setTimeout(() => void run(false), Math.min(60_000, 5_000 * 2 ** failures)); failures++; }
       } finally {
         running = false;
         if (again) { again = false; void run(false); }
@@ -49,6 +56,7 @@ export function SyncEngine() {
     return () => {
       unsubscribe();
       clearTimeout(timer);
+      clearTimeout(retry);
       window.removeEventListener(EVENT, onSync);
       window.removeEventListener("online", onOnline);
       document.removeEventListener("visibilitychange", onVisible);

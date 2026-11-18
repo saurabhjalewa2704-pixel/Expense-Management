@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { sql } from "../db";
 import { startTrip } from "../helpers";
-import { expectNoTouchingCards } from "../spacing";
+import { expectNoSidewaysOverflow, expectNoTouchingCards } from "../spacing";
 
 // UX: no two cards touch on the trip screens, in every phase of a trip (coming up, on now, over) and with and without a budget.
 // the guard that keeps a stop inside its trip checks one row at a time, so both tables are moved with it switched off
@@ -18,10 +18,12 @@ for (const [phase, days] of [["on now", 0], ["coming up", 20], ["over", -40]] as
       await page.goto(route);
       await page.waitForTimeout(1800);
       await expectNoTouchingCards(page, `${route} (${phase})`, expect as never);
+      await expectNoSidewaysOverflow(page, `${route} (${phase})`, expect as never);
     }
     await sql(`update trips set budget_pence = null`);
     await page.goto(`/trips/${id}`);
     await page.waitForTimeout(1800);
     await expectNoTouchingCards(page, `/trips/${id} without a budget (${phase})`, expect as never);
+    await expectNoSidewaysOverflow(page, `/trips/${id} without a budget (${phase})`, expect as never);
   });
 }

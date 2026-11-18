@@ -5,6 +5,7 @@ import { useBannerSpace } from "./banner-space";
 import { useQuickAdd } from "@/components/capture/quick-add";
 import { UI } from "@/lib/icons";
 import { discard } from "@/lib/outbox";
+import { requestSync } from "@/lib/sync";
 import { pendingRow } from "@/lib/overlay";
 import { useAccounts, useCategories, useOutbox, usePots } from "@/lib/queries/hooks";
 import { formatGBP } from "@/lib/money";
@@ -14,7 +15,9 @@ import { formatGBP } from "@/lib/money";
  * Now it stays here, with the server's reason, until it is fixed or discarded.
  */
 export function FailedEntries() {
-  const items = useOutbox().filter((i) => i.status === "failed");
+  const all = useOutbox();
+  const items = all.filter((i) => i.status === "failed");
+  const stuck = all.filter((i) => i.status === "pending" && !i.confirmed_at && i.last_error);
   const accounts = useAccounts().data ?? [];
   const categories = useCategories().data ?? [];
   const pots = usePots().data ?? [];
@@ -22,7 +25,17 @@ export function FailedEntries() {
   const qc = useQueryClient();
   const item = items[0];
   const box = useRef<HTMLDivElement>(null);
-  useBannerSpace(box, !!item);
+  useBannerSpace(box, !!item || stuck.length > 0);
+  if (!item && stuck.length > 0) {
+    // not refused, just not sent: the server answered badly or the session ended. Say why instead of showing "Waiting" with no explanation.
+    return (
+      <div ref={box} role="status" className="failed-banner" data-testid="stuck-entry">
+        <UI.CloudUpload size={16} strokeWidth={2} aria-hidden />
+        <div className="msg"><b>{stuck.length > 1 ? `${stuck.length} entries haven’t been sent yet.` : "An entry hasn’t been sent yet."}</b> {stuck[0]!.last_error} It’s saved on this phone and will keep trying.</div>
+        <button className="go" onClick={() => requestSync()}>Try now</button>
+      </div>
+    );
+  }
   if (!item) return null;
   const p = item.payload;
   const label = `${formatGBP(p.amount_pence)}${p.payee ? ` · ${p.payee}` : ""} (${p.occurred_on.split("-").reverse().join("/")})`;
