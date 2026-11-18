@@ -22,9 +22,9 @@ export function ReminderPrompt() {
     <section className="card" data-testid="reminder-prompt" aria-label="Evening reminder" style={{ marginTop: 16 }}>
       <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
         <div className="tile"><UI.Bell size={18} strokeWidth={1.75} aria-hidden /></div>
-        <div style={{ flex: 1 }}>
-          <div className="row-t">Get a gentle reminder at {p.reminder_time.slice(0, 5)} if you haven&rsquo;t logged anything?</div>
-          <div className="row-s" style={{ marginTop: 4 }}>Only on days with nothing logged. Change the time or turn it off in Settings.</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="row-t" style={{ whiteSpace: "normal" }}>Get a gentle reminder at {p.reminder_time.slice(0, 5)} if you haven&rsquo;t logged anything?</div>
+          <div className="row-s" style={{ marginTop: 4, whiteSpace: "normal" }}>Only on days with nothing logged. Change the time or turn it off in Settings.</div>
         </div>
       </div>
       {error && <p role="alert" className="sub" style={{ marginTop: 10, color: "var(--caution)" }}>{error}</p>}

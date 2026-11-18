@@ -53,3 +53,18 @@ export async function expectNoTouchingCards(page: Page, where: string, expectFn:
   const t = await touchingCards(page);
   expectFn(t, `${where}: cards with less than 6px between them`).toEqual([]);
 }
+
+/**
+ * Nothing is wider than the screen. One element with text that cannot wrap makes the whole page wider than the phone, and the phone then
+ * zooms out and shifts everything (the tab bar slides off to one side). Reports the elements that stick out.
+ */
+export async function expectNoSidewaysOverflow(page: Page, where: string, expectFn: (v: unknown, msg?: string) => { toEqual(x: unknown): void }) {
+  const out = await page.evaluate(() => {
+    const cw = document.documentElement.clientWidth;
+    const wide = [...document.querySelectorAll("body *")]
+      .filter((e) => !e.closest(".tabbar, .sidebar, [data-vaul-overlay], [role=status], .toast") && getComputedStyle(e).position !== "fixed" && e.getBoundingClientRect().right > cw + 1 && e.getBoundingClientRect().width > 0)
+      .slice(0, 5).map((e) => `${e.tagName.toLowerCase()}${e.getAttribute("data-testid") ? `[${e.getAttribute("data-testid")}]` : ""}.${(e.getAttribute("class") ?? "").split(" ")[0]} right=${Math.round(e.getBoundingClientRect().right)} (screen ${cw})`);
+    return { over: document.documentElement.scrollWidth - cw, wide };
+  });
+  expectFn(out.over > 1 ? out : { over: 0, wide: [] }, `${where}: wider than the screen`).toEqual({ over: 0, wide: [] });
+}
