@@ -305,6 +305,11 @@ Record judgement calls here as: date · decision · reason.
 - **Undoing a skipped bill (`EC-B5`).** `recurring_unskip` compared the payment's date with the database's own clock (`london_today()`), while the app and its tests pin "today". Once the real date passed 3 Nov the undo was refused. It and `recurring_suggestions` now take the day from the caller (`p_today`, default the database clock), and `20261116000001_bills_today_param.sql` replaces both. The SQL test no longer depends on the real date (it asserted "27 Dec 2026 is still ahead", which would have started failing on 27 Dec).
 - **Test hardening:** the first trip-insights test waits 40 s for the on-demand insight, as its sibling already did.
 
+## Test notification (17 Nov 2026)
+
+- **Why:** a reminder that never arrives was impossible to diagnose from the phone: there are four independent causes (no push keys on the server, no registration for this phone, a keys mismatch between the build and the server, no 15-minute scheduler) and the only signal was waiting for the evening slot. Settings → Reminders now has "Send a test notification" (visible once the reminder is on). `sendTestReminder` sends one push to this person's devices immediately and returns the specific reason it could not: no registration, no VAPID keys on the server, the push service refusing the keys (401/403), an expired registration (410, which is also removed), or another status.
+- **Judgement call:** the message names the Vercel variables because the person running this app sets them there; a test button cannot prove the 15-minute scheduler, so the README's `net._http_response` query is the way to check that part. Test `NOT-02` in `12-reminders.spec.ts`.
+
 ## "Waiting" entries (18 Nov 2026)
 
 - **Cause 1: one request that never answers blocked everything behind it.** The outbox sent each entry with no time limit, so a request that hung (an iPhone suspends the app mid-request) kept the flush, and its lock, open for ever; every later entry waited behind it and nothing retried by itself. Reproduced: after one hung request and a healthy network, nothing was sent for 40+ seconds. A send now has a 20 s limit, and the sync engine retries a failed send by itself (5 s, 10 s, 20 s… up to a minute).

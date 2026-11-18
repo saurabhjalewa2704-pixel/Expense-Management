@@ -39,6 +39,30 @@ test.describe("evening reminder (M4b, NOT-01)", () => {
     await expect(page.getByTestId("reminder-prompt")).toHaveCount(0);
   });
 
+  test("NOT-02 Settings → Reminders can send a test notification now, and says plainly why when it cannot", async ({ page }) => {
+    await fakePush(page);
+    await startDemo(page);
+    await page.goto("/settings/reminders");
+    await expect(page.getByTestId("reminder-test")).toHaveCount(0);                          // only once the reminder is on
+    await page.getByRole("switch", { name: "Evening reminder" }).click();
+    await expect(page.getByRole("switch", { name: "Evening reminder" })).toHaveAttribute("aria-checked", "true");
+
+    await page.getByTestId("reminder-test").click();
+    await expect.poll(() => sent().map((m) => m.body)).toEqual(["Test notification. Reminders are working on this phone."]);
+    expect(sent()[0]!.url).toBe("/settings/reminders");
+
+    // this phone's registration is gone: the screen says so instead of staying silent
+    await sql(`delete from push_subscriptions`);
+    await page.getByTestId("reminder-test").click();
+    await expect(page.getByTestId("reminder-problem")).toContainText("isn't registered for notifications");
+
+    // a registration the push service no longer knows (410) is removed, and the message says to switch it off and on
+    await sql(`insert into push_subscriptions (user_id, endpoint, p256dh, auth) select id, 'https://push.test/gone-device', 'BPtestkey', 'authkey' from profiles`);
+    await page.getByTestId("reminder-test").click();
+    await expect(page.getByTestId("reminder-problem")).toContainText("registration has expired");
+    expect(await sqlOne(`select count(*)::int n from push_subscriptions`)).toEqual({ n: 0 });
+  });
+
   test("'Not now' dismisses the card for good and nothing is registered", async ({ page }) => {
     await fakePush(page);
     await startDemo(page);
