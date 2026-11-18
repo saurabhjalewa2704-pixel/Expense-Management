@@ -6,6 +6,7 @@ import { QuickAddProvider } from "@/components/capture/quick-add";
 import { ToastProvider } from "@/components/ui/toast";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { useProfile } from "@/lib/queries/hooks";
+import { isStaleCodeError, refreshToNewVersion } from "@/lib/stale-code";
 import { SyncEngine } from "@/lib/sync";
 import { BillsCatchUp } from "@/components/bills/catch-up";
 import { FailedEntries } from "./failed-entries";
@@ -25,6 +26,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <BillsCatchUp />
           <OnboardingGate />
           <SessionGuard />
+          <StaleCodeGuard />
           <SyncEngine />
           <Shortcuts />
           <Sidebar />
@@ -34,6 +36,18 @@ export function AppShell({ children }: { children: ReactNode }) {
       </Suspense>
     </ToastProvider>
   );
+}
+
+/** An app that has not updated yet calls Server Actions the new server no longer knows: switch to the new version instead of failing quietly. */
+function StaleCodeGuard() {
+  useEffect(() => {
+    const onRejection = (e: PromiseRejectionEvent) => { if (isStaleCodeError(e.reason)) { e.preventDefault(); void refreshToNewVersion(); } };
+    const onError = (e: ErrorEvent) => { if (isStaleCodeError(e.error ?? e.message)) void refreshToNewVersion(); };
+    window.addEventListener("unhandledrejection", onRejection);
+    window.addEventListener("error", onError);
+    return () => { window.removeEventListener("unhandledrejection", onRejection); window.removeEventListener("error", onError); };
+  }, []);
+  return null;
 }
 
 /**
