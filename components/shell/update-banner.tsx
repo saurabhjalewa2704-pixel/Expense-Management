@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { UI } from "@/lib/icons";
-import { applyUpdate, watchForUpdate } from "@/lib/sw-update";
+import { applyLatestUpdate, watchForUpdate } from "@/lib/sw-update";
 import { useBannerSpace } from "./banner-space";
 
 const CHECK_EVERY_MS = 15 * 60_000;
@@ -15,20 +15,30 @@ export function UpdateBanner() {
   const [dismissed, setDismissed] = useState(false);
   const [busy, setBusy] = useState(false);
   const reg = useRef<ServiceWorkerRegistration | null>(null);
+  const held = useRef<ServiceWorker | null>(null);
   const box = useRef<HTMLDivElement>(null);
   useBannerSpace(box, !!waiting && !dismissed);
 
   useEffect(() => {
     if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
     let cancelled = false;
-    const look = () => { void reg.current?.update().catch(() => {}); };
+    // what is waiting NOW: the worker held from an earlier event can have been replaced while the app was frozen in the background
+    const sync = () => {
+      const w = reg.current?.waiting ?? null;
+      const next = w && navigator.serviceWorker.controller ? w : null;
+      if (next === held.current) return;
+      held.current = next;
+      setWaiting(next);
+      if (next) setDismissed(false);
+    };
+    const look = () => { void reg.current?.update().then(sync, sync); };
     void navigator.serviceWorker.getRegistration().then((r) => {
       if (!r || cancelled) return;
       reg.current = r;
-      watchForUpdate(r, () => !!navigator.serviceWorker.controller, (w) => { setWaiting(w); setDismissed(false); });
+      watchForUpdate(r, () => !!navigator.serviceWorker.controller, (w) => { held.current = w; setWaiting(w); setDismissed(false); });
       look();
     });
-    const onVisible = () => { if (document.visibilityState === "visible") look(); };
+    const onVisible = () => { if (document.visibilityState === "visible") { sync(); look(); } };
     document.addEventListener("visibilitychange", onVisible);
     window.addEventListener("online", look);
     const timer = setInterval(look, CHECK_EVERY_MS);
@@ -40,7 +50,7 @@ export function UpdateBanner() {
     <div ref={box} role="status" className="update-banner" data-testid="update-banner">
       <UI.RefreshCw size={16} strokeWidth={2} aria-hidden />
       <span className="msg">A new version of Sterling is ready.</span>
-      <button className="go" disabled={busy} onClick={() => { setBusy(true); if (!applyUpdate(waiting, navigator.serviceWorker, () => window.location.reload())) setBusy(false); }}>{busy ? "Updating…" : "Refresh"}</button>
+      <button className="go" disabled={busy} onClick={() => { setBusy(true); applyLatestUpdate(reg.current, navigator.serviceWorker, () => window.location.reload(), { beforeReload: () => caches.delete("pages") }); }}>{busy ? "Updating…" : "Refresh"}</button>
       <button className="x" aria-label="Dismiss update banner" onClick={() => setDismissed(true)}><UI.X size={16} strokeWidth={2} aria-hidden /></button>
     </div>
   );

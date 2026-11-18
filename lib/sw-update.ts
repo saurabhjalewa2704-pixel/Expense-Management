@@ -31,3 +31,34 @@ export function applyUpdate(waiting: Pick<ServiceWorker, "postMessage"> | null, 
   waiting.postMessage({ type: "SKIP_WAITING" });
   return true;
 }
+
+export interface ApplyOptions {
+  /** How long to wait for the browser to report the switch before reloading anyway. */
+  fallbackMs?: number;
+  /** Runs before the reload (the app drops its stored pages so the reload brings the new version, not the old one from the device). */
+  beforeReload?: () => Promise<unknown>;
+}
+
+/**
+ * Switch to the newest version, whatever the banner last heard. The worker the banner holds can be out of date (a newer build may have
+ * installed while the app was frozen in the background, which makes the one it holds "redundant" and deaf to the message), so the
+ * waiting worker is looked up now, at the tap. The browser's "controllerchange" is the normal sign that the switch happened, but it can
+ * be missed, so after a few seconds the app reloads anyway: it must never sit on "Updating…".
+ */
+export function applyLatestUpdate(
+  reg: Pick<ServiceWorkerRegistration, "waiting"> | null | undefined,
+  container: Pick<ServiceWorkerContainer, "addEventListener">,
+  reload: () => void,
+  opts: ApplyOptions = {},
+): void {
+  let done = false;
+  const go = () => {
+    if (done) return;
+    done = true;
+    void (opts.beforeReload ? opts.beforeReload().catch(() => undefined) : Promise.resolve()).then(reload);
+  };
+  container.addEventListener("controllerchange", go);
+  const waiting = reg?.waiting;
+  if (waiting) waiting.postMessage({ type: "SKIP_WAITING" });
+  setTimeout(go, waiting ? (opts.fallbackMs ?? 6000) : 0);          // nothing waiting: the new version is already active (or on its way), just reload
+}
