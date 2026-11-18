@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { applyUpdate, watchForUpdate } from "@/lib/sw-update";
+import { applyLatestUpdate, applyUpdate, watchForUpdate } from "@/lib/sw-update";
 
 type L = () => void;
 const emitter = () => { const m = new Map<string, L[]>(); return { on: (t: string, cb: L) => m.set(t, [...(m.get(t) ?? []), cb]), fire: (t: string) => (m.get(t) ?? []).forEach((cb) => cb()) }; };
@@ -43,5 +43,48 @@ describe("applyUpdate", () => {
   });
   it("does nothing without a waiting worker", () => {
     expect(applyUpdate(null, { addEventListener: vi.fn() } as never, vi.fn())).toBe(false);
+  });
+});
+
+describe("applyLatestUpdate (never stuck on 'Updating…')", () => {
+  const container = () => { const c = emitter(); return { c, api: { addEventListener: (_t: "controllerchange", cb: L) => c.on("controllerchange", cb) } as never }; };
+  const flush = async () => { await Promise.resolve(); await Promise.resolve(); };
+
+  it("asks the worker that is waiting now, and reloads once when the browser reports the switch", async () => {
+    const w = sw(), reload = vi.fn(), { c, api } = container();
+    applyLatestUpdate({ waiting: w }, api, reload);
+    expect((w as unknown as { postMessage: ReturnType<typeof vi.fn> }).postMessage).toHaveBeenCalledWith({ type: "SKIP_WAITING" });
+    c.fire("controllerchange"); c.fire("controllerchange");
+    await flush();
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it("reloads anyway when the switch is never reported (a stale or deaf worker)", async () => {
+    vi.useFakeTimers();
+    const reload = vi.fn(), { api } = container();
+    applyLatestUpdate({ waiting: sw() }, api, reload, { fallbackMs: 6000 });
+    await vi.advanceTimersByTimeAsync(5999);
+    expect(reload).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(2);
+    expect(reload).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+  });
+
+  it("with nothing waiting (it is already active) it just reloads", async () => {
+    vi.useFakeTimers();
+    const reload = vi.fn(), { api } = container();
+    applyLatestUpdate({ waiting: null }, api, reload);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(reload).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+  });
+
+  it("drops the stored pages before it reloads, and reloads even if that fails", async () => {
+    vi.useFakeTimers();
+    const order: string[] = [], { api } = container();
+    applyLatestUpdate({ waiting: null }, api, () => order.push("reload"), { beforeReload: async () => { order.push("clear"); throw new Error("no cache storage"); } });
+    await vi.advanceTimersByTimeAsync(1);
+    expect(order).toEqual(["clear", "reload"]);
+    vi.useRealTimers();
   });
 });

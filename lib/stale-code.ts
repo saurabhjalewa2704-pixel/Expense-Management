@@ -1,7 +1,7 @@
 // An app that has not updated yet talks to a server that has. Server Action ids change with every build, so the old app's calls (edit, delete,
 // settings…) are answered "Server Action … was not found on the server". That is not the person's mistake and retrying cannot fix it:
 // the app has to switch to the new version. Captures do not depend on this (they use /api/transactions).
-import { applyUpdate } from "@/lib/sw-update";
+import { applyLatestUpdate } from "@/lib/sw-update";
 
 /** The error Next throws on the client when the server does not know the action id. */
 export function isStaleCodeError(e: unknown): boolean {
@@ -30,7 +30,7 @@ export async function refreshToNewVersion(): Promise<void> {
     if (reg) {
       await reg.update().catch(() => undefined);
       for (let i = 0; i < 16 && !reg.waiting; i++) await new Promise((r) => setTimeout(r, 500));
-      if (reg.waiting && applyUpdate(reg.waiting, navigator.serviceWorker, () => window.location.reload())) return;
+      if (reg.waiting) { applyLatestUpdate(reg, navigator.serviceWorker, () => window.location.reload(), { beforeReload: () => caches.delete("pages") }); return; }
     }
   } catch { /* fall through to a plain reload */ }
   window.location.reload();

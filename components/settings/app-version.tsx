@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { UI } from "@/lib/icons";
-import { applyUpdate, watchForUpdate } from "@/lib/sw-update";
+import { applyLatestUpdate, watchForUpdate } from "@/lib/sw-update";
 
 type State = "checking" | "current" | "ready" | "offline";
 
@@ -52,7 +52,7 @@ export function AppVersion() {
       </div>
       {state === "ready" ? (
         <button className="row" style={{ width: "100%", textAlign: "left" }} disabled={busy} data-testid="version-refresh"
-          onClick={() => { setBusy(true); if (!applyUpdate(waiting.current, navigator.serviceWorker, () => window.location.reload())) setBusy(false); }}>
+          onClick={() => { setBusy(true); applyLatestUpdate(reg.current, navigator.serviceWorker, () => window.location.reload(), { beforeReload: () => caches.delete("pages") }); }}>
           <div className="tile"><UI.RefreshCw size={20} strokeWidth={1.75} aria-hidden /></div>
           <div className="row-main"><div className="row-t" data-testid="version-status">{busy ? "Updating…" : status}</div><div className="row-s">Tap to refresh and switch to it</div></div>
         </button>
