@@ -317,3 +317,9 @@ Record judgement calls here as: date · decision · reason.
 - **A failed send now says why.** A waiting entry whose send keeps failing shows a banner with the reason (signed out, the server's answer, no answer in time) and a "Try now" button; offline is still silent.
 - **Also fixed:** the "Get a gentle reminder" card on Home had text that cannot wrap in a container that cannot shrink, which made the whole page 143px wider than the phone (it zooms out and the tab bar slides sideways). It showed for anyone with three or more transactions who had not answered it. A new check (`expectNoSidewaysOverflow`) runs with the card-spacing audits.
 - **Tests:** `34-sync-waiting.spec.ts` (`WAIT-01` to `WAIT-05`), `tests/unit/stale-code.test.ts`; the overflow check is in the `UI-SP-0x` audits.
+
+## App version in Settings (18 Nov 2026)
+
+- **What:** Settings → About shows `Sterling <version>`, `Build <commit> · <date>` and whether a newer version is waiting ("You’re on the latest version" / "A newer version is ready" with a Refresh, "Couldn’t check" offline). The check is the same one the update banner uses (`registration.update()`, then a waiting worker), so the two always agree.
+- **Judgement call:** the release number is `version` in package.json, bumped by hand with every release (a rule in CLAUDE.md), because nothing at build time can count releases (Vercel clones the repository shallowly, so a commit count is unreliable). The build id (the commit on Vercel, "dev" locally) and the build date are filled in by every deployment, so even a forgotten bump cannot make two different builds look identical. Set to 1.8.0 for this release; renumber freely.
+- **Test:** `VER-01` in `35-app-version.spec.ts` (shows the package.json version and build, reports the latest, then finds a staged newer build and refreshes onto it).

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { signOut } from "@/app/(auth)/sign-in/actions";
 import { updateProfile } from "@/app/actions/profile";
 import { PageHeader } from "@/components/ui/page-header";
+import { AppVersion } from "./app-version";
 import { Switch } from "@/components/ui/switch";
 import { useAccounts, useCategories, useProfile } from "@/lib/queries/hooks";
 import { APP_NAME } from "@/lib/env";
@@ -79,6 +80,8 @@ export function SettingsScreen() {
           <div className="row-main"><div className="row-t">Sign out</div><div className="row-s">Signs you out everywhere</div></div>
         </button>
       </div>
+      <div className="eyebrow group-label">About</div>
+      <AppVersion />
       <p className="sub" style={{ margin: "24px 16px 0", textAlign: "center" }}>{APP_NAME} · {profile?.display_name ?? "Signed in"}</p>
     </div>
   );

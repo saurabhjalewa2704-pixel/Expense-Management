@@ -15,3 +15,4 @@ design/screenshots/*.png and design/tokens.css.
 - Every forecast or projection in the app comes from getForecast() in /lib/forecast/ (docs/FORECASTING-ENGINE-PRD.md). Never write a second projection. It must reproduce forecast/fixtures/*.expected.json to the penny.
 - AI copy must pass the grounding validator (PRD §12.4); never show unvalidated model text.
 - Record judgement calls in DECISIONS.md.
+- Every release bumps `version` in package.json (patch for a fix, minor for a feature). It is the number shown in Settings → About, so the owner can tell whether a phone is on the latest build.
